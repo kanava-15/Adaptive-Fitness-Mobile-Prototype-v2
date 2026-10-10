@@ -134,6 +134,7 @@ export const GetCatalogReleaseResponse = zod.object({
 export const searchCatalogActivitiesQueryVersionRegExp = new RegExp('^[a-z0-9][a-z0-9-]{0,95}$');
 export const searchCatalogActivitiesQueryQMax = 120;
 
+export const searchCatalogActivitiesQueryIncludeArchivedDefault = false;
 export const searchCatalogActivitiesQueryLimitDefault = 30;
 export const searchCatalogActivitiesQueryLimitMax = 100;
 
@@ -148,6 +149,11 @@ export const SearchCatalogActivitiesQueryParams = zod.object({
   "q": zod.coerce.string().max(searchCatalogActivitiesQueryQMax).optional(),
   "discipline": zod.enum(['strength', 'yoga', 'mobility', 'conditioning']).optional(),
   "type": zod.enum(['exercise', 'asana', 'mobility-drill', 'conditioning-activity', 'sequence']).optional(),
+  "family": zod.enum(['general', 'ashtanga-vinyasa', 'cars']).optional(),
+  "equipment": zod.enum(['none', 'mat', 'block', 'strap', 'wall', 'chair', 'band', 'dumbbells', 'kettlebell', 'barbell', 'plates', 'rack', 'bench', 'machine', 'cable', 'pull-up-bar', 'rings', 'suspension-trainer', 'stability-ball', 'medicine-ball', 'foam-roller', 'step', 'box', 'jump-rope', 'treadmill', 'bike', 'rower', 'elliptical', 'sled', 'pool', 'parallel-bars']).optional(),
+  "joint": zod.enum(['cervical-spine', 'thoracic-spine', 'lumbar-spine', 'scapula', 'shoulder', 'elbow', 'forearm', 'wrist', 'fingers', 'hip', 'knee', 'ankle', 'toes']).optional(),
+  "difficulty": zod.enum(['beginner', 'intermediate', 'advanced', 'unknown']).optional(),
+  "includeArchived": zod.coerce.boolean().default(searchCatalogActivitiesQueryIncludeArchivedDefault),
   "limit": zod.coerce.number().int().min(1).max(searchCatalogActivitiesQueryLimitMax).default(searchCatalogActivitiesQueryLimitDefault),
   "offset": zod.coerce.number().int().min(searchCatalogActivitiesQueryOffsetMin).max(searchCatalogActivitiesQueryOffsetMax).default(searchCatalogActivitiesQueryOffsetDefault)
 })

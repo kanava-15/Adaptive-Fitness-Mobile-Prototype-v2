@@ -1,0 +1,410 @@
+id	name	discipline	family	context	sources
+conditioning-basic-jump-rope-hop	Basic jump-rope hop	conditioning	general		exrx-cardio
+conditioning-burpee	Burpee	conditioning	general		exrx-cardio
+conditioning-elliptical-trainer	Elliptical trainer	conditioning	general		exrx-cardio
+conditioning-freestyle-swimming	Freestyle swimming	conditioning	general		exrx-cardio
+conditioning-jumping-jack	Jumping jack	conditioning	general		exrx-cardio
+conditioning-mountain-climber	Mountain climber	conditioning	general		exrx-cardio
+conditioning-outdoor-cycling	Outdoor cycling	conditioning	general		exrx-cardio
+conditioning-outdoor-running	Outdoor running	conditioning	general		exrx-cardio
+conditioning-outdoor-walking	Outdoor walking	conditioning	general		exrx-cardio
+conditioning-recumbent-cycling	Recumbent cycling	conditioning	general		exrx-cardio
+conditioning-rowing-ergometer	Rowing ergometer	conditioning	general		exrx-cardio
+conditioning-side-shuffle	Side shuffle	conditioning	general		exrx-cardio
+conditioning-stair-climbing	Stair climbing	conditioning	general		exrx-cardio
+conditioning-stationary-upright-cycling	Stationary upright cycling	conditioning	general		exrx-cardio
+conditioning-treadmill-running	Treadmill running	conditioning	general		exrx-cardio
+conditioning-treadmill-walking	Treadmill walking	conditioning	general		exrx-cardio
+mobility-ankle-cars	Ankle CARs	mobility	cars		tcm-cars
+mobility-backward-facing-wrist-extensor-stretch	Backward-facing wrist extensor stretch	mobility	general		gmb-joints
+mobility-backward-facing-wrist-flexor-stretch	Backward-facing wrist flexor stretch	mobility	general		gmb-joints
+mobility-butterfly-hip-fold	Butterfly hip fold	mobility	general		gmb-hips
+mobility-cat-cow-spinal-motion	Cat-cow spinal motion	mobility	general		gmb-joints
+mobility-closed-chain-elbow-rotations	Closed-chain elbow rotations	mobility	general		gmb-joints
+mobility-cobra-spinal-lift	Cobra spinal lift	mobility	general		gmb-joints
+mobility-forward-facing-wrist-flexor-stretch	Forward-facing wrist flexor stretch	mobility	general		gmb-joints
+mobility-frog-hip-stretch	Frog hip stretch	mobility	general		gmb-hips
+mobility-gentle-joint-exploration-sequence	Gentle joint exploration sequence	mobility	general		maintainer-mobility-order
+mobility-half-kneeling-hip-flexor-shift	Half-kneeling hip-flexor shift	mobility	general		gmb-hips
+mobility-knee-and-tibial-cars	Knee and tibial CARs	mobility	cars		tcm-cars
+mobility-kneeling-hamstring-hinge	Kneeling hamstring hinge	mobility	general		gmb-joints
+mobility-kneeling-lunge-rotations	Kneeling lunge rotations	mobility	general		gmb-joints
+mobility-lying-hip-rotations	Lying hip rotations	mobility	general		gmb-hips
+mobility-neck-cars	Neck CARs	mobility	cars		neckcare-cars
+mobility-prone-position-shoulder-opener	Prone-position shoulder opener	mobility	general		gmb-shoulders
+mobility-quadruped-hip-cars	Quadruped hip CARs	mobility	cars		mh-hip-cars
+mobility-quadruped-scapular-protraction-and-retraction	Quadruped scapular protraction and retraction	mobility	general		gmb-joints
+mobility-quadruped-shoulder-blade-circles	Quadruped shoulder-blade circles	mobility	general		gmb-joints
+mobility-quadruped-side-bending-reach	Quadruped side-bending reach	mobility	general		gmb-joints
+mobility-quadruped-spinal-circles	Quadruped spinal circles	mobility	general		gmb-joints
+mobility-quadruped-thoracic-twist	Quadruped thoracic twist	mobility	general		gmb-shoulders
+mobility-quadruped-upper-spine-extension-and-flexion	Quadruped upper-spine extension and flexion	mobility	general		gmb-joints
+mobility-seated-combined-rotation-and-side-bend	Seated combined rotation and side bend	mobility	general		gmb-shoulders
+mobility-shoulder-cars	Shoulder CARs	mobility	cars		tcm-cars
+mobility-spinal-cars	Spinal CARs	mobility	cars		tcm-cars
+mobility-squat-trunk-rotations	Squat trunk rotations	mobility	general		gmb-joints
+mobility-squatting-hip-internal-rotations	Squatting hip internal rotations	mobility	general		gmb-hips
+mobility-supine-piriformis-figure-four-stretch	Supine piriformis figure-four stretch	mobility	general		gmb-hips
+mobility-supported-pigeon-hip-stretch	Supported pigeon hip stretch	mobility	general		gmb-hips
+mobility-supported-standing-hip-cars	Supported standing hip CARs	mobility	cars		tcm-cars
+mobility-supported-upper-thoracic-extension	Supported upper-thoracic extension	mobility	general		gmb-shoulders
+mobility-tall-kneeling-side-arm-reach	Tall-kneeling side arm reach	mobility	general		gmb-shoulders
+mobility-three-point-bridge-reach	Three-point bridge reach	mobility	general		gmb-joints
+mobility-traveling-butterfly	Traveling butterfly	mobility	general		gmb-hips
+mobility-wrist-cars	Wrist CARs	mobility	cars		tcm-cars
+strength-archer-pull-up	Archer pull-up	strength	general		ref-archer-pull-up
+strength-archer-push-up	Archer push-up	strength	general		ref-archer-push-up
+strength-band-assisted-chin-up	Band-assisted chin-up	strength	general		ref-band-assisted-chin-up
+strength-band-assisted-pull-up	Band-assisted pull-up	strength	general		ref-band-assisted-pull-up
+strength-band-assisted-triceps-dip	Band-assisted triceps dip	strength	general		ref-band-assisted-triceps-dip
+strength-barbell-back-squat	Barbell back squat	strength	general		ref-barbell-back-squat
+strength-barbell-bench-press	Barbell bench press	strength	general		ref-barbell-bench-press
+strength-barbell-bent-knee-good-morning	Barbell bent-knee good morning	strength	general		ref-barbell-bent-knee-good-morning
+strength-barbell-bent-over-row	Barbell bent-over row	strength	general		ref-barbell-bent-over-row
+strength-barbell-biceps-curl	Barbell biceps curl	strength	general		ref-barbell-biceps-curl
+strength-barbell-close-grip-bench-press	Barbell close-grip bench press	strength	general		ref-barbell-close-grip-bench-press
+strength-barbell-deadlift	Barbell deadlift	strength	general		ref-barbell-deadlift
+strength-barbell-forward-lunge	Barbell forward lunge	strength	general		ref-barbell-forward-lunge
+strength-barbell-front-raise	Barbell front raise	strength	general		ref-barbell-front-raise
+strength-barbell-front-squat	Barbell front squat	strength	general		ref-barbell-front-squat
+strength-barbell-hip-thrust	Barbell hip thrust	strength	general		ref-barbell-hip-thrust
+strength-barbell-lying-triceps-extension	Barbell lying triceps extension	strength	general		ref-barbell-lying-triceps-extension
+strength-barbell-military-press	Barbell military press	strength	general		ref-barbell-military-press
+strength-barbell-overhead-triceps-extension	Barbell overhead triceps extension	strength	general		ref-barbell-overhead-triceps-extension
+strength-barbell-preacher-curl	Barbell preacher curl	strength	general		ref-barbell-preacher-curl
+strength-barbell-pullover	Barbell pullover	strength	general		ref-barbell-pullover
+strength-barbell-rear-delt-row	Barbell rear-delt row	strength	general		ref-barbell-rear-delt-row
+strength-barbell-reverse-curl	Barbell reverse curl	strength	general		ref-barbell-reverse-curl
+strength-barbell-reverse-lunge	Barbell reverse lunge	strength	general		ref-barbell-reverse-lunge
+strength-barbell-reverse-wrist-curl	Barbell reverse wrist curl	strength	general		ref-barbell-reverse-wrist-curl
+strength-barbell-shrug	Barbell shrug	strength	general		ref-barbell-shrug
+strength-barbell-split-squat	Barbell split squat	strength	general		ref-barbell-split-squat
+strength-barbell-step-up	Barbell step-up	strength	general		ref-barbell-step-up
+strength-barbell-stiff-leg-deadlift	Barbell stiff-leg deadlift	strength	general		ref-barbell-stiff-leg-deadlift
+strength-barbell-upright-row	Barbell upright row	strength	general		ref-barbell-upright-row
+strength-barbell-wrist-curl	Barbell wrist curl	strength	general		ref-barbell-wrist-curl
+strength-bent-knee-side-plank	Bent-knee side plank	strength	general		ref-bent-knee-side-plank
+strength-bird-dog	Bird dog	strength	general		ref-bird-dog
+strength-bodyweight-45-degree-back-extension	Bodyweight 45-degree back extension	strength	general		ref-bodyweight-45-degree-back-extension
+strength-bodyweight-bench-dip	Bodyweight bench dip	strength	general		ref-bodyweight-bench-dip
+strength-bodyweight-crunch	Bodyweight crunch	strength	general		ref-bodyweight-crunch
+strength-bodyweight-forward-lunge	Bodyweight forward lunge	strength	general		ref-bodyweight-forward-lunge
+strength-bodyweight-pistol-squat	Bodyweight pistol squat	strength	general		ref-bodyweight-pistol-squat
+strength-bodyweight-reverse-calf-raise	Bodyweight reverse calf raise	strength	general		ref-bodyweight-reverse-calf-raise
+strength-bodyweight-reverse-lunge	Bodyweight reverse lunge	strength	general		ref-bodyweight-reverse-lunge
+strength-bodyweight-side-crunch	Bodyweight side crunch	strength	general		ref-bodyweight-side-crunch
+strength-bodyweight-single-leg-calf-raise	Bodyweight single-leg calf raise	strength	general		ref-bodyweight-single-leg-calf-raise
+strength-bodyweight-single-leg-stiff-leg-deadlift	Bodyweight single-leg stiff-leg deadlift	strength	general		ref-bodyweight-single-leg-stiff-leg-deadlift
+strength-bodyweight-sit-up	Bodyweight sit-up	strength	general		ref-bodyweight-sit-up
+strength-bodyweight-split-squat	Bodyweight split squat	strength	general		ref-bodyweight-split-squat
+strength-bodyweight-squat	Bodyweight squat	strength	general		ref-bodyweight-squat
+strength-bodyweight-standing-calf-raise	Bodyweight standing calf raise	strength	general		ref-bodyweight-standing-calf-raise
+strength-bodyweight-step-down	Bodyweight step-down	strength	general		ref-bodyweight-step-down
+strength-bodyweight-step-up	Bodyweight step-up	strength	general		ref-bodyweight-step-up
+strength-bodyweight-triceps-dip	Bodyweight triceps dip	strength	general		ref-bodyweight-triceps-dip
+strength-bodyweight-twisting-crunch	Bodyweight twisting crunch	strength	general		ref-bodyweight-twisting-crunch
+strength-cable-bench-press	Cable bench press	strength	general		ref-cable-bench-press
+strength-cable-bent-over-pullover	Cable bent-over pullover	strength	general		ref-cable-bent-over-pullover
+strength-cable-bent-over-triceps-extension	Cable bent-over triceps extension	strength	general		ref-cable-bent-over-triceps-extension
+strength-cable-biceps-curl	Cable biceps curl	strength	general		ref-cable-biceps-curl
+strength-cable-concentration-curl	Cable concentration curl	strength	general		ref-cable-concentration-curl
+strength-cable-glute-kickback	Cable glute kickback	strength	general		ref-cable-glute-kickback
+strength-cable-hammer-curl	Cable hammer curl	strength	general		ref-cable-hammer-curl
+strength-cable-hip-abduction	Cable hip abduction	strength	general		ref-cable-hip-abduction
+strength-cable-hip-adduction	Cable hip adduction	strength	general		ref-cable-hip-adduction
+strength-cable-kneeling-crunch	Cable kneeling crunch	strength	general		ref-cable-kneeling-crunch
+strength-cable-lat-pulldown	Cable lat pulldown	strength	general		ref-cable-lat-pulldown
+strength-cable-lying-triceps-extension	Cable lying triceps extension	strength	general		ref-cable-lying-triceps-extension
+strength-cable-overhead-triceps-extension	Cable overhead triceps extension	strength	general		ref-cable-overhead-triceps-extension
+strength-cable-preacher-curl	Cable preacher curl	strength	general		ref-cable-preacher-curl
+strength-cable-rear-delt-row	Cable rear-delt row	strength	general		ref-cable-rear-delt-row
+strength-cable-reverse-fly	Cable reverse fly	strength	general		ref-cable-reverse-fly
+strength-cable-seated-crunch	Cable seated crunch	strength	general		ref-cable-seated-crunch
+strength-cable-seated-row	Cable seated row	strength	general		ref-cable-seated-row
+strength-cable-seated-twist	Cable seated twist	strength	general		ref-cable-seated-twist
+strength-cable-shoulder-external-rotation	Cable shoulder external rotation	strength	general		ref-cable-shoulder-external-rotation
+strength-cable-shoulder-internal-rotation	Cable shoulder internal rotation	strength	general		ref-cable-shoulder-internal-rotation
+strength-cable-shrug	Cable shrug	strength	general		ref-cable-shrug
+strength-cable-side-bend	Cable side bend	strength	general		ref-cable-side-bend
+strength-cable-squat	Cable squat	strength	general		ref-cable-squat
+strength-cable-standing-crunch	Cable standing crunch	strength	general		ref-cable-standing-crunch
+strength-cable-standing-hip-extension	Cable standing hip extension	strength	general		ref-cable-standing-hip-extension
+strength-cable-stiff-leg-deadlift	Cable stiff-leg deadlift	strength	general		ref-cable-stiff-leg-deadlift
+strength-cable-triceps-pushdown	Cable triceps pushdown	strength	general		ref-cable-triceps-pushdown
+strength-cable-upright-row	Cable upright row	strength	general		ref-cable-upright-row
+strength-cable-wrist-curl	Cable wrist curl	strength	general		ref-cable-wrist-curl
+strength-cable-y-raise	Cable Y raise	strength	general		ref-cable-y-raise
+strength-chest-supported-dumbbell-row	Chest-supported dumbbell row	strength	general		ref-chest-supported-dumbbell-row
+strength-chin-up	Chin-up	strength	general		ref-chin-up
+strength-close-grip-cable-pulldown	Close-grip cable pulldown	strength	general		ref-close-grip-cable-pulldown
+strength-close-grip-push-up	Close-grip push-up	strength	general		ref-close-grip-push-up
+strength-decline-barbell-bench-press	Decline barbell bench press	strength	general		ref-decline-barbell-bench-press
+strength-decline-dumbbell-bench-press	Decline dumbbell bench press	strength	general		ref-decline-dumbbell-bench-press
+strength-decline-machine-chest-press	Decline machine chest press	strength	general		ref-decline-machine-chest-press
+strength-decline-push-up	Decline push-up	strength	general		ref-decline-push-up
+strength-decline-smith-bench-press	Decline Smith bench press	strength	general		ref-decline-smith-bench-press
+strength-dumbbell-arnold-press	Dumbbell Arnold press	strength	general		ref-dumbbell-arnold-press
+strength-dumbbell-bench-press	Dumbbell bench press	strength	general		ref-dumbbell-bench-press
+strength-dumbbell-bent-over-row	Dumbbell bent-over row	strength	general		ref-dumbbell-bent-over-row
+strength-dumbbell-biceps-curl	Dumbbell biceps curl	strength	general		ref-dumbbell-biceps-curl
+strength-dumbbell-chest-fly	Dumbbell chest fly	strength	general		ref-dumbbell-chest-fly
+strength-dumbbell-chest-pullover	Dumbbell chest pullover	strength	general		ref-dumbbell-chest-pullover
+strength-dumbbell-concentration-curl	Dumbbell concentration curl	strength	general		ref-dumbbell-concentration-curl
+strength-dumbbell-forearm-pronation	Dumbbell forearm pronation	strength	general		ref-dumbbell-forearm-pronation
+strength-dumbbell-forearm-supination	Dumbbell forearm supination	strength	general		ref-dumbbell-forearm-supination
+strength-dumbbell-forward-lunge	Dumbbell forward lunge	strength	general		ref-dumbbell-forward-lunge
+strength-dumbbell-front-raise	Dumbbell front raise	strength	general		ref-dumbbell-front-raise
+strength-dumbbell-front-squat	Dumbbell front squat	strength	general		ref-dumbbell-front-squat
+strength-dumbbell-hammer-curl	Dumbbell hammer curl	strength	general		ref-dumbbell-hammer-curl
+strength-dumbbell-lateral-raise	Dumbbell lateral raise	strength	general		ref-dumbbell-lateral-raise
+strength-dumbbell-lying-triceps-extension	Dumbbell lying triceps extension	strength	general		ref-dumbbell-lying-triceps-extension
+strength-dumbbell-overhead-triceps-extension	Dumbbell overhead triceps extension	strength	general		ref-dumbbell-overhead-triceps-extension
+strength-dumbbell-preacher-curl	Dumbbell preacher curl	strength	general		ref-dumbbell-preacher-curl
+strength-dumbbell-rear-delt-row	Dumbbell rear-delt row	strength	general		ref-dumbbell-rear-delt-row
+strength-dumbbell-rear-lateral-raise	Dumbbell rear lateral raise	strength	general		ref-dumbbell-rear-lateral-raise
+strength-dumbbell-reverse-lunge	Dumbbell reverse lunge	strength	general		ref-dumbbell-reverse-lunge
+strength-dumbbell-reverse-wrist-curl	Dumbbell reverse wrist curl	strength	general		ref-dumbbell-reverse-wrist-curl
+strength-dumbbell-shoulder-press	Dumbbell shoulder press	strength	general		ref-dumbbell-shoulder-press
+strength-dumbbell-shrug	Dumbbell shrug	strength	general		ref-dumbbell-shrug
+strength-dumbbell-side-bend	Dumbbell side bend	strength	general		ref-dumbbell-side-bend
+strength-dumbbell-split-squat	Dumbbell split squat	strength	general		ref-dumbbell-split-squat
+strength-dumbbell-squat	Dumbbell squat	strength	general		ref-dumbbell-squat
+strength-dumbbell-standing-calf-raise	Dumbbell standing calf raise	strength	general		ref-dumbbell-standing-calf-raise
+strength-dumbbell-step-down	Dumbbell step-down	strength	general		ref-dumbbell-step-down
+strength-dumbbell-step-up	Dumbbell step-up	strength	general		ref-dumbbell-step-up
+strength-dumbbell-triceps-kickback	Dumbbell triceps kickback	strength	general		ref-dumbbell-triceps-kickback
+strength-dumbbell-upright-row	Dumbbell upright row	strength	general		ref-dumbbell-upright-row
+strength-dumbbell-wrist-curl	Dumbbell wrist curl	strength	general		ref-dumbbell-wrist-curl
+strength-feet-elevated-inverted-row	Feet-elevated inverted row	strength	general		ref-feet-elevated-inverted-row
+strength-floor-dumbbell-internal-rotation	Floor dumbbell internal rotation	strength	general		ref-floor-dumbbell-internal-rotation
+strength-front-plank	Front plank	strength	general		ref-front-plank
+strength-hanging-bent-knee-leg-raise	Hanging bent-knee leg raise	strength	general		ref-hanging-bent-knee-leg-raise
+strength-hanging-straight-leg-raise	Hanging straight-leg raise	strength	general		ref-hanging-straight-leg-raise
+strength-incline-barbell-bench-press	Incline barbell bench press	strength	general		ref-incline-barbell-bench-press
+strength-incline-cable-fly	Incline cable fly	strength	general		ref-incline-cable-fly
+strength-incline-close-grip-push-up	Incline close-grip push-up	strength	general		ref-incline-close-grip-push-up
+strength-incline-crunch	Incline crunch	strength	general		ref-incline-crunch
+strength-incline-dumbbell-bench-press	Incline dumbbell bench press	strength	general		ref-incline-dumbbell-bench-press
+strength-incline-dumbbell-curl	Incline dumbbell curl	strength	general		ref-incline-dumbbell-curl
+strength-incline-dumbbell-fly	Incline dumbbell fly	strength	general		ref-incline-dumbbell-fly
+strength-incline-dumbbell-lateral-raise	Incline dumbbell lateral raise	strength	general		ref-incline-dumbbell-lateral-raise
+strength-incline-machine-chest-press	Incline machine chest press	strength	general		ref-incline-machine-chest-press
+strength-incline-push-up	Incline push-up	strength	general		ref-incline-push-up
+strength-incline-sit-up	Incline sit-up	strength	general		ref-incline-sit-up
+strength-incline-smith-bench-press	Incline Smith bench press	strength	general		ref-incline-smith-bench-press
+strength-inverted-row	Inverted row	strength	general		ref-inverted-row
+strength-kneeling-close-grip-push-up	Kneeling close-grip push-up	strength	general		ref-kneeling-close-grip-push-up
+strength-kneeling-push-up	Kneeling push-up	strength	general		ref-kneeling-push-up
+strength-lying-bent-knee-leg-raise	Lying bent-knee leg raise	strength	general		ref-lying-bent-knee-leg-raise
+strength-lying-cable-fly	Lying cable fly	strength	general		ref-lying-cable-fly
+strength-lying-dumbbell-lateral-raise	Lying dumbbell lateral raise	strength	general		ref-lying-dumbbell-lateral-raise
+strength-lying-straight-leg-raise	Lying straight-leg raise	strength	general		ref-lying-straight-leg-raise
+strength-machine-assisted-chin-up	Machine-assisted chin-up	strength	general		ref-machine-assisted-chin-up
+strength-machine-assisted-triceps-dip	Machine-assisted triceps dip	strength	general		ref-machine-assisted-triceps-dip
+strength-machine-back-extension	Machine back extension	strength	general		ref-machine-back-extension
+strength-machine-biceps-curl	Machine biceps curl	strength	general		ref-machine-biceps-curl
+strength-machine-chest-press	Machine chest press	strength	general		ref-machine-chest-press
+strength-machine-deadlift	Machine deadlift	strength	general		ref-machine-deadlift
+strength-machine-hip-adduction	Machine hip adduction	strength	general		ref-machine-hip-adduction
+strength-machine-lat-pulldown	Machine lat pulldown	strength	general		ref-machine-lat-pulldown
+strength-machine-lateral-raise	Machine lateral raise	strength	general		ref-machine-lateral-raise
+strength-machine-leg-extension	Machine leg extension	strength	general		ref-machine-leg-extension
+strength-machine-lying-hip-extension	Machine lying hip extension	strength	general		ref-machine-lying-hip-extension
+strength-machine-lying-leg-curl	Machine lying leg curl	strength	general		ref-machine-lying-leg-curl
+strength-machine-pec-deck-fly	Machine pec-deck fly	strength	general		ref-machine-pec-deck-fly
+strength-machine-preacher-curl	Machine preacher curl	strength	general		ref-machine-preacher-curl
+strength-machine-pullover	Machine pullover	strength	general		ref-machine-pullover
+strength-machine-reverse-fly	Machine reverse fly	strength	general		ref-machine-reverse-fly
+strength-machine-reverse-hyperextension	Machine reverse hyperextension	strength	general		ref-machine-reverse-hyperextension
+strength-machine-seated-calf-raise	Machine seated calf raise	strength	general		ref-machine-seated-calf-raise
+strength-machine-seated-crunch	Machine seated crunch	strength	general		ref-machine-seated-crunch
+strength-machine-seated-high-row	Machine seated high row	strength	general		ref-machine-seated-high-row
+strength-machine-seated-hip-abduction	Machine seated hip abduction	strength	general		ref-machine-seated-hip-abduction
+strength-machine-seated-leg-curl	Machine seated leg curl	strength	general		ref-machine-seated-leg-curl
+strength-machine-seated-leg-press	Machine seated leg press	strength	general		ref-machine-seated-leg-press
+strength-machine-seated-row	Machine seated row	strength	general		ref-machine-seated-row
+strength-machine-seated-twist	Machine seated twist	strength	general		ref-machine-seated-twist
+strength-machine-shoulder-external-rotation	Machine shoulder external rotation	strength	general		ref-machine-shoulder-external-rotation
+strength-machine-shoulder-internal-rotation	Machine shoulder internal rotation	strength	general		ref-machine-shoulder-internal-rotation
+strength-machine-shoulder-press	Machine shoulder press	strength	general		ref-machine-shoulder-press
+strength-machine-shrug	Machine shrug	strength	general		ref-machine-shrug
+strength-machine-standing-leg-curl	Machine standing leg curl	strength	general		ref-machine-standing-leg-curl
+strength-machine-triceps-extension	Machine triceps extension	strength	general		ref-machine-triceps-extension
+strength-neutral-close-grip-pull-up	Neutral close-grip pull-up	strength	general		ref-neutral-close-grip-pull-up
+strength-one-arm-cable-bent-over-row	One-arm cable bent-over row	strength	general		ref-one-arm-cable-bent-over-row
+strength-one-arm-cable-biceps-curl	One-arm cable biceps curl	strength	general		ref-one-arm-cable-biceps-curl
+strength-one-arm-cable-front-raise	One-arm cable front raise	strength	general		ref-one-arm-cable-front-raise
+strength-one-arm-cable-lateral-raise	One-arm cable lateral raise	strength	general		ref-one-arm-cable-lateral-raise
+strength-one-arm-cable-triceps-pushdown	One-arm cable triceps pushdown	strength	general		ref-one-arm-cable-triceps-pushdown
+strength-one-arm-dumbbell-shoulder-press	One-arm dumbbell shoulder press	strength	general		ref-one-arm-dumbbell-shoulder-press
+strength-one-arm-dumbbell-straight-leg-deadlift	One-arm dumbbell straight-leg deadlift	strength	general		ref-one-arm-dumbbell-straight-leg-deadlift
+strength-one-arm-pull-up	One-arm pull-up	strength	general		ref-one-arm-pull-up
+strength-one-arm-suspension-row	One-arm suspension row	strength	general		ref-one-arm-suspension-row
+strength-prone-incline-barbell-curl	Prone incline barbell curl	strength	general		ref-prone-incline-barbell-curl
+strength-pull-up	Pull-up	strength	general		ref-pull-up
+strength-push-up	Push-up	strength	general		ref-push-up
+strength-push-up-plus	Push-up plus	strength	general		ref-push-up-plus
+strength-rear-bridge-plank	Rear bridge plank	strength	general		ref-rear-bridge-plank
+strength-rear-foot-elevated-barbell-split-squat	Rear-foot-elevated barbell split squat	strength	general		ref-rear-foot-elevated-barbell-split-squat
+strength-rear-foot-elevated-bodyweight-split-squat	Rear-foot-elevated bodyweight split squat	strength	general		ref-rear-foot-elevated-bodyweight-split-squat
+strength-reclined-machine-shoulder-press	Reclined machine shoulder press	strength	general		ref-reclined-machine-shoulder-press
+strength-seated-barbell-military-press	Seated barbell military press	strength	general		ref-seated-barbell-military-press
+strength-seated-cable-fly	Seated cable fly	strength	general		ref-seated-cable-fly
+strength-seated-cable-shoulder-press	Seated cable shoulder press	strength	general		ref-seated-cable-shoulder-press
+strength-seated-dumbbell-rear-lateral-raise	Seated dumbbell rear lateral raise	strength	general		ref-seated-dumbbell-rear-lateral-raise
+strength-side-bridge-hip-abduction	Side-bridge hip abduction	strength	general		ref-side-bridge-hip-abduction
+strength-side-lying-dumbbell-external-rotation	Side-lying dumbbell external rotation	strength	general		ref-side-lying-dumbbell-external-rotation
+strength-side-plank	Side plank	strength	general		ref-side-plank
+strength-single-leg-box-squat	Single-leg box squat	strength	general		ref-single-leg-box-squat
+strength-smith-back-squat	Smith back squat	strength	general		ref-smith-back-squat
+strength-smith-bench-press	Smith bench press	strength	general		ref-smith-bench-press
+strength-smith-bent-knee-good-morning	Smith bent-knee good morning	strength	general		ref-smith-bent-knee-good-morning
+strength-smith-bent-over-row	Smith bent-over row	strength	general		ref-smith-bent-over-row
+strength-smith-close-grip-bench-press	Smith close-grip bench press	strength	general		ref-smith-close-grip-bench-press
+strength-smith-deadlift	Smith deadlift	strength	general		ref-smith-deadlift
+strength-smith-shoulder-press	Smith shoulder press	strength	general		ref-smith-shoulder-press
+strength-smith-shrug	Smith shrug	strength	general		ref-smith-shrug
+strength-smith-upright-row	Smith upright row	strength	general		ref-smith-upright-row
+strength-stability-ball-back-extension	Stability-ball back extension	strength	general		ref-stability-ball-back-extension
+strength-stability-ball-crunch	Stability-ball crunch	strength	general		ref-stability-ball-crunch
+strength-standing-cable-chest-press	Standing cable chest press	strength	general		ref-standing-cable-chest-press
+strength-standing-cable-fly	Standing cable fly	strength	general		ref-standing-cable-fly
+strength-standing-cable-shoulder-press	Standing cable shoulder press	strength	general		ref-standing-cable-shoulder-press
+strength-superman	Superman	strength	general		ref-superman
+strength-supported-upright-dumbbell-external-rotation	Supported upright dumbbell external rotation	strength	general		ref-supported-upright-dumbbell-external-rotation
+strength-suspension-arm-curl	Suspension arm curl	strength	general		ref-suspension-arm-curl
+strength-suspension-chest-fly	Suspension chest fly	strength	general		ref-suspension-chest-fly
+strength-suspension-chest-press	Suspension chest press	strength	general		ref-suspension-chest-press
+strength-suspension-front-raise	Suspension front raise	strength	general		ref-suspension-front-raise
+strength-suspension-hip-bridge	Suspension hip bridge	strength	general		ref-suspension-hip-bridge
+strength-suspension-jackknife	Suspension jackknife	strength	general		ref-suspension-jackknife
+strength-suspension-pike	Suspension pike	strength	general		ref-suspension-pike
+strength-suspension-reverse-fly	Suspension reverse fly	strength	general		ref-suspension-reverse-fly
+strength-suspension-row	Suspension row	strength	general		ref-suspension-row
+strength-suspension-triceps-extension	Suspension triceps extension	strength	general		ref-suspension-triceps-extension
+strength-suspension-y-raise	Suspension Y raise	strength	general		ref-suspension-y-raise
+strength-t-bar-row	T-bar row	strength	general		ref-t-bar-row
+strength-underhand-barbell-bent-over-row	Underhand barbell bent-over row	strength	general		ref-underhand-barbell-bent-over-row
+strength-underhand-cable-pulldown	Underhand cable pulldown	strength	general		ref-underhand-cable-pulldown
+strength-underhand-inverted-row	Underhand inverted row	strength	general		ref-underhand-inverted-row
+strength-weighted-chin-up	Weighted chin-up	strength	general		ref-weighted-chin-up
+strength-weighted-pull-up	Weighted pull-up	strength	general		ref-weighted-pull-up
+strength-weighted-push-up	Weighted push-up	strength	general		ref-weighted-push-up
+strength-weighted-triceps-dip	Weighted triceps dip	strength	general		ref-weighted-triceps-dip
+strength-wide-grip-cable-seated-row	Wide-grip cable seated row	strength	general		ref-wide-grip-cable-seated-row
+yoga-adho-mukha-svanasana	Adho Mukha Svanasana	yoga	ashtanga-vinyasa	Vinyasa	asher-primary
+yoga-ardha-baddha-padma-paschimattanasana	Ardha Baddha Padma Paschimattanasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-astavakrasana-a	Astavakrasana A	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-astavakrasana-b	Astavakrasana B	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-baddha-hasta-sirsasana-a	Baddha Hasta Sirsasana A	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-baddha-hasta-sirsasana-b	Baddha Hasta Sirsasana B	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-baddha-hasta-sirsasana-c	Baddha Hasta Sirsasana C	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-baddha-hasta-sirsasana-d	Baddha Hasta Sirsasana D	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-baddha-konasana	Baddha Konasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-baddha-padmasana	Baddha Padmasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-bakasana-a	Bakasana A	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-bakasana-b	Bakasana B	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-balasana	Balasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-bhairavasana	Bhairavasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-bharadvajasana	Bharadvajasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-bhekasana	Bhekasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-bhujapidasana	Bhujapidasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-chakorasana	Chakorasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-chaturanga-dandasana	Chaturanga Dandasana	yoga	ashtanga-vinyasa	Vinyasa	asher-primary
+yoga-dandasana	Dandasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-dhanurasana	Dhanurasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-durvasasana	Durvasasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-eka-pada-bakasana-a	Eka Pada Bakasana A	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-eka-pada-bakasana-b	Eka Pada Bakasana B	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-eka-pada-sirsasana	Eka Pada Sirsasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-eka-pada-viparita-dandasana	Eka Pada Viparita Dandasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-galavasana	Galavasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-garbha-pindasana	Garbha Pindasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-gomukhasana-a	Gomukhasana A	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-gomukhasana-b	Gomukhasana B	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-halasana	Halasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-janu-sirsasana-a	Janu Sirsasana A	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-janu-sirsasana-b	Janu Sirsasana B	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-janu-sirsasana-c	Janu Sirsasana C	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-kapotasana-a	Kapotasana A	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-kapotasana-b	Kapotasana B	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-karandavasana	Karandavasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-karna-pidasana	Karna Pidasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-kasyapasana	Kasyapasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-koundinyasana-a	Koundinyasana A	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-koundinyasana-b	Koundinyasana B	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-krounchasana	Krounchasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-kukkutasana	Kukkutasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-kurmasana	Kurmasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-laghu-vajrasana	Laghu Vajrasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-marichyasana-a	Marichyasana A	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-marichyasana-b	Marichyasana B	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-marichyasana-c	Marichyasana C	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-marichyasana-d	Marichyasana D	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-matsyasana	Matsyasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-mayurasana	Mayurasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-mukta-hasta-sirsasana-a	Mukta Hasta Sirsasana A	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-mukta-hasta-sirsasana-b	Mukta Hasta Sirsasana B	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-mukta-hasta-sirsasana-c	Mukta Hasta Sirsasana C	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-nakrasana	Nakrasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-navasana	Navasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-omkarasana	Omkarasana	yoga	ashtanga-vinyasa	Advanced B	asher-later
+yoga-padahastasana	Padahastasana	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-padangusthasana	Padangusthasana	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-padmasana	Padmasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-parighasana	Parighasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-parsva-dhanurasana	Parsva Dhanurasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-parsvottanasana	Parsvottanasana	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-pasasana	Pasasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-paschimattanasana-a	Paschimattanasana A	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-pincha-mayurasana	Pincha Mayurasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-pindasana	Pindasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-purna-matsyendrasana	Purna Matsyendrasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-purvottanasana	Purvottanasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-salabhasana-a	Salabhasana A	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-salabhasana-b	Salabhasana B	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-salamba-sarvangasana	Salamba Sarvangasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-samasthitih	Samasthitih	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-sayanasana	Sayanasana	yoga	ashtanga-vinyasa	Advanced B	asher-later
+yoga-setu-bandhasana	Setu Bandhasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-sirsasana	Sirsasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-skandasana	Skandasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-supta-konasana	Supta Konasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-supta-kurmasana	Supta Kurmasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-supta-padangusthasana	Supta Padangusthasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-supta-urdhva-pada-vajrasana	Supta Urdhva Pada Vajrasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-supta-vajrasana	Supta Vajrasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-tittibhasana-a	Tittibhasana A	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-tittibhasana-b	Tittibhasana B	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-tittibhasana-c	Tittibhasana C	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-trianga-mukhaikapada-paschimattanasana	Trianga Mukhaikapada Paschimattanasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-ubhaya-padangusthasana	Ubhaya Padangusthasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-upavistha-konasana-a	Upavistha Konasana A	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-upavistha-konasana-b	Upavistha Konasana B	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-urdhva-dhanurasana	Urdhva Dhanurasana	yoga	ashtanga-vinyasa	Backbends	asher-primary
+yoga-urdhva-kukkutasana-a	Urdhva Kukkutasana A	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-urdhva-kukkutasana-b	Urdhva Kukkutasana B	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-urdhva-kukkutasana-c	Urdhva Kukkutasana C	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-urdhva-mukha-paschimattanasana	Urdhva Mukha Paschimattanasana	yoga	ashtanga-vinyasa	Primary	asher-primary
+yoga-urdhva-mukha-svanasana	Urdhva Mukha Svanasana	yoga	ashtanga-vinyasa	Vinyasa	asher-primary
+yoga-urdhva-padmasana	Urdhva Padmasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-urdhva-vrksasana	Urdhva Vrksasana	yoga	ashtanga-vinyasa	Vinyasa	asher-primary
+yoga-ustrasana	Ustrasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-utkatasana	Utkatasana	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-utpluthih	Utpluthih	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-uttana-padasana	Uttana Padasana	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-uttanasana-a	Uttanasana A	yoga	ashtanga-vinyasa	Vinyasa	asher-primary
+yoga-uttanasana-b	Uttanasana B	yoga	ashtanga-vinyasa	Vinyasa	asher-primary
+yoga-utthita-parsvakonasana-a	Utthita Parsvakonasana A	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-utthita-parsvakonasana-b	Utthita Parsvakonasana B	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-utthita-trikonasana-a	Utthita Trikonasana A	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-utthita-trikonasana-b	Utthita Trikonasana B	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-vasisthasana	Vasisthasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-vatayanasana	Vatayanasana	yoga	ashtanga-vinyasa	Intermediate	asher-later
+yoga-viparita-dandasana	Viparita Dandasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-virabhadrasana-a	Virabhadrasana A	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-virabhadrasana-b	Virabhadrasana B	yoga	ashtanga-vinyasa	Standing	asher-primary
+yoga-vishvamitrasana	Vishvamitrasana	yoga	ashtanga-vinyasa	Advanced A	asher-later
+yoga-vrschikasana	Vrschikasana	yoga	ashtanga-vinyasa	Advanced B	asher-later
+yoga-yoga-mudra	Yoga Mudra	yoga	ashtanga-vinyasa	Finishing	asher-primary
+yoga-yoga-nidrasana	Yoga Nidrasana	yoga	ashtanga-vinyasa	Intermediate	asher-later

@@ -75,6 +75,31 @@ paths:
           schema:
             type: string
             enum: [exercise, asana, mobility-drill, conditioning-activity, sequence]
+        - name: family
+          in: query
+          schema:
+            type: string
+            enum: [general, ashtanga-vinyasa, cars]
+        - name: equipment
+          in: query
+          schema:
+            type: string
+            enum: [none, mat, block, strap, wall, chair, band, dumbbells, kettlebell, barbell, plates, rack, bench, machine, cable, pull-up-bar, rings, suspension-trainer, stability-ball, medicine-ball, foam-roller, step, box, jump-rope, treadmill, bike, rower, elliptical, sled, pool, parallel-bars]
+        - name: joint
+          in: query
+          schema:
+            type: string
+            enum: [cervical-spine, thoracic-spine, lumbar-spine, scapula, shoulder, elbow, forearm, wrist, fingers, hip, knee, ankle, toes]
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced, unknown]
+        - name: includeArchived
+          in: query
+          schema:
+            type: boolean
+            default: false
         - name: limit
           in: query
           schema:

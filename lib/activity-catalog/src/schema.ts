@@ -13,7 +13,7 @@ export const equipmentSchema = z.enum([
   'kettlebell', 'barbell', 'plates', 'rack', 'bench', 'machine', 'cable',
   'pull-up-bar', 'rings', 'suspension-trainer', 'stability-ball', 'medicine-ball',
   'foam-roller', 'step', 'box', 'jump-rope', 'treadmill', 'bike', 'rower',
-  'elliptical', 'sled', 'pool',
+  'elliptical', 'sled', 'pool', 'parallel-bars',
 ]);
 export const jointSchema = z.enum(['cervical-spine', 'thoracic-spine', 'lumbar-spine', 'scapula', 'shoulder', 'elbow', 'forearm', 'wrist', 'fingers', 'hip', 'knee', 'ankle', 'toes']);
 export const muscleSchema = z.enum(['quadriceps', 'hamstrings', 'glutes', 'calves', 'tibialis', 'adductors', 'abductors', 'abdominals', 'obliques', 'spinal-erectors', 'lats', 'trapezius', 'rhomboids', 'pectorals', 'deltoids', 'rotator-cuff', 'biceps', 'triceps', 'forearms', 'neck', 'feet']);

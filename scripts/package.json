@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "catalog:bundle": "tsx ./src/catalog-bundle.ts",
+    "test:catalog-development": "NODE_ENV=development tsx ./src/catalog-development-check.ts",
     "catalog": "tsx ./src/catalog-release.ts",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -15,6 +17,7 @@
   "dependencies": {
     "@workspace/activity-catalog": "workspace:*",
     "@workspace/db": "workspace:*",
-    "drizzle-orm": "catalog:"
+    "drizzle-orm": "catalog:",
+    "zod": "catalog:"
   }
 }

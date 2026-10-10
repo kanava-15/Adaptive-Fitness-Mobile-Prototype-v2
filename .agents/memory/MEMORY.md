@@ -1,2 +1,4 @@
 - [Product direction](product-direction.md) — Busy professionals; action-first adaptation, local ownership, and a narrowly scoped fitness prototype.
 - [Incremental delivery](incremental-delivery.md) — User requested phase-wise improvements; keep existing local records and app usable between phases.
+- [Catalog content evidence](catalog-content-evidence.md) — Exclude mismatched CARs reference sections and keep Ashtanga naming lineage-qualified.
+- [TypeScript dependency cache](typescript-cache.md) — After pnpm relinking, compare a fresh check before changing UI to address stale React declaration errors.

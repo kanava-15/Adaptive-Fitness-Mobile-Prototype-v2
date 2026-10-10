@@ -5,7 +5,7 @@ import {
   db, catalogReleases, catalogActivities, catalogAliases,
   catalogSources, catalogRelationships, catalogMemberships,
 } from '@workspace/db';
-import { idSchema, activityTypeSchema, disciplineSchema, activitySchema, validateRelease, orderRelease, normalizedIdentity } from '@workspace/activity-catalog';
+import { idSchema, activityTypeSchema, disciplineSchema, equipmentSchema, jointSchema, activitySchema, validateRelease, orderRelease, normalizedIdentity } from '@workspace/activity-catalog';
 
 const router: IRouter = Router();
 const querySchema = z.object({
@@ -13,6 +13,11 @@ const querySchema = z.object({
   q: z.string().trim().max(120).optional(),
   discipline: disciplineSchema.optional(),
   type: activityTypeSchema.optional(),
+  family: activitySchema.shape.family.optional(),
+  equipment: equipmentSchema.optional(),
+  joint: jointSchema.optional(),
+  difficulty: activitySchema.shape.difficulty.optional(),
+  includeArchived: z.enum(['true', 'false']).default('false').transform(v => v === 'true'),
   limit: z.coerce.number().int().min(1).max(100).default(30),
   offset: z.coerce.number().int().min(0).max(10000).default(0),
 }).strict();
@@ -52,12 +57,17 @@ router.get('/catalog/releases/:version', async (req, res): Promise<void> => {
 router.get('/catalog/activities', async (req, res): Promise<void> => {
   const parsed = querySchema.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: 'Invalid catalog query.', details: parsed.error.flatten() }); return; }
-  const { version, q, discipline, type, limit, offset } = parsed.data;
+  const { version, q, discipline, type, family, equipment, joint, difficulty, includeArchived, limit, offset } = parsed.data;
   const [release] = await db.select({ version: catalogReleases.version }).from(catalogReleases).where(eq(catalogReleases.version, version)).limit(1);
   if (!release) { res.status(404).json({ error: 'Released catalog not found.' }); return; }
   const conditions = [eq(catalogActivities.release, version)];
   if (discipline) conditions.push(eq(catalogActivities.discipline, discipline));
   if (type) conditions.push(eq(catalogActivities.type, type));
+  if (family) conditions.push(sql`${catalogActivities.definition}->>'family' = ${family}`);
+  if (difficulty) conditions.push(sql`${catalogActivities.definition}->>'difficulty' = ${difficulty}`);
+  if (equipment) conditions.push(sql`${catalogActivities.definition}->'equipment' @> ${JSON.stringify([equipment])}::jsonb`);
+  if (joint) conditions.push(sql`${catalogActivities.definition}->'joints' @> ${JSON.stringify([joint])}::jsonb`);
+  if (!includeArchived) conditions.push(sql`${catalogActivities.definition}->>'archived' = 'false'`);
   if (q) {
     const pattern = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
     const identity = normalizedIdentity(q);

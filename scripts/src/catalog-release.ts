@@ -25,7 +25,8 @@ const apply = args.includes('--apply');
 const file = value('--file'), rollback = value('--rollback');
 if (!!file === !!rollback) throw new Error('Supply exactly one of --file <release.json> or --rollback <version>.');
 if (apply && environment === 'production' && !args.includes('--confirm-production')) throw new Error('Production content writes require --confirm-production.');
-if (apply && ((environment === 'production') !== (process.env.NODE_ENV === 'production'))) throw new Error('Selected environment does not match NODE_ENV. Run inside the intended target runtime; do not relabel a development connection.');
+if (apply && environment !== process.env.NODE_ENV) throw new Error('Selected environment does not match NODE_ENV. Run inside the intended target runtime; do not relabel a development connection.');
+if (apply && environment === 'development' && ['1', 'true'].includes(process.env.REPLIT_DEPLOYMENT ?? '')) throw new Error('Development content writes are not allowed in a published runtime.');
 
 const input = file ? orderRelease(validateRelease(JSON.parse(await readFile(file, 'utf8')))) : null;
 if (input) {

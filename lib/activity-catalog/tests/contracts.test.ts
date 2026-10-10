@@ -97,7 +97,7 @@ test('manifest checksum identifies the reconstructed snapshot regardless of inpu
       sources: [{
         id: 'fixture-source', url: 'https://example.test/fixture',
         title: 'Contract fixture, not catalog content', provenance: 'Test fixture only.',
-        retrievedOn: null, reviewedOn: null, permittedUse: 'Original test fixture only.',
+        retrievedOn: '2026-10-10', reviewedOn: '2026-10-10', permittedUse: 'Original test fixture only.',
         reviewStatus: 'source-checked',
       }],
     });

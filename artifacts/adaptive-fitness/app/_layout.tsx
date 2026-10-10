@@ -16,6 +16,12 @@ import { Stack } from 'expo-router';
 import { TempoProvider } from '@/context/TempoContext';
 import colors from '@/constants/colors';
 import * as SplashScreen from 'expo-splash-screen';
+import { setBaseUrl } from '@workspace/api-client-react';
+import { CatalogProvider } from '@/context/CatalogContext';
+
+// Native bundles run outside the web proxy. Origin is configured per build, never a preview literal.
+const apiDomain = process.env.EXPO_PUBLIC_DOMAIN;
+if (apiDomain) setBaseUrl(apiDomain.startsWith('https://') ? apiDomain : `https://${apiDomain}`);
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -62,7 +68,9 @@ export default function RootLayout() {
           <GestureHandlerRootView>
             <KeyboardProvider>
               <TempoProvider>
-                <RootLayoutNav />
+                <CatalogProvider>
+                  <RootLayoutNav />
+                </CatalogProvider>
               </TempoProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>

@@ -409,6 +409,11 @@ version: string;
 q?: string;
 discipline?: SearchCatalogActivitiesDiscipline;
 type?: SearchCatalogActivitiesType;
+family?: SearchCatalogActivitiesFamily;
+equipment?: SearchCatalogActivitiesEquipment;
+joint?: SearchCatalogActivitiesJoint;
+difficulty?: SearchCatalogActivitiesDifficulty;
+includeArchived?: boolean;
 /**
  * @minimum 1
  * @maximum 100
@@ -440,6 +445,81 @@ export const SearchCatalogActivitiesType = {
   'mobility-drill': 'mobility-drill',
   'conditioning-activity': 'conditioning-activity',
   sequence: 'sequence',
+} as const;
+
+export type SearchCatalogActivitiesFamily = typeof SearchCatalogActivitiesFamily[keyof typeof SearchCatalogActivitiesFamily];
+
+
+export const SearchCatalogActivitiesFamily = {
+  general: 'general',
+  'ashtanga-vinyasa': 'ashtanga-vinyasa',
+  cars: 'cars',
+} as const;
+
+export type SearchCatalogActivitiesEquipment = typeof SearchCatalogActivitiesEquipment[keyof typeof SearchCatalogActivitiesEquipment];
+
+
+export const SearchCatalogActivitiesEquipment = {
+  none: 'none',
+  mat: 'mat',
+  block: 'block',
+  strap: 'strap',
+  wall: 'wall',
+  chair: 'chair',
+  band: 'band',
+  dumbbells: 'dumbbells',
+  kettlebell: 'kettlebell',
+  barbell: 'barbell',
+  plates: 'plates',
+  rack: 'rack',
+  bench: 'bench',
+  machine: 'machine',
+  cable: 'cable',
+  'pull-up-bar': 'pull-up-bar',
+  rings: 'rings',
+  'suspension-trainer': 'suspension-trainer',
+  'stability-ball': 'stability-ball',
+  'medicine-ball': 'medicine-ball',
+  'foam-roller': 'foam-roller',
+  step: 'step',
+  box: 'box',
+  'jump-rope': 'jump-rope',
+  treadmill: 'treadmill',
+  bike: 'bike',
+  rower: 'rower',
+  elliptical: 'elliptical',
+  sled: 'sled',
+  pool: 'pool',
+  'parallel-bars': 'parallel-bars',
+} as const;
+
+export type SearchCatalogActivitiesJoint = typeof SearchCatalogActivitiesJoint[keyof typeof SearchCatalogActivitiesJoint];
+
+
+export const SearchCatalogActivitiesJoint = {
+  'cervical-spine': 'cervical-spine',
+  'thoracic-spine': 'thoracic-spine',
+  'lumbar-spine': 'lumbar-spine',
+  scapula: 'scapula',
+  shoulder: 'shoulder',
+  elbow: 'elbow',
+  forearm: 'forearm',
+  wrist: 'wrist',
+  fingers: 'fingers',
+  hip: 'hip',
+  knee: 'knee',
+  ankle: 'ankle',
+  toes: 'toes',
+} as const;
+
+export type SearchCatalogActivitiesDifficulty = typeof SearchCatalogActivitiesDifficulty[keyof typeof SearchCatalogActivitiesDifficulty];
+
+
+export const SearchCatalogActivitiesDifficulty = {
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+  unknown: 'unknown',
 } as const;
 
 export type SearchCatalogActivities200 = {

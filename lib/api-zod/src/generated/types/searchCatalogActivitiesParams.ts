@@ -5,7 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SearchCatalogActivitiesDifficulty } from './searchCatalogActivitiesDifficulty';
 import type { SearchCatalogActivitiesDiscipline } from './searchCatalogActivitiesDiscipline';
+import type { SearchCatalogActivitiesEquipment } from './searchCatalogActivitiesEquipment';
+import type { SearchCatalogActivitiesFamily } from './searchCatalogActivitiesFamily';
+import type { SearchCatalogActivitiesJoint } from './searchCatalogActivitiesJoint';
 import type { SearchCatalogActivitiesType } from './searchCatalogActivitiesType';
 
 export type SearchCatalogActivitiesParams = {
@@ -19,6 +23,11 @@ version: string;
 q?: string;
 discipline?: SearchCatalogActivitiesDiscipline;
 type?: SearchCatalogActivitiesType;
+family?: SearchCatalogActivitiesFamily;
+equipment?: SearchCatalogActivitiesEquipment;
+joint?: SearchCatalogActivitiesJoint;
+difficulty?: SearchCatalogActivitiesDifficulty;
+includeArchived?: boolean;
 /**
  * @minimum 1
  * @maximum 100

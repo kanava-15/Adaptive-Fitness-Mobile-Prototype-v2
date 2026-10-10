@@ -1,36 +1,58 @@
-# Source inventory evidence — initial discovery, not a completed inventory
+# Source inventory and authoring evidence
 
-These pages were retrieved and inspected on 2026-10-10. No per-entry instructional
-or clinical review is claimed. Link/reference permission is not permission to
-copy instructional text, photos or licensed curricula. Author original wording;
-do not clone competitor databases. No downloaded licensed assets are shipped.
+The references below were retrieved and inspected on **2026-10-10**. The
+published starter is `tempo-catalog-2026-10-10-2`: **240 strength**, **116
+Ashtanga-related elements**, **36 mobility drills** (8 CARs), **16 conditioning
+activities**, plus one original ordered mobility sequence. [inventory.tsv](inventory.tsv)
+lists every stable ID, distinct identity, family, qualified series context and
+source ID. Each source record in the bundle links its inspected reference,
+describes the evidence scope, and states the permitted-use position.
+
+`source-checked` means identities, reference links, contextual naming, original
+wording and safeguards were checked against the inspected material. It does
+**not** mean teacher, clinician, FRC/Kinstretch, rights-holder or expert approval.
+No expert review is claimed. All instruction text is original maintainer wording;
+no chart, photograph, video, curriculum, commercial database export or clinical
+claim is shipped. Public factual references are not a license to copy media or
+instructional prose. There is no acquired media license.
 
 | Source | Observed scope | Permitted-use position |
 |---|---|---|
-| [ACE Exercise Library](https://www.acefitness.org/resources/everyone/exercise-library/) | Public examples include bodyweight squat, back squat, barbell forward lunge, bear crawl, ankle flexion and kneeling hip-flexor stretch. | Link as a reference; no copied instructions or photographs; no bulk database import. |
-| [Keen on Yoga Intermediate Series](https://www.keenonyoga.com/ashtanga-yoga-intermediate-series-download) | Adam Keen describes learning Intermediate and Advanced A with Sharath Jois and links an Intermediate chart. This is lineage-qualified context, not a universal sequence. | Link/reference only; charts and assets not copied. Do not adopt the page's progression advice automatically. |
-| [Philippa Asher practice resources](https://ashtangaphilippa.com/ashtanga-yoga-practise-sheets-and-resources) | Primary, Intermediate, Advanced A and Advanced B practice-sheet references, qualified as learned from Pattabhi Jois and Sharath Jois. Calls for experienced instruction. | Copyrighted references; no sheet or media copying. The linked PDFs still need actual inspection before validating individual membership/names. |
-| [Marathon Handbook CARs guide](https://marathonhandbook.com/controlled-articular-rotations/) | General CARs terminology and discussion; inspected text contains medical/rehabilitation and benefit claims that are not suitable for automatic adoption. | Background reference only; not adequate evidence for 35 distinct joint-specific drills. No clinical claim is imported. |
+| [ExRx directories](https://exrx.net/Lists/Directory) | Inspected shoulder, arm, back, chest, waist, hip, thigh, calf and forearm directories. 240 explicitly curated identities point to the exact observed individual exercise links. Directory evidence supports identity/apparatus/target region, not expert validation of new prose. | Factual reference links only, with original movement-family and apparatus-specific instructions; no export or copied instructions. |
+| [Philippa Asher Part 1](https://ashtangaphilippa.com/wp-content/uploads/2026/02/Asana-Practise-Sheets-Part-1-1-1.pdf) | Inspected standing, Primary, backbend and finishing names/context, pages 3–9. | Identity/context reference only; no PDF, counts, therapeutic claims, chart layout or images reproduced. |
+| [Philippa Asher Part 2](https://ashtangaphilippa.com/wp-content/uploads/2026/03/Asana-Practise-Sheets-Part-2.pdf) | Inspected Intermediate and Advanced A/B elements, pages 11–18. Context is specifically Asher's account of learning from Pattabhi Jois and Sharath Jois, not universal agreement about a fixed series. | Original cautious reference guidance. Later-series, inversions, deep backbends, lotus, leg-behind-head and demanding supports have instruction flags; no self-teaching progression. |
+| [NeckCare neck CARs](https://help.neckcare.com/controlled-articular-rotations) | Comfortable neck circle, quiet trunk, smaller-arc regression. | One identity; seated/standing synonyms not multiplied. No patient or treatment claims adopted. |
+| [Twin Cities Movement CARs](https://tcmvmt.com/the-morning-cars-routine-a-joint-by-joint-guide-to-start-your-day-right) | Spine, shoulder, wrist, supported standing hip, knee/tibial and ankle descriptions inspected. | Original low-effort control cues. Scapula/elbow sections repeat spine text; fingers/toes repeat wrist text: these faulty sections were **excluded**, not used to fabricate drills. |
+| [Marathon Handbook CARs](https://marathonhandbook.com/controlled-articular-rotations/) | Quadruped hip circle with bent knee, quiet pelvis and controlled rotation inspected. | Quadruped support is mechanically different from standing balance/support. No rep dose or medical benefit claim copied. |
+| [GMB joint mobility](https://gmb.io/joint-mobility/) | Inspected named wrist, elbow, scapular, spinal, squat, lunge and bridge drills. | Original instructions; no program, training dose or videos copied. Whole-spine cat/cow differs from upper-spine isolation; scapular circles are not claimed to be certified CARs. |
+| [GMB hip mobility](https://gmb.io/hip-mobility/) | Lying rotation, figure-four, butterfly, frog, kneeling lunge, traveling butterfly, squat internal rotation and pigeon. | Overlapping frog and lunge identities counted once. Dynamic traveling butterfly retains its distinct supported hip translation. No diagnoses, anatomical correction or pain-treatment claims. |
+| [GMB shoulder mobility](https://gmb.io/shoulder-mobility/) | Named kneeling arm reach, supported thoracic extension, trunk twist/combined motions and shoulder opener inspected. | Overlapping circles/bridge/cobra/side bend not added again. Original controlled-range guidance. |
+| [ExRx conditioning](https://exrx.net/Lists/CardioExercises) | Inspected links for walking, running, cycling apparatus, rower, elliptical, treadmill locomotion, stairs, freestyle swimming, rope hop, burpee, jumping jack, mountain climber and side shuffle. | 16 distinct activities with original setup, motion, modification and safety text. No intensity, dose, weight-loss or therapeutic promises. |
 
-## Explicit gaps
+## Identity and review rules
 
-- This discovery is **not** an established 330-entry inventory and is **not**
-  an authored starter release.
-- At least 200 distinct strength entries still need individual identity/source
-  mapping, original instruction authoring and review. Do not multiply trivial
-  synonyms to reach this number.
-- At least 80 distinct Ashtanga asanas/practice elements still need verified
-  transliteration/English names and source-qualified standing, finishing,
-  Intermediate and adequately referenced Advanced contexts. Inspect linked
-  references rather than assuming series membership. Count each identity once.
-- At least 35 mobility drills still need source-supported meaningful variations;
-  the inspected general CARs article does not substantiate that quota. Acquire
-  better joint-specific references without reproducing proprietary Kinstretch
-  programming or implying affiliation/certification.
-- At least 15 conditioning activities still need source mapping and original
-  detail authoring with appropriate duration/distance/repetition capabilities.
-- No photo/media license has been acquired. Text-only original instructions are
-  the intended initial approach.
+- Explicit rows, never an equipment × movement generator. Apparatus, support,
+  position or a source-defined transition must meaningfully change the movement.
+  Trivial grips, brands, left/right sides, Sanskrit spelling alternatives and
+  the same exercise listed under several muscle groups do not count again.
+- English yoga labels describe the observed shape; they are not scholarly
+  literal translations. Sanskrit spelling alternatives are aliases, not entries.
+  Asher notes variation in Vasisthasana/Vishvamitrasana naming; this release
+  follows her labeled shapes without making a universal naming claim.
+- Source-defined A/B/C practice elements are retained when the support, shape
+  or entry is materially different, including instructional references beyond
+  Primary. No complete Ashtanga series is imposed or automatically scheduled.
+- All advanced entries require experienced instruction. All catalog adaptation
+  permission remains false. Unknown loading, difficulty, anatomy or suitability
+  is unknown, not manufactured to enable adaptation.
+- CARs are first-class mobility records with joint/actions, stabilization,
+  compensation cues, comfortable range, low-effort caution and regression.
+  There is no maximal-tension, tissue-change, therapeutic or certified-method claim.
+- Validator checks source references (including benefit/context provenance),
+  actual review dates, normalized identity/alias collisions, hierarchy/sequence
+  cycles, contiguous order, archive-excluded coverage and release suitability.
+  Benefits state a qualified practice intent and link evidence; not clinical efficacy.
 
-Keep review status unreviewed while gaps remain. Do not invent review dates,
-muscles, diagnoses, therapeutic benefits or auto-adaptation suitability.
+The inventory is complete for this phase's minimum scope. Professional review,
+licensed media and personalized suitability assessment remain **unprovided**,
+not silently represented as completed.

@@ -20,6 +20,9 @@ export function validateRelease(input: unknown): CatalogRelease {
   for (const s of release.sources) {
     if (sources.has(s.id)) errors.push(`Duplicate source ID: ${s.id}`);
     if (release.status === 'released' && s.reviewStatus === 'unreviewed') errors.push(`${s.id}: release source is unreviewed`);
+    if (release.status === 'released' && (!s.retrievedOn || !s.reviewedOn)) errors.push(`${s.id}: source-check dates are required for publication`);
+    if (s.reviewedOn && s.retrievedOn && s.reviewedOn < s.retrievedOn) errors.push(`${s.id}: review predates retrieval`);
+    if (release.publishedAt && s.reviewedOn && s.reviewedOn > release.publishedAt.slice(0, 10)) errors.push(`${s.id}: review postdates publication`);
     sources.add(s.id);
   }
   const identities = new Map<string, string>();
@@ -44,6 +47,9 @@ export function validateRelease(input: unknown): CatalogRelease {
     if (a.type !== 'sequence' && (!a.setup.length || !a.execution.length)) errors.push(`${a.id}: setup/execution missing`);
     if (a.adaptation.eligible && (!a.adaptation.loadingKnown || a.difficulty === 'unknown' || a.difficulty === 'advanced' || a.instructionNeeded || a.authorship === 'user' || a.reviewStatus === 'unreviewed' || a.equipment === null)) errors.push(`${a.id}: insufficient suitability for automatic adaptation`);
     if (release.status === 'released' && (a.authorship !== 'maintainer' || !a.sourceIds.length || a.reviewStatus === 'unreviewed')) errors.push(`${a.id}: released catalog requires source-reviewed maintainer content`);
+    if (release.status === 'released' && a.family === 'ashtanga-vinyasa' && !a.seriesContext.length) errors.push(`${a.id}: Ashtanga requires lineage-qualified context`);
+    if (a.difficulty === 'advanced' && !a.instructionNeeded) errors.push(`${a.id}: advanced activity requires instruction flag`);
+    if (new Set(a.sourceIds).size !== a.sourceIds.length) errors.push(`${a.id}: duplicate source references`);
   }
   const edges = new Map<string, string[]>();
   const positions = new Set<string>();
@@ -68,12 +74,28 @@ export function validateRelease(input: unknown): CatalogRelease {
     visit(a.id);
   }
   const relations = new Set<string>();
+  const directed = new Map<string, string[]>();
   for (const r of release.relationships) {
     if (!ids.has(r.from) || !ids.has(r.to)) errors.push(`Dangling relationship: ${r.from} -> ${r.to}`);
     if (r.from === r.to) errors.push(`Self relationship: ${r.from}`);
     const key = `${r.from}:${r.type}:${r.to}`;
     if (relations.has(key)) errors.push(`Duplicate relationship: ${key}`);
     relations.add(key);
+    if (r.type !== 'related-to') directed.set(r.from, [...(directed.get(r.from) ?? []), r.to]);
+  }
+  // Related-to is intentionally symmetric; only hierarchy edges must be acyclic.
+  visiting.clear(); visited.clear();
+  const visitRelation = (id: string) => {
+    if (visiting.has(id)) { errors.push(`Relationship cycle at ${id}`); return; }
+    if (visited.has(id)) return;
+    visiting.add(id);
+    for (const child of directed.get(id) ?? []) visitRelation(child);
+    visiting.delete(id); visited.add(id);
+  };
+  for (const id of directed.keys()) visitRelation(id);
+  for (const sequenceId of new Set(release.sequences.map(m => m.sequenceId))) {
+    const orders = release.sequences.filter(m => m.sequenceId === sequenceId).map(m => m.order).sort((a, b) => a - b);
+    if (orders.some((order, index) => order !== index)) errors.push(`${sequenceId}: sequence positions must be contiguous from zero`);
   }
   if (release.status === 'released' && (!release.publishedAt || release.reviewStatus === 'unreviewed')) errors.push('Release requires publication date and completed source review');
   if (errors.length) throw new Error(errors.join('\n'));
@@ -81,11 +103,12 @@ export function validateRelease(input: unknown): CatalogRelease {
 }
 
 export function coverage(release: CatalogRelease) {
+  const active = release.activities.filter(a => !a.archived);
   return {
-    strength: release.activities.filter(a => a.discipline === 'strength' && a.type === 'exercise').length,
-    ashtanga: release.activities.filter(a => a.family === 'ashtanga-vinyasa' && a.type !== 'sequence').length,
-    mobility: release.activities.filter(a => a.discipline === 'mobility' && a.type === 'mobility-drill').length,
-    conditioning: release.activities.filter(a => a.type === 'conditioning-activity').length,
+    strength: active.filter(a => a.discipline === 'strength' && a.type === 'exercise').length,
+    ashtanga: active.filter(a => a.family === 'ashtanga-vinyasa' && a.type !== 'sequence').length,
+    mobility: active.filter(a => a.discipline === 'mobility' && a.type === 'mobility-drill').length,
+    conditioning: active.filter(a => a.type === 'conditioning-activity').length,
   };
 }
 

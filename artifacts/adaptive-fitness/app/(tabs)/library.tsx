@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
@@ -9,15 +9,17 @@ import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { estimateSec, findExercise, minutesLabel, searchLibrary, snapItem } from '@/lib/domain';
+import { CatalogBrowser } from '@/components/CatalogBrowser';
 
-type Tab = 'moves' | 'routines';
+type Tab = 'moves' | 'routines' | 'catalog';
 
 export default function LibraryScreen() {
   const c = useColors();
   const top = useTopInset();
   const bottom = useBottomPad();
   const { state, duplicateRoutine, setRoutineArchived } = useTempo();
-  const [tab, setTab] = useState<Tab>('routines');
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<Tab>(params.tab === 'catalog' ? 'catalog' : 'routines');
   const [source, setSource] = useState<'all' | 'builtin' | 'custom'>('all');
   const [showArchived, setShowArchived] = useState(false);
   const f = useLibraryFilter();
@@ -33,12 +35,12 @@ export default function LibraryScreen() {
     <KeyboardAwareScrollViewCompat style={{ backgroundColor: c.background }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: top + 16, paddingBottom: bottom }} keyboardShouldPersistTaps="handled" bottomOffset={20}>
       <ScreenTitle
         eyebrow="Library"
-        title={tab === 'moves' ? 'Moves' : 'Your routines'}
-        right={<IconButton testID="library-new" icon="plus" label={tab === 'moves' ? 'New custom move' : 'New routine'} onPress={() => router.push(tab === 'moves' ? '/exercise-edit' : '/builder')} />}
+        title={tab === 'catalog' ? 'Activity catalog' : tab === 'moves' ? 'Moves' : 'Your routines'}
+        right={tab === 'catalog' ? undefined : <IconButton testID="library-new" icon="plus" label={tab === 'moves' ? 'New custom move' : 'New routine'} onPress={() => router.push(tab === 'moves' ? '/exercise-edit' : '/builder')} />}
       />
-      <Segmented testID="library-tab" options={[{ value: 'routines', label: `Routines (${state.routines.filter((r) => !r.archived).length})` }, { value: 'moves', label: 'Moves' }]} value={tab} onChange={(v) => setTab(v)} />
+      <Segmented testID="library-tab" options={[{ value: 'routines', label: `Routines (${state.routines.filter((r) => !r.archived).length})` }, { value: 'moves', label: 'Moves' }, { value: 'catalog', label: 'Catalog' }]} value={tab} onChange={(v) => setTab(v)} />
 
-      {tab === 'moves' ? (
+      {tab === 'catalog' ? <CatalogBrowser /> : tab === 'moves' ? (
         <View style={{ marginTop: 16 }}>
           <LibraryFilters f={f} />
           <View style={{ marginTop: 12 }}>
@@ -101,7 +103,7 @@ export default function LibraryScreen() {
           )}
         </View>
       )}
-      {archivedCount || showArchived ? (
+      {tab !== 'catalog' && (archivedCount || showArchived) ? (
         <Pressable onPress={() => { tap(); setShowArchived(!showArchived); }} style={{ marginTop: 18, alignSelf: 'center' }} hitSlop={8}>
           <Text style={[s.link, { color: c.mutedForeground }]}>{showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}</Text>
         </Pressable>
