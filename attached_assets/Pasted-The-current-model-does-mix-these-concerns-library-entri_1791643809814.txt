@@ -1,0 +1,26 @@
+The current model does mix these concerns: library entries contain default reps/time, while their descriptive information is fairly limited.
+
+I recommend two connected improvements:
+
+### 1. Separate activity knowledge from workout targets
+| Layer | What belongs there |
+|---|---|
+| **Library activity** | What it is, how to perform it, equipment, muscles/joints involved, benefits, precautions, and supported measurements |
+| **Routine or day-plan item** | Your sets, reps, hold time, breaths, distance, load, rest, and side |
+| **Completed record** | What you actually did, kept separate from the target |
+
+An asana can support **breaths or hold duration** without having a fixed “5 breaths” prescription stored as part of its identity. A sequence, such as Surya Namaskara, should reference ordered activities rather than masquerade as a single pose.
+
+### 2. Build a structured, source-backed library
+I’d start with **at least 200 distinct entries** across gym, bodyweight, joint mobility, conditioning, and Ashtanga Vinyasa yoga. For yoga, I suggest focusing first on the Primary Series and its standing/finishing practices, with Sanskrit names, English names, aliases, and sequence context. Advanced positions should be clearly labelled—not automatically recommended to beginners.
+
+Each entry would have structured fields for:
+- Technique, cues, common mistakes, and variations
+- Primary/secondary muscles, joints, and movement patterns
+- Intended benefits, precautions, and guidance about when instruction is needed
+- Difficulty, equipment, supported measurements, and related activities
+- Sources, content version, and review status—without implying clinical verification
+
+For future AI, **structured data remains the source of truth**. A vector index can later help retrieve relevant entries; it should not decide whether an activity meets safety or equipment constraints. We can prepare stable IDs and searchable content now without adding a database or AI dependency yet.
+
+I also found two unresolved issues from the previous work: typed numeric values can be saved incorrectly, and zero-load logging can restore an older weight. I’ll include their correction in this plan because reliable targets are central to this redesign.
