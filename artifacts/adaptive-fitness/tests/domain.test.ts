@@ -21,6 +21,7 @@ import {
   logSetOn,
   makeItem,
   migrateV1,
+  migrateV2,
   moveOccurrence,
   occurrencesBetween,
   rolloverState,
@@ -52,9 +53,9 @@ const v1 = {
   active: { id: 'run1', date: '2025-02-02', session: { id: 's2', title: 'Steady', minutes: 20, lowEnergy: false, noEquipment: true, note: '', exercises: [{ exerciseId: 'march', name: 'March in place', kind: 'time', sets: 1, seconds: 45, restSec: 30 }, { exerciseId: 'wall-push', name: 'Wall push-up', kind: 'reps', sets: 2, reps: 10, restSec: 30 }] }, startedAt: '2025-02-02T08:00:00Z', clock: { accMs: 1000, since: null }, exClock: { accMs: 0, since: null }, index: 1, logs: [{ exerciseId: 'march', name: 'March in place', kind: 'time', plannedSets: 1, reps: [45], done: true, skipped: false }, { exerciseId: 'wall-push', name: 'Wall push-up', kind: 'reps', plannedSets: 2, reps: [9], done: false, skipped: false }] },
 };
 
-test('migration v1 -> v2 keeps profile, history and active session', () => {
+test('migration v1 -> current keeps profile, history and active session', () => {
   const s = migrateV1(v1 as never);
-  assert.equal(s.schemaVersion, 2);
+  assert.equal(s.schemaVersion, 3);
   assert.deepEqual(s.profile.exclusions, ['knees']);
   assert.equal(s.completions.length, 1);
   assert.deepEqual(s.completions[0].exercises[1].sets, [{ reps: 10 }, { reps: 8 }]);
@@ -164,7 +165,7 @@ test('adaptation: exclusions override locks, locks and rehab are preserved, volu
     snapItem({ ...makeItem(ex('split-squat')), locked: true }, ex('split-squat')), // knees, locked
     snapItem({ ...makeItem(ex('band-row')), sets: 4, locked: true }, ex('band-row')),
     snapItem({ ...makeItem(ex('dead-bug')), sets: 3, priority: 'optional' }, ex('dead-bug')),
-    snapItem({ ...makeItem(custom), sets: 3 }, custom),
+    snapItem({ ...makeItem(custom), reps: 12, sets: 3 }, custom),
   ];
   const snap = snapshotFromItems('Mine', items);
   const p = { ...DEFAULT_PROFILE, exclusions: ['knees' as const], equipment: ['none' as const, 'band' as const] };
@@ -179,7 +180,7 @@ test('adaptation: exclusions override locks, locks and rehab are preserved, volu
   assert.equal(rehab.reps, items[3].reps);
   assert.equal(r.fits, false);
   assert.match(r.infeasible!, /won’t claim it fits/);
-  assert.ok(r.suggestions.some((s) => s.itemName === 'Supported split squat'));
+  assert.ok(!r.suggestions.some((s) => s.itemName === 'Supported split squat')); // locked: never offered swaps
   assert.ok(!r.suggestions.some((s) => s.itemKey === items[3].key)); // custom never gets auto subs
   // estimate includes rest
   assert.equal(estimateSec([{ tracking: 'reps', reps: 10, sets: 2, restSec: 30, perSide: false }]), 2 * 30 + 30 + 15);
@@ -216,7 +217,7 @@ test('mid-session add keeps logged work; completion stores planned and actual se
 test('import validation: v1 upgrade, v2 round trip incl. active, explicit errors', () => {
   const up = checkImport(JSON.stringify({ app: 'tempo', exportedAt: 'x', data: v1 }));
   assert.ok(up.ok && up.migratedFrom === 1 && up.data.active);
-  let s: StateV2 = { ...emptyState(), routines: [routine()], customExercises: [{ ...ex('march'), id: 'c1', custom: true, verified: false }] };
+  let s: StateV2 = migrateV2({ ...emptyState(), schemaVersion: 2, routines: [routine()], customExercises: [{ ...ex('march'), id: 'c1', custom: true, verified: false }] } as never);
   const snap = snapshotFromRoutine(s.routines[0], []);
   let sch = [scheduleEntry(snap, MON, [1], null)];
   sch = deleteOccurrence(sch, findOccurrence(sch, `${sch[0].rootId}@${addDays(MON, 7)}`)!, 'one');
@@ -229,7 +230,7 @@ test('import validation: v1 upgrade, v2 round trip incl. active, explicit errors
   }
   assert.equal(checkImport('{nope').ok, false);
   const bad = checkImport(JSON.stringify(exportPayload({ ...s, routines: [{ ...s.routines[0], items: [{ ...s.routines[0].items[0], exerciseId: 'ghost' }] }] })));
-  assert.ok(!bad.ok && /isn’t in the file/.test(bad.error));
+  assert.ok(!bad.ok && /isn’t in the file|mismatch/.test(bad.error));
   const v9 = checkImport(JSON.stringify({ app: 'tempo', data: { schemaVersion: 9 } }));
   assert.ok(!v9.ok && /Unsupported/.test(v9.error));
   const dup = checkImport(JSON.stringify(exportPayload({ ...s, routines: [s.routines[0], s.routines[0]] })));

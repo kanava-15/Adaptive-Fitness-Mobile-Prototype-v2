@@ -3,15 +3,16 @@ import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Chip, IconButton, confirm, success, tap, warn } from '@/components/ui';
+import { Button, Chip, IconButton, confirm, success, tap, warn, notify } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { clockMs, useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
-import { ExercisePicker, Segmented } from '@/components/planner';
-import { CompletionV2, SnapItem, Unit, buildSet, nextLoad } from '@/lib/domain';
+import { ExercisePicker, Segmented, NumField } from '@/components/planner';
+import { SessionAddition } from '@/components/SessionAddition';
+import { CompletionV2, SnapItem, Unit, buildSet, nextLoad, targetLabel, ExerciseDef, DistanceUnit, Side, ActualSet } from '@/lib/domain';
 import { REGION_LABEL, Region, formatDuration } from '@/lib/engine';
 
-const targetOf = (i: SnapItem) => `${i.tracking === 'reps' ? `${i.reps ?? '-'} reps` : `${i.seconds ?? '-'}s`}${i.perSide ? ' / side' : ''}${i.load != null ? ` @ ${i.load} ${i.unit}` : ''}`;
+const targetOf = targetLabel;
 
 const DIFFICULTY = ['Very easy', 'Easy', 'About right', 'Hard', 'Too hard'];
 
@@ -34,8 +35,9 @@ export default function SessionScreen() {
   const [difficulty, setDifficulty] = useState<number | null>(null);
   const [painRegion, setPainRegion] = useState<Region | null>(null);
   const [result, setResult] = useState<CompletionV2 | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, { reps?: number; load?: number; unit?: Unit }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { reps?: number; load?: number; unit?: Unit; distanceUnit?: DistanceUnit; side?: Side }>>({});
   const [picking, setPicking] = useState(false);
+  const [addition, setAddition] = useState<ExerciseDef | null>(null);
   const now = useNow(!!a && (!!a.clock.since || !!a.exClock.since));
   const firedRef = useRef<string>('');
 
@@ -50,9 +52,16 @@ export default function SessionScreen() {
   const draft = ex ? drafts[ex.key] ?? {} : {};
   const resumed = ex && log ? nextLoad(ex, log.sets) : { load: 0, unit: 'kg' as Unit };
   const loadState = { load: draft.load ?? resumed.load, unit: draft.unit ?? resumed.unit };
-  const setDraft = (p: { reps?: number; load?: number; unit?: Unit }) => { if (ex) setDrafts((d) => ({ ...d, [ex.key]: { ...d[ex.key], ...p } })); };
+  const setDraft = (p: { reps?: number; load?: number; unit?: Unit; distanceUnit?: DistanceUnit; side?: Side }) => { if (ex) setDrafts((d) => ({ ...d, [ex.key]: { ...d[ex.key], ...p } })); };
   const loadRef = useRef(loadState);
   loadRef.current = loadState;
+  const sideRef = useRef(draft.side);
+  sideRef.current = draft.side;
+  const record = (set: ActualSet) => {
+    const errors = t.logSet(set);
+    if (errors.length) notify('Check actual set', errors.join('\n'));
+    else success();
+  };
 
   // Auto-log a timed set when the countdown hits zero.
   useEffect(() => {
@@ -60,8 +69,7 @@ export default function SessionScreen() {
     const key = `${a.index}-${log?.sets.length}`;
     if (remaining <= 0 && firedRef.current !== key) {
       firedRef.current = key;
-      success();
-      t.logSet(buildSet(ex, ex.seconds ?? 0, loadRef.current));
+      record(buildSet({ ...ex, side: sideRef.current ?? ex.side }, ex.seconds ?? 0, loadRef.current));
     }
   }, [remaining, a, ex, log, t]);
 
@@ -81,7 +89,7 @@ export default function SessionScreen() {
         </Text>
         <View style={s.doneStats}>
           <Stat label="active time" value={formatDuration(result.activeSeconds)} />
-          <Stat label="moves" value={`${moves}/${result.exercises.length}`} />
+          <Stat label="activities" value={`${moves}/${result.exercises.length}`} />
           <Stat label="sets" value={String(sets)} />
         </View>
         <View style={{ flex: 1 }} />
@@ -103,7 +111,8 @@ export default function SessionScreen() {
   const running = !!a.clock.since;
   const total = clockMs(a.clock, now) / 1000;
   const doneCount = a.logs.filter((l) => l.done).length;
-  const reps = draft.reps ?? ex.reps ?? 0;
+  const reps = draft.reps ?? ex.reps ?? ex.breaths ?? ex.distance ?? 0;
+  const actualItem = { ...ex, distanceUnit: draft.distanceUnit ?? ex.distanceUnit, side: draft.side ?? (ex.perSide && ex.side === 'unspecified' ? 'both' : ex.side) };
   const showLoad = ex.loadable || ex.load != null;
   const { load, unit } = loadState;
 
@@ -135,7 +144,7 @@ export default function SessionScreen() {
           </>
         ) : (
           <Text style={[s.body, { color: c.mutedForeground }]}>
-            {doneCount} of {a.logs.length} moves done in {formatDuration(total)}. Whatever you did gets saved as-is. Nothing carries over as debt.
+            {doneCount} of {a.logs.length} activities done in {formatDuration(total)}. Whatever you did gets saved as-is. Nothing carries over as debt.
           </Text>
         )}
         <Text style={[s.label, { color: c.foreground }]}>How did it feel?</Text>
@@ -195,7 +204,7 @@ export default function SessionScreen() {
       {!running ? <Text style={[s.paused, { color: c.primary }]}>Paused — tap the clock to resume</Text> : null}
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 16 }} showsVerticalScrollIndicator={false}>
-        <Text style={[s.counter, { color: c.mutedForeground }]}>MOVE {a.index + 1} OF {a.logs.length}</Text>
+        <Text style={[s.counter, { color: c.mutedForeground }]}>ACTIVITY {a.index + 1} OF {a.logs.length}</Text>
         <Text style={[s.exName, { color: c.foreground }]}>{ex.name}</Text>
         <Text style={[s.target, { color: c.primary }]}>
           Set {Math.min(log.sets.length + 1, ex.sets)} of {ex.sets} · {targetOf(ex)}{log.added ? ' · added' : ''}
@@ -217,18 +226,24 @@ export default function SessionScreen() {
                 <Button testID="ex-timer" compact label={a.exClock.since ? 'Pause' : exSec > 0 ? 'Resume' : 'Start timer'} icon={a.exClock.since ? 'pause' : 'play'} variant="accent" onPress={t.toggleExClock} />
                 <Button compact label="Reset" icon="rotate-ccw" variant="ghost" onPress={t.resetExClock} />
               </View>
-              <Button compact label={`Log ${Math.round(exSec) || ex.seconds}s set`} variant="soft" onPress={() => { success(); t.logSet(buildSet(ex, Math.round(exSec) || (ex.seconds ?? 0), loadState)); }} />
+              <Button compact label={`Log ${Math.round(exSec) || ex.seconds}s set`} variant="soft" onPress={() => record(buildSet(actualItem, Math.round(exSec) || (ex.seconds ?? 0), loadState))} />
             </View>
           ) : (
             <View style={{ alignItems: 'center', gap: 12 }}>
+              {ex.tracking === 'distance' ? <>
+                <NumField testID="actual-distance" label="Actual distance" value={reps} min={0} decimals max={1000000} onChange={v => setDraft({ reps: v ?? 0 })} />
+                <Segmented options={(ex.definition?.activity?.distanceUnits ?? ['m', 'km', 'mi', 'yd'] as DistanceUnit[]).map(u => ({ value: u, label: u }))} value={actualItem.distanceUnit ?? 'm'} onChange={distanceUnit => setDraft({ distanceUnit })} />
+              </> : null}
               <View style={s.stepper}>
-                <IconButton icon="minus" label="Fewer reps" onPress={() => setDraft({ reps: Math.max(0, reps - 1) })} />
+                <IconButton icon="minus" label={`Fewer ${ex.tracking}`} onPress={() => setDraft({ reps: Math.max(0, reps - 1) })} />
                 <Text style={[s.big, { color: c.foreground, minWidth: 90, textAlign: 'center' }]}>{reps}</Text>
-                <IconButton icon="plus" label="More reps" onPress={() => setDraft({ reps: reps + 1 })} />
+                <IconButton icon="plus" label={`More ${ex.tracking}`} onPress={() => setDraft({ reps: reps + 1 })} />
               </View>
-              <Button testID="log-set" compact label={`Log set of ${reps}`} icon="check" variant="accent" onPress={() => { success(); t.logSet(buildSet(ex, reps, loadState)); setDraft({ reps: undefined }); }} />
+              <Text style={{ color: c.mutedForeground }}>{ex.tracking === 'distance' ? actualItem.distanceUnit : ex.tracking}{ex.tracking !== 'reps' ? ' · No duration inferred' : ''}</Text>
+              <Button testID="log-set" compact label={`Log set of ${reps}`} icon="check" variant="accent" onPress={() => { record(buildSet(actualItem, reps, loadState)); setDraft({ reps: undefined }); }} />
             </View>
           )}
+          {ex.perSide || ['unilateral', 'alternating'].includes(ex.definition?.activity?.laterality ?? '') ? <Segmented options={(['left', 'right', 'both', 'alternating'] as Side[]).map(side => ({ value: side, label: side }))} value={actualItem.side === 'unspecified' || !actualItem.side ? 'both' : actualItem.side} onChange={side => setDraft({ side })} /> : null}
           {showLoad ? (
             <View style={{ alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: c.border, paddingTop: 12 }}>
               <View style={s.stepper}>
@@ -245,7 +260,7 @@ export default function SessionScreen() {
             <View style={s.logged}>
               {log.sets.map((r, i) => (
                 <View key={i} style={[s.logChip, { backgroundColor: c.done }]}>
-                  <Text style={[s.logText, { color: c.doneForeground }]}>{ex.tracking === 'time' ? `${r.seconds ?? 0}s` : r.reps ?? 0}{r.load != null ? ` × ${r.load}${r.unit ?? ''}` : ''}</Text>
+                  <Text style={[s.logText, { color: c.doneForeground }]}>{targetLabel(r)}</Text>
                 </View>
               ))}
               <Pressable onPress={() => { tap(); t.undoSet(); }} hitSlop={10}>
@@ -260,16 +275,17 @@ export default function SessionScreen() {
 
       <View style={s.navRow}>
         <IconButton icon="chevron-left" label="Previous" onPress={() => { t.goTo(a.index - 1); }} />
-        <Button testID="mark-done" label={log.done ? 'Done — undo' : 'Mark move done'} icon={log.done ? 'rotate-ccw' : 'check-circle'} variant={log.done ? 'soft' : 'primary'} onPress={() => { success(); t.markDone(); }} style={{ flex: 1 }} />
+        <Button testID="mark-done" label={log.done ? 'Done — undo' : 'Mark activity done'} icon={log.done ? 'rotate-ccw' : 'check-circle'} variant={log.done ? 'soft' : 'primary'} onPress={() => { success(); t.markDone(); }} style={{ flex: 1 }} />
         <IconButton icon="chevron-right" label="Next" onPress={() => { t.goTo(a.index + 1); }} />
       </View>
       <View style={[s.navRow, { marginTop: 10 }]}>
         <Button testID="pain-stop" compact label="Pain? Stop" icon="alert-octagon" variant="danger" onPress={() => { warn(); setStage('pain'); }} style={{ flex: 1 }} />
-        <Button compact label="Skip move" variant="ghost" onPress={() => { t.skipExercise(); }} style={{ flex: 1 }} />
-        <IconButton testID="session-add-move" icon="plus" label="Add a move" onPress={() => setPicking(true)} />
+        <Button compact label="Skip activity" variant="ghost" onPress={() => { t.skipExercise(); }} style={{ flex: 1 }} />
+        <IconButton testID="session-add-move" icon="plus" label="Add an activity" onPress={() => setPicking(true)} />
         <Button testID="finish" compact label={doneCount === a.logs.length ? 'Finish' : 'Finish early'} variant="accent" onPress={() => setStage('finish')} style={{ flex: 1 }} />
       </View>
-      <ExercisePicker visible={picking} custom={t.state.customExercises} title="Add to this session" onClose={() => setPicking(false)} onPick={(e) => { t.addExerciseToActive(e.id); setPicking(false); success(); t.goTo(a.logs.length); }} />
+      <ExercisePicker visible={picking} custom={t.state.customExercises} title="Add to this session" onClose={() => setPicking(false)} onPick={(e) => { setAddition(e); setPicking(false); }} />
+      {addition ? <SessionAddition definition={addition} close={() => setAddition(null)} /> : null}
     </View>
   );
 }

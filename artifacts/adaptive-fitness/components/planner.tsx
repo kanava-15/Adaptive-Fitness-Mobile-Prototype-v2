@@ -22,6 +22,9 @@ import {
 } from '@/lib/domain';
 import { DAY_SHORT, addDays, dateKey, parseKey, weekday } from '@/lib/engine';
 import { numericValue } from '@/lib/numeric-input';
+import { activityTypeSchema, muscleSchema, jointSchema } from '@workspace/activity-catalog';
+import { knowledgeOf } from '@/lib/domain';
+import { useCatalog } from '@/context/CatalogContext';
 
 // ---------------------------------------------------------------- segmented control
 export function Segmented<T extends string>({ options, value, onChange, testID }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void; testID?: string }) {
@@ -236,9 +239,13 @@ export function useLibraryFilter() {
   const [gear, setGear] = useState<Gear | null>(null);
   const [area, setArea] = useState<Area | null>(null);
   const [tracking, setTracking] = useState<Tracking | null>(null);
-  const filter: LibraryFilter = { query, discipline, gear, area, tracking };
-  const active = [discipline, gear, area, tracking].filter(Boolean).length;
-  return { filter, query, setQuery, discipline, setDiscipline, gear, setGear, area, setArea, tracking, setTracking, active, clear: () => { setDiscipline(null); setGear(null); setArea(null); setTracking(null); setQuery(''); } };
+  const [type, setType] = useState<LibraryFilter['type']>(null);
+  const [muscle, setMuscle] = useState<string | null>(null);
+  const [joint, setJoint] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<LibraryFilter['difficulty']>(null);
+  const filter: LibraryFilter = { query, discipline, gear, area, tracking, type, muscle, joint, difficulty };
+  const active = [discipline, gear, area, tracking, type, muscle, joint, difficulty].filter(Boolean).length;
+  return { filter, query, setQuery, discipline, setDiscipline, gear, setGear, area, setArea, tracking, setTracking, type, setType, muscle, setMuscle, joint, setJoint, difficulty, setDifficulty, active, clear: () => { setDiscipline(null); setGear(null); setArea(null); setTracking(null); setType(null); setMuscle(null); setJoint(null); setDifficulty(null); setQuery(''); } };
 }
 export type LibraryFilterState = ReturnType<typeof useLibraryFilter>;
 
@@ -263,7 +270,7 @@ export function LibraryFilters({ f }: { f: LibraryFilterState }) {
     <View>
       <View style={[s.search, { backgroundColor: c.card, borderColor: c.border }]}>
         <Feather name="search" size={18} color={c.mutedForeground} />
-        <TextInput testID="library-search" value={f.query} onChangeText={f.setQuery} placeholder="Search moves, areas…" placeholderTextColor={c.mutedForeground} style={[s.searchInput, { color: c.foreground }]} autoCorrect={false} />
+        <TextInput testID="library-search" value={f.query} onChangeText={f.setQuery} placeholder="Search activities, Sanskrit, aliases…" placeholderTextColor={c.mutedForeground} style={[s.searchInput, { color: c.foreground }]} autoCorrect={false} />
         {f.query ? (
           <Pressable onPress={() => f.setQuery('')} hitSlop={8} accessibilityLabel="Clear search">
             <Feather name="x-circle" size={18} color={c.mutedForeground} />
@@ -279,7 +286,11 @@ export function LibraryFilters({ f }: { f: LibraryFilterState }) {
           <ChipRow label="Discipline" values={DISCIPLINES} labels={DISCIPLINE_LABEL} value={f.discipline} onChange={f.setDiscipline} />
           <ChipRow label="Equipment" values={GEARS} labels={GEAR_LABEL} value={f.gear} onChange={f.setGear} />
           <ChipRow label="Movement area" values={AREAS} labels={AREA_LABEL} value={f.area} onChange={f.setArea} />
-          <ChipRow label="Tracking" values={['reps', 'time'] as Tracking[]} labels={{ reps: 'Reps', time: 'Timed' }} value={f.tracking} onChange={f.setTracking} />
+          <ChipRow label="Measurement" values={['reps', 'time', 'breaths', 'distance'] as Tracking[]} labels={{ reps: 'Reps', time: 'Duration', breaths: 'Breaths', distance: 'Distance' }} value={f.tracking} onChange={f.setTracking} />
+          <ChipRow label="Activity type" values={activityTypeSchema.options} labels={Object.fromEntries(activityTypeSchema.options.map(v => [v, v])) as Record<typeof activityTypeSchema.options[number], string>} value={f.type ?? null} onChange={f.setType} />
+          <ChipRow label="Muscle" values={muscleSchema.options} labels={Object.fromEntries(muscleSchema.options.map(v => [v, v]))} value={f.muscle} onChange={f.setMuscle} />
+          <ChipRow label="Joint" values={jointSchema.options} labels={Object.fromEntries(jointSchema.options.map(v => [v, v]))} value={f.joint} onChange={f.setJoint} />
+          <ChipRow label="Difficulty" values={['beginner', 'intermediate', 'advanced', 'unknown'] as const as ('beginner' | 'intermediate' | 'advanced' | 'unknown')[]} labels={{ beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', unknown: 'Unknown' }} value={f.difficulty ?? null} onChange={f.setDifficulty} />
           {f.active ? (
             <Pressable onPress={f.clear} hitSlop={8} style={{ marginTop: 10 }}>
               <Text style={[s.link, { color: c.primary }]}>Clear filters</Text>
@@ -301,7 +312,7 @@ export function ExerciseRow({ e, onPress, right, testID }: { e: ExerciseDef; onP
       <View style={{ flex: 1 }}>
         <Text style={[s.exName, { color: c.foreground }]} numberOfLines={1}>{e.name}</Text>
         <Text style={[s.exMeta, { color: c.mutedForeground }]} numberOfLines={1}>
-          {e.custom ? 'Custom · ' : ''}{e.tracking === 'reps' ? `${e.defaultReps ?? '-'} reps` : `${e.defaultSeconds ?? '-'}s`}{e.perSide ? ' / side' : ''} · {e.gear.map((g) => GEAR_LABEL[g]).join(' + ')}{e.archived ? ' · archived' : ''}
+          {e.custom ? 'User-authored · unreviewed · ' : ''}{knowledgeOf(e).type} · {knowledgeOf(e).supportedMetrics.join('/')} · {e.gear.map((g) => GEAR_LABEL[g]).join(' + ') || 'Equipment unknown'}{e.archived ? ' · archived' : ''}
         </Text>
       </View>
       {right ?? <Feather name="chevron-right" size={18} color={c.mutedForeground} />}
@@ -309,11 +320,12 @@ export function ExerciseRow({ e, onPress, right, testID }: { e: ExerciseDef; onP
   );
 }
 
-export function ExercisePicker({ visible, onClose, onPick, custom, title = 'Add a move' }: { visible: boolean; onClose: () => void; onPick: (e: ExerciseDef) => void; custom: ExerciseDef[]; title?: string }) {
+export function ExercisePicker({ visible, onClose, onPick, custom, title = 'Add an activity' }: { visible: boolean; onClose: () => void; onPick: (e: ExerciseDef) => void; custom: ExerciseDef[]; title?: string }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const f = useLibraryFilter();
-  const list = useMemo(() => searchLibrary(custom, f.filter), [custom, f.filter.query, f.filter.discipline, f.filter.gear, f.filter.area, f.filter.tracking]); // eslint-disable-line react-hooks/exhaustive-deps
+  const catalog = useCatalog();
+  const list = searchLibrary(custom, f.filter);
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: c.background, paddingTop: Platform.OS === 'web' ? 67 : Platform.OS === 'ios' ? 16 : insets.top + 12, paddingHorizontal: 20 }}>
@@ -329,7 +341,7 @@ export function ExercisePicker({ visible, onClose, onPick, custom, title = 'Add 
           keyboardShouldPersistTaps="handled"
           scrollEnabled={list.length > 0}
           contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 40 }}
-          ListEmptyComponent={<Text style={[s.exMeta, { color: c.mutedForeground, textAlign: 'center', marginTop: 30 }]}>No moves match. Clear a filter or create a custom move from the Library tab.</Text>}
+          ListEmptyComponent={<Text style={[s.exMeta, { color: c.mutedForeground, textAlign: 'center', marginTop: 30 }]}>No activities match. Clear a filter or create a custom activity from the Library tab.</Text>}
           renderItem={({ item }) => <ExerciseRow testID={`pick-${item.id}`} e={item} onPress={() => onPick(item)} right={<Feather name="plus-circle" size={20} color={c.primary} />} />}
         />
       </View>

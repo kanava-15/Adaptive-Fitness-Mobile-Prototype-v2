@@ -94,7 +94,7 @@ export default function Today() {
               <Pressable key={o.key} testID={`today-occ-${o.key}`} onPress={() => router.push({ pathname: '/occurrence', params: { key: o.key } })} style={[s.occ, { backgroundColor: done ? c.secondary : c.accent }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[s.occTitle, { color: done ? c.secondaryForeground : c.accentForeground }]}>{o.snapshot.title}</Text>
-                  <Text style={[s.occMeta, { color: done ? c.secondaryForeground : c.accentMuted }]}>{o.snapshot.items.length} moves · about {minutesLabel(estimateSec(o.snapshot.items))}{done ? ' · done' : ''}</Text>
+                  <Text style={[s.occMeta, { color: done ? c.secondaryForeground : c.accentMuted }]}>{o.snapshot.items.length} activities · {minutesLabel(estimateSec(o.snapshot.items))}{done ? ' · done' : ''}</Text>
                 </View>
                 <Feather name={done ? 'check-circle' : 'play-circle'} size={26} color={done ? c.secondaryForeground : c.done} />
               </Pressable>
@@ -112,7 +112,7 @@ export default function Today() {
             <Text style={[s.heroTitle, { color: c.accentForeground }]}>{session.title}</Text>
             <View style={s.heroStats}>
               <Text style={[s.heroBig, { color: c.accentForeground }]}>{session.minutes}</Text>
-              <Text style={[s.heroUnit, { color: c.accentMuted }]}>min{'\n'}{session.exercises.length} moves · {estimatedSetCount(session)} sets</Text>
+              <Text style={[s.heroUnit, { color: c.accentMuted }]}>min{'\n'}{session.exercises.length} activities · {estimatedSetCount(session)} sets</Text>
             </View>
             <View style={s.tagRow}>
               {session.lowEnergy ? <Tag label="Low energy" /> : null}

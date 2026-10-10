@@ -75,7 +75,7 @@ export default function PlanScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[s.occTitle, { color: doneHere ? c.secondaryForeground : c.accentForeground }]}>{o.snapshot.title}</Text>
                 <Text style={[s.occMeta, { color: doneHere ? c.secondaryForeground : c.accentMuted }]}>
-                  {o.snapshot.items.length} moves · {minutesLabel(estimateSec(o.snapshot.items))}{o.recurring ? ' · repeats' : ''}{o.modified ? ' · edited' : ''}{doneHere ? ' · done' : ''}
+                  {o.snapshot.items.length} activities · {minutesLabel(estimateSec(o.snapshot.items))}{o.recurring ? ' · repeats' : ''}{o.modified ? ' · edited' : ''}{doneHere ? ' · done' : ''}
                 </Text>
               </View>
               <Feather name={doneHere ? 'check-circle' : 'chevron-right'} size={20} color={doneHere ? c.secondaryForeground : c.accentForeground} />
@@ -89,7 +89,7 @@ export default function PlanScreen() {
               <View style={{ flex: 1 }}>
                 <Eyebrow>Suggested by Tempo</Eyebrow>
                 <Text style={[s.genTitle, { color: c.foreground }]}>{gen.session.title}</Text>
-                <Text style={[s.occMeta, { color: c.mutedForeground }]}>{gen.session.minutes} min · {gen.session.exercises.length} moves{gen.date !== todayKey ? ' · forecast' : ''}</Text>
+                <Text style={[s.occMeta, { color: c.mutedForeground }]}>{gen.session.minutes} min · {gen.session.exercises.length} activities{gen.date !== todayKey ? ' · forecast' : ''}</Text>
               </View>
               <Feather name={openGen ? 'chevron-up' : 'chevron-down'} size={20} color={c.mutedForeground} />
             </Pressable>
@@ -119,7 +119,7 @@ export default function PlanScreen() {
         {!dayOcc.length && !showGen && !dayDone.length ? (
           <View style={[s.empty, { borderColor: c.border }]}>
             <Text style={[s.genTitle, { color: c.foreground }]}>{gen && !gen.session ? 'Rest day' : 'Nothing planned'}</Text>
-            <Text style={[s.hint, { color: c.mutedForeground, textAlign: 'center' }]}>{gen && !gen.session ? 'Recovery is part of the plan. You can still add something light.' : 'Schedule a routine or a single move for this day.'}</Text>
+            <Text style={[s.hint, { color: c.mutedForeground, textAlign: 'center' }]}>{gen && !gen.session ? 'Recovery is part of the plan. You can still add something light.' : 'Schedule a routine or a single activity for this day.'}</Text>
           </View>
         ) : null}
       </View>

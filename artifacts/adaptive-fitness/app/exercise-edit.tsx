@@ -11,6 +11,12 @@ import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { AREAS, AREA_LABEL, DISCIPLINES, DISCIPLINE_LABEL, ExerciseDef, GEARS, GEAR_LABEL, REGIONS, findExercise, validateExercise } from '@/lib/domain';
 import { REGION_LABEL, newId } from '@/lib/engine';
+import { activitySchema, membershipSchema, type Activity } from '@workspace/activity-catalog';
+import { z } from 'zod';
+import { ActivityDetails } from '@/components/ActivityDetails';
+import { KnowledgeEditor } from '@/components/KnowledgeEditor';
+import { useCatalog } from '@/context/CatalogContext';
+import { knowledgeOf, sequenceDefinitions, personalCatalog, editActivityText } from '@/lib/domain';
 
 const blank = (): ExerciseDef => ({
   id: newId('cx'),
@@ -42,21 +48,71 @@ export default function ExerciseEdit() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { state, saveExercise, setExerciseArchived } = useTempo();
   const existing = id ? findExercise(state.customExercises, id) : undefined;
-  const [e, setE] = useState<ExerciseDef>(existing ? { ...existing } : blank());
-  const [cuesText, setCuesText] = useState((existing?.cues ?? []).join('\n'));
+  const [e, setE] = useState<ExerciseDef>(existing ? { ...existing, ...state.presets[existing.id] } : blank());
+  const [knowledge, setKnowledge] = useState<Activity>(() => knowledgeOf(existing ?? blank()));
+  const [members, setMembers] = useState(() => JSON.stringify(existing?.sequenceMembers ?? [], null, 2));
+  const catalog = useCatalog();
+  const [advanced, setAdvanced] = useState('');
+  const [cuesText, setCuesText] = useState(existing ? knowledgeOf(existing).execution.join('\n') : '');
   const [errors, setErrors] = useState<string[]>([]);
   const top = Platform.OS === 'web' ? 67 : Platform.OS === 'ios' ? 20 : insets.top + 12;
   const bottom = Platform.OS === 'web' ? 34 : insets.bottom + 16;
   const readOnly = !!existing && !existing.custom;
   const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   const set = (p: Partial<ExerciseDef>) => setE((x) => ({ ...x, ...p }));
+  const syncAdvanced = (patch: Partial<Activity>) => {
+    if (!advanced.trim()) return;
+    try { setAdvanced(JSON.stringify({ ...JSON.parse(advanced), ...patch }, null, 2)); }
+    catch { /* Keep the invalid draft visible; Save reports its JSON error. */ }
+  };
+  const editNotes = (notes: string) => {
+    set({ instructions: notes });
+    setKnowledge(a => editActivityText(a, { notes }));
+    syncAdvanced({ description: notes });
+  };
+  const editSteps = (steps: string) => {
+    setCuesText(steps);
+    const next = editActivityText(knowledge, { steps });
+    setKnowledge(next);
+    syncAdvanced({ execution: next.execution });
+  };
+  const editAdvanced = (text: string) => {
+    setAdvanced(text);
+    try {
+      const parsed = activitySchema.safeParse(JSON.parse(text));
+      if (!parsed.success) return;
+      setKnowledge(parsed.data);
+      set({ instructions: parsed.data.description, discipline: parsed.data.discipline, gear: parsed.data.equipment ?? [],
+        loadable: parsed.data.loadUnits.length > 0, perSide: ['unilateral', 'alternating'].includes(parsed.data.laterality) });
+      setCuesText(parsed.data.execution.join('\n'));
+    } catch { /* Invalid drafts stay editable and cannot be saved. */ }
+  };
 
   const save = () => {
     const errs = validateExercise(e);
+    let a: Activity = { ...knowledge, id: e.id, name: e.name.trim(), discipline: e.discipline, equipment: e.gear,
+      loadUnits: e.loadable ? ['kg', 'lb'] : [], description: knowledge.description || e.instructions || e.name,
+      authorship: 'user', reviewStatus: 'unreviewed', archived: e.archived };
+    if (advanced.trim()) {
+      try { a = { ...JSON.parse(advanced), id: e.id, name: e.name.trim(), authorship: 'user', reviewStatus: 'unreviewed' }; }
+      catch { errs.push('Structured JSON is invalid. Correct it or clear the advanced field.'); }
+    }
+    const checked = activitySchema.safeParse(a);
+    if (!checked.success) checked.error.issues.forEach(i => errs.push(`${i.path.join('.')}: ${i.message}`));
+    if (a.type !== 'sequence' && !a.supportedMetrics.length) errs.push('Select at least one measurement capability so this activity can accept a personal target.');
+    let sequenceMembers: ExerciseDef['sequenceMembers'];
+    if (a.type === 'sequence') {
+      try {
+        const parsed = z.array(membershipSchema).min(1).max(500).parse(JSON.parse(members));
+        if (parsed.some((m, n) => m.sequenceId !== e.id || m.order !== n)) throw new Error('Use the sequence ID shown below and consecutive order starting at 0.');
+        sequenceMembers = parsed;
+        sequenceDefinitions(e.id, [...state.customExercises.filter(x => x.id !== e.id), { ...e, activity: a, sequenceMembers }]);
+      } catch (err) { errs.push(`Sequence membership: ${err instanceof Error ? err.message : 'invalid JSON'}`); }
+    }
     setErrors(errs);
     if (errs.length) return;
     const cues = cuesText.split('\n').map((x) => x.trim()).filter(Boolean);
-    saveExercise({ ...e, name: e.name.trim(), cues, instructions: e.instructions.trim() || cues.join(' '), defaultReps: e.tracking === 'reps' ? e.defaultReps : undefined, defaultSeconds: e.tracking === 'time' ? e.defaultSeconds : undefined });
+    saveExercise({ ...e, activity: a, sequenceMembers, name: e.name.trim(), cues: a.execution.length ? a.execution : cues, instructions: a.description, tracking: a.supportedMetrics[0] === 'duration' ? 'time' : a.supportedMetrics[0] ?? 'reps', perSide: ['unilateral', 'alternating'].includes(a.laterality) });
     success();
     router.back();
   };
@@ -65,7 +121,7 @@ export default function ExerciseEdit() {
     return (
       <View style={[s.root, { backgroundColor: c.background, paddingTop: top, alignItems: 'center', justifyContent: 'center', gap: 12 }]}>
         <Feather name="help-circle" size={32} color={c.mutedForeground} />
-        <Text style={[s.title, { color: c.foreground }]}>Move not found</Text>
+        <Text style={[s.title, { color: c.foreground }]}>Activity not found</Text>
         <Button label="Back" onPress={() => router.back()} />
       </View>
     );
@@ -82,11 +138,12 @@ export default function ExerciseEdit() {
           <IconButton testID="exercise-close" icon="x" label="Close" onPress={() => router.back()} />
         </View>
         <View style={[s.facts, { backgroundColor: c.accent }]}>
-          <Fact k="Target" v={existing.tracking === 'reps' ? `${existing.defaultReps} reps${existing.perSide ? ' / side' : ''}` : `${existing.defaultSeconds}s${existing.perSide ? ' / side' : ''}`} />
+          <Fact k="Measurement" v={knowledgeOf(existing).supportedMetrics.join(', ')} />
           <Fact k="Equipment" v={existing.gear.map((g) => GEAR_LABEL[g]).join(' + ')} />
           <Fact k="Areas" v={existing.areas.map((a) => AREA_LABEL[a]).join(', ')} />
           <Fact k="Loads" v={existing.stresses.length ? existing.stresses.map((r) => REGION_LABEL[r]).join(', ') : 'Nothing flagged'} />
         </View>
+        <ActivityDetails activity={knowledgeOf(existing)} release={catalog.state.release} />
         <Text style={[s.label, { color: c.foreground }]}>How to</Text>
         {existing.cues.map((cue, i) => (
           <View key={i} style={s.cue}>
@@ -95,7 +152,8 @@ export default function ExerciseEdit() {
           </View>
         ))}
         <Text style={[s.hint, { color: c.mutedForeground, marginTop: 14 }]}>General guidance only. Move within a comfortable range and stop if anything hurts.</Text>
-        <Button testID="schedule-move" label="Schedule this move" icon="calendar" onPress={() => router.replace({ pathname: '/schedule-add', params: { exerciseId: existing.id } })} style={{ marginTop: 20 }} />
+        <Button testID="schedule-move" label={existing.activity?.type === 'sequence' ? 'Expand into routine — enter targets' : 'Schedule this activity'} icon="calendar" onPress={() => router.replace(existing.activity?.type === 'sequence' ? { pathname: '/builder', params: { activityId: existing.id } } : { pathname: '/schedule-add', params: { exerciseId: existing.id } })} style={{ marginTop: 20 }} />
+        <Button label="Add to a new routine" variant="soft" onPress={() => router.replace({ pathname: '/builder', params: { activityId: existing.id } })} style={{ marginTop: 10 }} />
       </KeyboardAwareScrollViewCompat>
     );
   }
@@ -105,14 +163,14 @@ export default function ExerciseEdit() {
       <KeyboardAwareScrollViewCompat contentContainerStyle={[s.root, { paddingTop: top, paddingBottom: 140 }]} keyboardShouldPersistTaps="handled" bottomOffset={90}>
         <View style={s.head}>
           <View style={{ flex: 1 }}>
-            <Eyebrow>{existing ? `Custom move · v${existing.version}` : 'New custom move'}</Eyebrow>
-            <Text style={[s.title, { color: c.foreground }]}>{existing ? 'Edit move' : 'Create a move'}</Text>
+            <Eyebrow>{existing ? `User-authored activity · v${existing.version} · unreviewed` : 'New custom activity'}</Eyebrow>
+            <Text style={[s.title, { color: c.foreground }]}>{existing ? 'Edit activity' : 'Create an activity'}</Text>
           </View>
           <IconButton testID="exercise-close" icon="x" label="Close" onPress={() => router.back()} />
         </View>
         <View style={[s.note, { backgroundColor: c.secondary }]}>
           <Feather name="info" size={16} color={c.secondaryForeground} />
-          <Text style={[s.noteText, { color: c.secondaryForeground }]}>Custom moves are never treated as verified safe and are never swapped automatically. Edits create a new version; past sessions keep the version they used.</Text>
+          <Text style={[s.noteText, { color: c.secondaryForeground }]}>User-authored activities are unreviewed and never automatically altered. Edits create a new version; saved routines, sessions and history keep the version they used.</Text>
         </View>
 
         <Text style={[s.label, { color: c.foreground }]}>Name</Text>
@@ -127,28 +185,41 @@ export default function ExerciseEdit() {
         <Text style={[s.label, { color: c.foreground }]}>Movement areas</Text>
         <View style={s.wrap}>{AREAS.map((a) => <Chip key={a} label={AREA_LABEL[a]} active={e.areas.includes(a)} onPress={() => set({ areas: toggle(e.areas, a) })} />)}</View>
 
-        <Text style={[s.label, { color: c.foreground }]}>Tracking</Text>
-        <Segmented testID="exercise-tracking" options={[{ value: 'reps', label: 'Reps' }, { value: 'time', label: 'Timed' }]} value={e.tracking} onChange={(tracking) => set({ tracking })} />
+        <Text style={[s.label, { color: c.foreground }]}>Separate personal preset (optional)</Text>
+        <Text style={[s.hint, { color: c.mutedForeground }]}>These numbers are saved separately from the definition. They prefill your own routine targets, not library prescriptions.</Text>
+        <Segmented testID="exercise-tracking" options={[{ value: 'reps', label: 'Reps' }, { value: 'time', label: 'Timed' }]} value={e.tracking === 'time' ? 'time' : 'reps'} onChange={(tracking) => { set({ tracking }); setKnowledge(a => ({ ...a, supportedMetrics: [tracking === 'time' ? 'duration' : 'reps'] })); }} />
         <View style={[s.row, { marginTop: 12 }]}>
           {e.tracking === 'reps' ? (
-            <NumField testID="exercise-reps" label="Default reps" value={e.defaultReps} min={1} max={200} onChange={(v) => set({ defaultReps: v })} />
+            <NumField testID="exercise-reps" label="Preset reps" optional value={e.defaultReps} min={1} max={200} onChange={(v) => set({ defaultReps: v })} />
           ) : (
-            <NumField testID="exercise-seconds" label="Default time" suffix="s" step={5} value={e.defaultSeconds} min={5} max={3600} onChange={(v) => set({ defaultSeconds: v })} />
+            <NumField testID="exercise-seconds" label="Preset time" optional suffix="s" step={5} value={e.defaultSeconds} min={5} max={3600} onChange={(v) => set({ defaultSeconds: v })} />
           )}
         </View>
-        <ToggleRow label="Per side" hint="Counts each side separately, e.g. left and right leg." value={e.perSide} onChange={(perSide) => set({ perSide })} />
+        <ToggleRow label="Per side" hint="Counts each side separately, e.g. left and right leg." value={e.perSide} onChange={(perSide) => { set({ perSide }); setKnowledge(a => ({ ...a, laterality: perSide ? 'unilateral' : 'bilateral' })); }} />
         <ToggleRow label="Track load" hint="Shows a weight field (kg or lb) when logging." value={e.loadable} onChange={(loadable) => set({ loadable })} />
 
         <Text style={[s.label, { color: c.foreground }]}>Areas it loads</Text>
         <Text style={[s.hint, { color: c.mutedForeground, marginBottom: 8 }]}>Used to respect your exclusions. Leave empty if unsure; Tempo will tell you it couldn’t check.</Text>
         <View style={s.wrap}>{REGIONS.map((r) => <Chip key={r} label={REGION_LABEL[r]} active={e.stresses.includes(r)} onPress={() => set({ stresses: toggle(e.stresses, r) })} />)}</View>
 
-        <ToggleRow testID="exercise-rehab" label="Prescribed rehabilitation" hint="Tempo will never shorten, progress or swap this move. Follow the professional who prescribed it." value={e.rehab} onChange={(rehab) => set({ rehab })} />
+        <ToggleRow testID="exercise-rehab" label="Prescribed rehabilitation" hint="Tempo will never shorten, progress or swap this activity. Follow the professional who prescribed it." value={e.rehab} onChange={(rehab) => set({ rehab })} />
 
         <Text style={[s.label, { color: c.foreground }]}>Steps (one per line)</Text>
-        <TextInput value={cuesText} onChangeText={setCuesText} multiline placeholder={'Set up…\nMove…\nReturn…'} placeholderTextColor={c.mutedForeground} style={[s.input, s.area, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
+        <TextInput testID="exercise-steps" value={cuesText} onChangeText={editSteps} multiline placeholder={'Set up…\nMove…\nReturn…'} placeholderTextColor={c.mutedForeground} style={[s.input, s.area, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
         <Text style={[s.label, { color: c.foreground }]}>Notes</Text>
-        <TextInput value={e.instructions} onChangeText={(instructions) => set({ instructions })} multiline placeholder="Seat height 4, slow lowering…" placeholderTextColor={c.mutedForeground} style={[s.input, s.area, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
+        <TextInput testID="exercise-notes" value={knowledge.description} onChangeText={editNotes} multiline placeholder="Seat height 4, slow lowering…" placeholderTextColor={c.mutedForeground} style={[s.input, s.area, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
+        <KnowledgeEditor value={{ ...knowledge, discipline: e.discipline }} onChange={a => { setKnowledge(a); syncAdvanced(a); }} />
+        <Text style={[s.label, { color: c.foreground }]}>Advanced structured knowledge (optional JSON)</Text>
+        <Text style={[s.hint, { color: c.mutedForeground }]}>For qualified benefits, provenance references, series context, movement patterns and complete mobility metadata. Uses the same validated activity schema; no dosage allowed.</Text>
+        <Button compact variant="soft" label="Populate from current knowledge" onPress={() => setAdvanced(JSON.stringify({ ...knowledge, id: e.id, name: e.name, equipment: e.gear, description: knowledge.description || e.instructions || e.name }, null, 2))} />
+        <TextInput accessibilityLabel="Advanced structured knowledge JSON" value={advanced} onChangeText={editAdvanced} multiline style={[s.input, s.area, { color: c.foreground, borderColor: c.border }]} />
+        {knowledge.type === 'sequence' || advanced.includes('"sequence"') ? <>
+          <Text style={[s.label, { color: c.foreground }]}>Ordered sequence membership</Text>
+          <Text selectable style={[s.hint, { color: c.mutedForeground }]}>Sequence ID: {e.id}. JSON array: each entry has sequenceId, activityId, order (starting at 0), and side (left/right/both/unspecified). Repeated activities are retained. No dose belongs here; enter targets when expanding into a routine.</Text>
+          <Button compact variant="soft" label="Insert membership example" onPress={() => setMembers(JSON.stringify([{ sequenceId: e.id, activityId: 'march', order: 0, side: 'unspecified' }], null, 2))} />
+          <TextInput accessibilityLabel="Sequence membership JSON" value={members} onChangeText={setMembers} multiline style={[s.input, s.area, { color: c.foreground, borderColor: c.border }]} />
+          {existing?.activity?.type === 'sequence' ? <ActivityDetails activity={existing.activity} release={personalCatalog(state.customExercises)} /> : null}
+        </> : null}
 
         {errors.length ? (
           <View style={[s.errBox, { borderColor: c.destructive }]}>
@@ -158,16 +229,16 @@ export default function ExerciseEdit() {
 
         {existing ? (
           <View style={{ gap: 10, marginTop: 20 }}>
-            <Button label="Schedule this move" icon="calendar" variant="soft" onPress={() => router.replace({ pathname: '/schedule-add', params: { exerciseId: existing.id } })} />
+            <Button label={existing.activity?.type === 'sequence' ? 'Expand into routine — enter targets' : 'Schedule this activity'} icon="calendar" variant="soft" onPress={() => router.replace(existing.activity?.type === 'sequence' ? { pathname: '/builder', params: { activityId: existing.id } } : { pathname: '/schedule-add', params: { exerciseId: existing.id } })} />
             <Button
               testID="exercise-archive"
-              label={existing.archived ? 'Restore move' : 'Archive move'}
+              label={existing.archived ? 'Restore activity' : 'Archive activity'}
               icon={existing.archived ? 'rotate-ccw' : 'archive'}
               variant="danger"
               onPress={() =>
                 existing.archived
                   ? (setExerciseArchived(existing.id, false), router.back())
-                  : confirm('Archive this move?', 'It leaves the library and pickers. Routines, scheduled sessions and history that use it keep working and stay readable.', 'Archive', () => {
+                  : confirm('Archive this activity?', 'It leaves the library and pickers. Routines, scheduled sessions and history that use it keep working and stay readable.', 'Archive', () => {
                       setExerciseArchived(existing.id, true);
                       router.back();
                     })
@@ -178,7 +249,7 @@ export default function ExerciseEdit() {
       </KeyboardAwareScrollViewCompat>
       <View style={[s.footer, { paddingBottom: bottom, backgroundColor: c.background, borderTopColor: c.border }]}>
         <Button label="Cancel" variant="ghost" onPress={() => router.back()} style={{ flex: 1 }} />
-        <Button testID="exercise-save" label="Save move" icon="check" onPress={save} style={{ flex: 1.4 }} />
+        <Button testID="exercise-save" label="Save activity" icon="check" onPress={save} style={{ flex: 1.4 }} />
       </View>
     </View>
   );

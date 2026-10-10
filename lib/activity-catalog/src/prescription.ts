@@ -19,8 +19,15 @@ export const prescriptionSchema = z.object({
   priority: z.enum(['must', 'normal', 'optional']),
 }).strict();
 export type Prescription = z.infer<typeof prescriptionSchema>;
+// Actual execution may be zero; prescription targets must remain positive.
+export const actualTargetSchema = z.discriminatedUnion('metric', [
+  z.object({ metric: z.literal('reps'), value: z.number().int().min(0).max(10000) }).strict(),
+  z.object({ metric: z.literal('duration'), value: z.number().min(0).max(86400), unit: z.literal('s') }).strict(),
+  z.object({ metric: z.literal('breaths'), value: z.number().int().min(0).max(10000) }).strict(),
+  z.object({ metric: z.literal('distance'), value: z.number().min(0).max(1000000), unit: distanceUnitSchema }).strict(),
+]);
 export const actualSchema = z.object({
-  target: targetSchema,
+  target: actualTargetSchema,
   load: z.object({ value: z.number().min(0).max(1000), unit: z.enum(['kg', 'lb']) }).strict().optional(),
   side: z.enum(['left', 'right', 'both', 'alternating', 'unspecified']),
 }).strict();
@@ -49,11 +56,16 @@ export function estimatePrescription(p: Prescription): { seconds: number | null;
 /** Expands membership only; callers must obtain an explicit prescription for each leaf. */
 export function expandSequence(release: CatalogRelease, id: string): { activityId: string; side: 'left' | 'right' | 'both' | 'unspecified' }[] {
   const path = new Set<string>();
+  let leafCount = 0;
   const expand = (current: string, side: 'left' | 'right' | 'both' | 'unspecified'): ReturnType<typeof expandSequence> => {
     if (path.has(current)) throw new Error(`Sequence cycle at ${current}`);
+    if (path.size >= 128) throw new Error('Sequence nesting exceeds 128 levels; simplify the membership.');
     const a = release.activities.find(a => a.id === current);
     if (!a) throw new Error(`Missing activity ${current}`);
-    if (a.type !== 'sequence') return [{ activityId: current, side }];
+    if (a.type !== 'sequence') {
+      if (++leafCount > 5000) throw new Error('Sequence expands to more than 5000 activities; simplify repeated membership.');
+      return [{ activityId: current, side }];
+    }
     path.add(current);
     const members = release.sequences.filter(m => m.sequenceId === current).sort((a, b) => a.order - b.order);
     if (!members.length) throw new Error(`Empty sequence ${current}`);

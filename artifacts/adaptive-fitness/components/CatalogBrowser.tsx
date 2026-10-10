@@ -5,6 +5,9 @@ import { useCatalog } from '@/context/CatalogContext';
 import { useColors } from '@/hooks/useColors';
 import { fonts } from '@/constants/colors';
 import { Button, Card } from '@/components/ui';
+import { router } from 'expo-router';
+import { LibraryFilters, useLibraryFilter } from './planner';
+import { searchLibrary } from '@/lib/domain';
 
 export function CatalogBrowser() {
   const c = useColors();
@@ -15,8 +18,9 @@ export function CatalogBrowser() {
   const [visible, setVisible] = useState(30);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
-  const list = useMemo(() => repository.browse({ q, discipline, family: cars ? 'cars' : undefined }),
-    [repository, state.release, q, discipline, cars]);
+  const f = useLibraryFilter();
+  const matched = new Set(searchLibrary([], f.filter).map(d => d.id));
+  const list = repository.browse({ q, discipline, family: cars ? 'cars' : undefined }).filter(a => matched.has(a.id));
   const selected = state.release.activities.find(a => a.id === selectedId);
   const body = (text: string, key?: string | number) => <Text key={key} style={[s.body, { color: c.foreground }]}>{text}</Text>;
   const section = (title: string, lines: string[] | null) => (
@@ -34,7 +38,7 @@ export function CatalogBrowser() {
           {state.origin === 'bundled' ? 'Bundled offline copy' : state.origin === 'cache' ? 'Saved offline copy' : 'Downloaded and validated copy'}
           {' · '}{state.checkedAt ? `Last checked ${new Date(state.checkedAt).toLocaleString()}` : 'Not yet checked for updates'}
         </Text>
-        <Text style={[s.meta, { color: c.mutedForeground }]}>Content reference checks, not medical certification. Catalog browsing is separate from your current moves, routines and history. Rich routine integration comes next.</Text>
+        <Text style={[s.meta, { color: c.mutedForeground }]}>Content reference checks, not medical certification. Add activities with explicit personal targets. Updates never rewrite saved routines, sessions or history.</Text>
         {state.error ? <Text testID="catalog-error" accessibilityRole="alert" style={[s.meta, { color: c.foreground }]}>{state.error}</Text> : null}
         <Button testID="catalog-refresh" compact variant="soft" icon="refresh-cw" label={state.checking ? 'Checking…' : 'Check for updates'} disabled={state.checking} onPress={() => void repository.refresh()} />
       </Card>
@@ -69,6 +73,10 @@ export function CatalogBrowser() {
           {selected.type === 'sequence' ? section('Ordered members', state.release.sequences.filter(m => m.sequenceId === selected.id).sort((a, b) => a.order - b.order)
             .map(m => `${m.order + 1}. ${state.release.activities.find(a => a.id === m.activityId)?.name} · ${m.side}`)) : null}
           {section('Adaptation permission', [selected.adaptation.eligible ? 'Explicitly eligible.' : 'Not eligible for automatic adaptation.', selected.adaptation.rationale])}
+          {!selected.archived ? <>
+            <Button testID="catalog-add-routine" label={selected.type === 'sequence' ? 'Expand into routine — enter targets' : 'Add to new routine'} onPress={() => router.push({ pathname: '/builder', params: { activityId: selected.id } })} />
+            {selected.type !== 'sequence' ? <Button testID="catalog-schedule" variant="soft" label="Schedule — enter target" onPress={() => router.push({ pathname: '/schedule-add', params: { exerciseId: selected.id } })} /> : null}
+          </> : null}
           <Text style={[s.heading, { color: c.foreground }]}>Sources and review</Text>
           {state.release.sources.filter(source => selected.sourceIds.includes(source.id)).map(source => (
             <View key={source.id} style={s.section}>
@@ -85,6 +93,7 @@ export function CatalogBrowser() {
         </Card>
       ) : (
         <>
+          <LibraryFilters f={f} />
           <TextInput testID="catalog-search" accessibilityLabel="Search catalog" placeholder="Search names, Sanskrit, equipment or joints" placeholderTextColor={c.mutedForeground}
             value={q} maxLength={120} onChangeText={text => { setQuery(text); setVisible(30); }}
             style={[s.search, { color: c.foreground, backgroundColor: c.card, borderColor: c.border }]} />

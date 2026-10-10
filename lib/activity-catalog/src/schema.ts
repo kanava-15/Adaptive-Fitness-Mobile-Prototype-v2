@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 export const CATALOG_SCHEMA_VERSION = 1;
-export const idSchema = z.string().regex(/^[a-z0-9][a-z0-9-]{0,95}$/);
+// Underscores are retained for existing device-authored Tempo identifiers.
+export const idSchema = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,95}$/);
 const text = z.string().trim().min(1).max(4000);
 const texts = z.array(text).max(100);
 export const disciplineSchema = z.enum(['strength', 'yoga', 'mobility', 'conditioning']);
@@ -99,3 +100,4 @@ export const releaseSchema = z.object({
 export type Activity = z.infer<typeof activitySchema>;
 export type CatalogRelease = z.infer<typeof releaseSchema>;
 export type Source = z.infer<typeof sourceSchema>;
+export type SequenceMembership = z.infer<typeof membershipSchema>;

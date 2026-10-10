@@ -8,7 +8,8 @@ import { Button, Chip, EmptyState, Eyebrow, IconButton, success } from '@/compon
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
-import { estimateSec, findExercise, minutesLabel, snapshotFromExercise, snapshotFromRoutine, snapshotErrors } from '@/lib/domain';
+import { estimateSec, findExercise, minutesLabel, snapshotFromItems, snapshotFromRoutine, snapshotErrors, makeItem, snapItem, RoutineItem } from '@/lib/domain';
+import { TargetEditor } from '@/components/TargetEditor';
 import { DAY_SHORT, addDays, prettyDate, weekday } from '@/lib/engine';
 
 type Mode = 'today' | 'date' | 'weekly';
@@ -21,6 +22,7 @@ export default function ScheduleAdd() {
   const routines = state.routines.filter((r) => !r.archived);
   const [routineId, setRoutineId] = useState<string | null>(p.routineId ?? (p.exerciseId ? null : routines[0]?.id ?? null));
   const exercise = p.exerciseId ? findExercise(state.customExercises, p.exerciseId) : undefined;
+  const [target, setTarget] = useState<RoutineItem | null>(() => exercise ? makeItem(exercise, 'kg', state.presets[exercise.id]) : null);
   const routine = state.routines.find((r) => r.id === routineId);
   const initial = p.date && p.date >= todayKey ? p.date : todayKey;
   const [mode, setMode] = useState<Mode>(p.date && p.date !== todayKey ? 'date' : 'today');
@@ -31,7 +33,7 @@ export default function ScheduleAdd() {
   const top = Platform.OS === 'web' ? 67 : Platform.OS === 'ios' ? 20 : insets.top + 12;
   const bottom = Platform.OS === 'web' ? 34 : insets.bottom + 16;
 
-  const snap = exercise ? snapshotFromExercise(exercise) : routine ? snapshotFromRoutine(routine, state.customExercises) : null;
+  const snap = exercise && target ? snapshotFromItems(exercise.name, [snapItem(target, exercise)]) : routine ? snapshotFromRoutine(routine, state.customExercises) : null;
   const start = mode === 'today' ? todayKey : date;
   const until = weeks === '0' ? null : addDays(start, Number(weeks) * 7 - 1);
   const snapErrs = snap ? snapshotErrors(snap.items) : [];
@@ -57,8 +59,9 @@ export default function ScheduleAdd() {
         </View>
 
         {exercise ? (
-          <View style={[s.pill, { backgroundColor: c.secondary }]}>
-            <Text style={[s.pillText, { color: c.secondaryForeground }]}>Single move: {exercise.name}</Text>
+          <View style={{ gap: 12 }}>
+            <Text style={[s.pillText, { color: c.foreground }]}>Activity: {exercise.name}</Text>
+            {exercise.activity?.type === 'sequence' ? <Button label="Expand sequence — enter member targets" variant="soft" onPress={() => router.replace({ pathname: '/builder', params: { activityId: exercise.id } })} /> : target ? <TargetEditor item={target} definition={exercise} onChange={patch => setTarget(t => t ? { ...t, ...patch } : t)} /> : null}
           </View>
         ) : routines.length === 0 ? (
           <EmptyState icon="layers" title="No routines yet" body="Build a routine first, then schedule it on any day or repeat it weekly.">
@@ -72,7 +75,7 @@ export default function ScheduleAdd() {
             </View>
           </>
         )}
-        {snap ? <Text style={[s.hint, { color: c.mutedForeground, marginTop: 10 }]}>{snap.items.length} moves · about {minutesLabel(estimateSec(snap.items))} with rest. A copy is saved with each scheduled session, so later edits to the routine don’t silently change it.</Text> : null}
+        {snap ? <Text style={[s.hint, { color: c.mutedForeground, marginTop: 10 }]}>{snap.items.length} activities · {minutesLabel(estimateSec(snap.items))}. A copy is saved with each scheduled session, so later edits to the routine don’t silently change it.</Text> : null}
 
         <Text style={[s.label, { color: c.foreground }]}>When</Text>
         <Segmented testID="schedule-mode" options={[{ value: 'today', label: 'Today' }, { value: 'date', label: 'Pick a date' }, { value: 'weekly', label: 'Weekly' }]} value={mode} onChange={setMode} />

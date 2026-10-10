@@ -5,7 +5,7 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { ExercisePicker, NumField, Segmented, ToggleRow, WeekdayPicker } from '@/components/planner';
-import { Button, Chip, Eyebrow, IconButton, confirm, success, tap } from '@/components/ui';
+import { Button, Chip, Eyebrow, IconButton, confirm, success, tap, notify } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
@@ -30,11 +30,13 @@ import {
   routineMismatches,
 } from '@/lib/domain';
 import { newId, prettyDate } from '@/lib/engine';
+import { TargetEditor } from '@/components/TargetEditor';
+import { sequenceDefinitions, targetLabel, trackingOf, definitionOfSnap, dosageFree } from '@/lib/domain';
 
 export default function Builder() {
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const { id, occ: occKey } = useLocalSearchParams<{ id?: string; occ?: string }>();
+  const { id, occ: occKey, activityId } = useLocalSearchParams<{ id?: string; occ?: string; activityId?: string }>();
   const { state, saveRoutine, futureUses, pushRoutineToFuture, occurrence, editOcc } = useTempo();
   const custom = state.customExercises;
   const routine = id ? state.routines.find((r) => r.id === id) : undefined;
@@ -43,10 +45,19 @@ export default function Builder() {
 
   const [name, setName] = useState(routine?.name ?? occ?.snapshot.title ?? '');
   const [notes, setNotes] = useState(routine?.notes ?? '');
-  const [items, setItems] = useState<RoutineItem[]>(routine ? routine.items.map((i) => ({ ...i })) : occ ? occ.snapshot.items.map(itemOf) : []);
+  const [initial] = useState(() => {
+    if (routine) return { items: routine.items.map(i => ({ ...i })), error: '' };
+    if (occ) return { items: occ.snapshot.items.map(itemOf), error: '' };
+    const d = activityId ? findExercise(custom, activityId) : undefined;
+    if (!d) return { items: [] as RoutineItem[], error: activityId ? 'Activity unavailable. Choose another activity from the library.' : '' };
+    if (d.activity?.type !== 'sequence') return { items: [makeItem(d, 'kg', state.presets[d.id])], error: '' };
+    try { return { items: sequenceDefinitions(d.id, custom).map(m => ({ ...makeItem(m.definition), side: m.side, confirmed: false })), error: '' }; }
+    catch (err) { return { items: [] as RoutineItem[], error: `Sequence unavailable: ${err instanceof Error ? err.message : 'membership invalid'}. Restore its missing activities or edit membership.` }; }
+  });
+  const [items, setItems] = useState<RoutineItem[]>(initial.items);
   const [open, setOpen] = useState<string | null>(null);
   const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; key: string } | null>(null);
-  const [errors, setErrors] = useState<string[]>([]);
+  const [errors, setErrors] = useState<string[]>(initial.error ? [initial.error] : []);
   const [scope, setScope] = useState<Scope>('one');
   const [weekdays, setWeekdays] = useState<number[]>(occ?.weekdays ?? []);
   const uses = routine ? futureUses(routine.id) : 0;
@@ -55,10 +66,10 @@ export default function Builder() {
   const bottom = Platform.OS === 'web' ? 34 : insets.bottom + 16;
 
   const resolve = (it: RoutineItem): SnapItem | null => {
-    const d = findExercise(custom, it.exerciseId);
-    if (d) return snapItem(it, d);
     const f = fallback.get(it.key);
-    return f ? { ...f, ...it } : null;
+    if (f) return { ...f, ...it, tracking: trackingOf(it, f.tracking) };
+    const d = it.definition ?? findExercise(custom, it.exerciseId);
+    return d ? snapItem(it, d) : null;
   };
   const resolved = items.map(resolve).filter((x): x is SnapItem => !!x);
   const est = estimateSec(resolved);
@@ -75,8 +86,17 @@ export default function Builder() {
     });
   const pick = (e: ExerciseDef) => {
     if (!picker) return;
+    if (e.activity?.type === 'sequence') {
+      let expanded: RoutineItem[];
+      try { expanded = sequenceDefinitions(e.id, custom).map(m => ({ ...makeItem(m.definition), side: m.side, confirmed: false })); }
+      catch (err) { notify('Sequence unavailable', `${err instanceof Error ? err.message : 'Cannot expand membership'}. Edit membership or restore its missing activities.`); return; }
+      setItems(xs => picker.mode === 'add' ? [...xs, ...expanded] : xs.flatMap(x => x.key === picker.key ? expanded : [x]));
+      setOpen(expanded[0]?.key ?? null);
+      setPicker(null);
+      return;
+    }
     if (picker.mode === 'add') {
-      const it = makeItem(e, state.profile.equipment.includes('dumbbells') ? 'kg' : 'kg');
+      const it = { ...makeItem(e, 'kg', state.presets[e.id]), definition: dosageFree(e) };
       setItems((xs) => [...xs, it]);
       setOpen(it.key);
     } else {
@@ -95,13 +115,13 @@ export default function Builder() {
   const validate = () => {
     const errs: string[] = [];
     if (!name.trim()) errs.push(occ ? 'Give the session a title.' : 'Name the routine.');
-    if (!items.length) errs.push('Add at least one move.');
+    if (!items.length) errs.push('Add at least one activity.');
     items.forEach((it) => {
       const r = resolve(it);
-      if (!r) errs.push('A move is missing from the library.');
+      if (!r) errs.push('An activity is missing from the library.');
       else validateItem(it, r.tracking).forEach((e) => errs.push(`${r.name}: ${e}`));
     });
-    if (mismatches.length) errs.push('Confirm new targets for moves whose tracking changed.');
+    if (mismatches.length) errs.push('Confirm new targets for activities whose tracking changed.');
     if (occ && scope === 'future' && occ.recurring && !weekdays.length) errs.push('Pick at least one weekday for the series.');
     setErrors(errs);
     return errs.length === 0;
@@ -152,7 +172,7 @@ export default function Builder() {
             <Text style={[s.estK, { color: c.accentMuted }]}>ESTIMATED</Text>
             <Text testID="builder-estimate" style={[s.estV, { color: c.accentForeground }]}>{items.length ? minutesLabel(est) : '—'}</Text>
           </View>
-          <Text style={[s.estNote, { color: c.accentMuted }]}>{items.length} moves · {resolved.reduce((n, i) => n + i.sets, 0)} sets{'\n'}rest included</Text>
+          <Text style={[s.estNote, { color: c.accentMuted }]}>{items.length} activities · {resolved.reduce((n, i) => n + i.sets, 0)} sets{'\n'}rest included when duration known</Text>
         </View>
         <Text style={[s.hint, { color: c.mutedForeground, marginTop: 8 }]}>{EST_EXPLAIN}</Text>
 
@@ -161,7 +181,7 @@ export default function Builder() {
             const r = resolve(it);
             if (!r) return null;
             const isOpen = open === it.key;
-            const target = r.tracking === 'reps' ? `${it.reps ?? '-'} reps` : `${it.seconds ?? '-'}s`;
+            const target = targetLabel(it);
             return (
               <View key={it.key} testID={`item-${n}`} style={[s.item, { backgroundColor: c.card, borderColor: isOpen ? c.primary : c.border }]}>
                 <Pressable onPress={() => { tap(); setOpen(isOpen ? null : it.key); }} style={s.itemHead}>
@@ -169,31 +189,18 @@ export default function Builder() {
                   <View style={{ flex: 1 }}>
                     <Text style={[s.itemName, { color: c.foreground }]}>{r.name}</Text>
                     <Text style={[s.itemMeta, { color: c.mutedForeground }]}>
-                      {it.sets} × {target}{it.perSide ? ' / side' : ''} · rest {it.restSec}s{it.load != null ? ` · ${it.load} ${it.unit}` : ''}
+                      {it.sets} × {target} · rest {it.restSec}s
                       {it.priority !== 'normal' ? ` · ${PRIORITY_LABEL[it.priority].toLowerCase()}` : ''}
                     </Text>
                   </View>
                   {r.rehab ? <Feather name="shield" size={16} color={c.secondaryForeground} /> : null}
-                  <Pressable accessibilityLabel={it.locked ? 'Unlock move' : 'Lock move'} testID={`lock-${n}`} hitSlop={8} onPress={() => { tap(); patch(it.key, { locked: !it.locked }); }} style={[s.lock, { backgroundColor: it.locked ? c.primary : c.muted }]}>
+                  <Pressable accessibilityLabel={it.locked ? 'Unlock activity' : 'Lock activity'} testID={`lock-${n}`} hitSlop={8} onPress={() => { tap(); patch(it.key, { locked: !it.locked }); }} style={[s.lock, { backgroundColor: it.locked ? c.primary : c.muted }]}>
                     <Feather name={it.locked ? 'lock' : 'unlock'} size={14} color={it.locked ? c.primaryForeground : c.mutedForeground} />
                   </Pressable>
                 </Pressable>
                 {isOpen ? (
                   <View style={{ marginTop: 12 }}>
-                    <View style={s.grid}>
-                      <NumField testID={`sets-${n}`} label="Sets" value={it.sets} min={1} max={20} onChange={(v) => patch(it.key, { sets: v ?? 1 })} />
-                      {r.tracking === 'reps' ? (
-                        <NumField testID={`reps-${n}`} label="Reps" value={it.reps} min={1} max={200} onChange={(v) => patch(it.key, { reps: v })} />
-                      ) : (
-                        <NumField testID={`seconds-${n}`} label="Time" suffix="s" step={5} value={it.seconds} min={5} max={3600} onChange={(v) => patch(it.key, { seconds: v })} />
-                      )}
-                      <NumField label="Rest" suffix="s" step={15} value={it.restSec} min={0} max={600} onChange={(v) => patch(it.key, { restSec: v ?? 0 })} />
-                      <NumField testID={`load-${n}`} label="Load" optional decimals step={it.unit === 'kg' ? 2.5 : 5} max={1000} value={it.load} suffix={it.unit} onChange={(v) => patch(it.key, { load: v })} />
-                    </View>
-                    <View style={{ marginTop: 10 }}>
-                      <Segmented options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} value={it.unit} onChange={(unit) => patch(it.key, { unit })} />
-                    </View>
-                    <ToggleRow label="Per side" value={it.perSide} onChange={(perSide) => patch(it.key, { perSide })} />
+                    <TargetEditor item={it} definition={it.definition ?? definitionOfSnap(r)} index={n} onChange={p => patch(it.key, p)} />
                     <ToggleRow label="Locked" hint="Adaptation won’t trim or swap it. Safety exclusions still remove it, and you’ll be told." value={it.locked} onChange={(locked) => patch(it.key, { locked })} />
                     <Text style={[s.sub, { color: c.mutedForeground }]}>PRIORITY WHEN SHORT ON TIME</Text>
                     <View style={s.wrap}>
@@ -205,7 +212,7 @@ export default function Builder() {
                       <IconButton icon="arrow-down" label="Move down" onPress={() => moveItem(it.key, 1)} />
                       <View style={{ flex: 1 }} />
                       <Button compact variant="ghost" icon="repeat" label="Replace" onPress={() => setPicker({ mode: 'replace', key: it.key })} />
-                      <IconButton testID={`remove-${n}`} icon="trash-2" label="Remove" onPress={() => confirm('Remove this move?', r.name, 'Remove', () => setItems((xs) => xs.filter((x) => x.key !== it.key)), true)} />
+                      <IconButton testID={`remove-${n}`} icon="trash-2" label="Remove" onPress={() => confirm('Remove this activity?', r.name, 'Remove', () => setItems((xs) => xs.filter((x) => x.key !== it.key)), true)} />
                     </View>
                   </View>
                 ) : null}
@@ -214,7 +221,7 @@ export default function Builder() {
           })}
           <Pressable testID="builder-add" onPress={() => { tap(); setPicker({ mode: 'add' }); }} style={[s.add, { borderColor: c.primary }]}>
             <Feather name="plus" size={18} color={c.primary} />
-            <Text style={[s.addText, { color: c.primary }]}>Add a move</Text>
+            <Text style={[s.addText, { color: c.primary }]}>Add an activity</Text>
           </Pressable>
         </View>
 
@@ -243,8 +250,8 @@ export default function Builder() {
             {mismatches.map((m) => (
               <Text key={m.key} style={[s.mmBody, { color: c.mutedForeground }]}>{m.name} now tracks {m.tracking === 'reps' ? 'reps' : 'time'}. Its old target no longer applies.</Text>
             ))}
-            <Text style={[s.mmBody, { color: c.mutedForeground }]}>This can’t be saved or scheduled until you confirm new targets. Start from each move’s default, then adjust below.</Text>
-            <Button testID="reconcile" compact variant="soft" icon="check" label={`Use defaults for ${mismatches.length} move${mismatches.length > 1 ? 's' : ''}`} onPress={reconcileAll} style={{ marginTop: 8 }} />
+            <Text style={[s.mmBody, { color: c.mutedForeground }]}>This can’t be saved or scheduled until you confirm new targets. Start from a personal preset, then adjust below.</Text>
+            <Button testID="reconcile" compact variant="soft" icon="check" label={`Reset targets for ${mismatches.length} activities`} onPress={reconcileAll} style={{ marginTop: 8 }} />
           </View>
         ) : null}
         {errors.length ? (
@@ -257,7 +264,7 @@ export default function Builder() {
         <Button label="Cancel" variant="ghost" onPress={() => router.back()} style={{ flex: 1 }} />
         <Button testID="builder-save" label={occ ? 'Save session' : 'Save routine'} icon="check" onPress={save} style={{ flex: 1.4 }} />
       </View>
-      <ExercisePicker visible={!!picker} custom={custom} title={picker?.mode === 'replace' ? 'Replace with' : 'Add a move'} onClose={() => setPicker(null)} onPick={pick} />
+      <ExercisePicker visible={!!picker} custom={custom} title={picker?.mode === 'replace' ? 'Replace with' : 'Add an activity'} onClose={() => setPicker(null)} onPick={pick} />
     </View>
   );
 }

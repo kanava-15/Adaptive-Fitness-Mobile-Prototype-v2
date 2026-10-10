@@ -7,6 +7,7 @@ import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { EventKind, addDays, dateKey, formatDuration, prettyDate } from '@/lib/engine';
+import { targetLabel } from '@/lib/domain';
 
 const EVENT_LABEL: Record<EventKind, string> = {
   starter: 'Starter plan',
@@ -81,7 +82,7 @@ export default function Progress() {
                     <Feather name={open === x.id ? 'chevron-up' : 'chevron-down'} size={18} color={c.mutedForeground} />
                   </Pressable>
                   <Text style={[s.sub, { color: c.mutedForeground, marginTop: 10 }]}>
-                    {moves}/{x.exercises.length} moves · {sets} sets · planned {x.plannedMinutes} min
+                    {moves}/{x.exercises.length} activities · {sets} sets · planned {x.estimateSec === null ? 'duration unknown' : `${x.plannedMinutes} min`}
                     {x.difficulty ? ` · felt ${DIFF[x.difficulty].toLowerCase()}` : ''}
                     {x.stoppedForPain ? ' · stopped for discomfort' : x.finishedEarly ? ' · finished early' : ''}
                   </Text>
@@ -94,10 +95,13 @@ export default function Progress() {
                             <Text style={[s.sub, { color: e.done ? c.foreground : c.mutedForeground }]}>{e.skipped ? 'skipped' : e.done ? 'done' : 'partial'}</Text>
                           </View>
                           <Text style={[s.sub, { color: c.mutedForeground }]}>
-                            Planned {e.planned.sets} × {e.kind === 'reps' ? `${e.planned.reps ?? '-'} reps` : `${e.planned.seconds ?? '-'}s`}{e.planned.perSide ? ' / side' : ''}{e.planned.load != null ? ` @ ${e.planned.load} ${e.planned.unit ?? ''}` : ''}
+                            Planned {e.planned.sets} × {targetLabel(e.planned)}
                           </Text>
+                          {(x.executedItems ?? x.snapshot?.items)?.find(it => it.key === e.itemKey) ? <Text style={[s.sub, { color: c.mutedForeground }]}>
+                            Saved definition v{(x.executedItems ?? x.snapshot?.items)!.find(it => it.key === e.itemKey)!.defVersion} · {(x.executedItems ?? x.snapshot?.items)!.find(it => it.key === e.itemKey)!.definition?.activity?.reviewStatus ?? 'legacy knowledge'}
+                          </Text> : null}
                           <Text style={[s.sub, { color: c.foreground }]}>
-                            Did {e.sets.length ? e.sets.map((st) => `${e.kind === 'reps' ? st.reps ?? 0 : `${st.seconds ?? 0}s`}${st.load != null ? ` × ${st.load}${st.unit ?? ''}` : ''}`).join(', ') : 'no sets logged'}
+                            Did {e.sets.length ? e.sets.map(targetLabel).join(', ') : 'no sets logged'}
                           </Text>
                         </View>
                       ))}

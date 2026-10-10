@@ -10,6 +10,7 @@ import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { estimateSec, findExercise, minutesLabel, searchLibrary, snapItem } from '@/lib/domain';
 import { CatalogBrowser } from '@/components/CatalogBrowser';
+import { useCatalog } from '@/context/CatalogContext';
 
 type Tab = 'moves' | 'routines' | 'catalog';
 
@@ -24,10 +25,8 @@ export default function LibraryScreen() {
   const [showArchived, setShowArchived] = useState(false);
   const f = useLibraryFilter();
   const custom = state.customExercises;
-  const list = useMemo(
-    () => searchLibrary(custom, { ...f.filter, source, includeArchived: showArchived }),
-    [custom, f.filter.query, f.filter.discipline, f.filter.gear, f.filter.area, f.filter.tracking, source, showArchived], // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  useCatalog();
+  const list = searchLibrary(custom, { ...f.filter, source, includeArchived: showArchived });
   const routines = state.routines.filter((r) => (showArchived ? true : !r.archived)).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
   const archivedCount = tab === 'moves' ? custom.filter((e) => e.archived).length : state.routines.filter((r) => r.archived).length;
 
@@ -35,10 +34,10 @@ export default function LibraryScreen() {
     <KeyboardAwareScrollViewCompat style={{ backgroundColor: c.background }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: top + 16, paddingBottom: bottom }} keyboardShouldPersistTaps="handled" bottomOffset={20}>
       <ScreenTitle
         eyebrow="Library"
-        title={tab === 'catalog' ? 'Activity catalog' : tab === 'moves' ? 'Moves' : 'Your routines'}
-        right={tab === 'catalog' ? undefined : <IconButton testID="library-new" icon="plus" label={tab === 'moves' ? 'New custom move' : 'New routine'} onPress={() => router.push(tab === 'moves' ? '/exercise-edit' : '/builder')} />}
+        title={tab === 'catalog' ? 'Activity catalog' : tab === 'moves' ? 'Activities' : 'Your routines'}
+        right={tab === 'catalog' ? undefined : <IconButton testID="library-new" icon="plus" label={tab === 'moves' ? 'New custom activity' : 'New routine'} onPress={() => router.push(tab === 'moves' ? '/exercise-edit' : '/builder')} />}
       />
-      <Segmented testID="library-tab" options={[{ value: 'routines', label: `Routines (${state.routines.filter((r) => !r.archived).length})` }, { value: 'moves', label: 'Moves' }, { value: 'catalog', label: 'Catalog' }]} value={tab} onChange={(v) => setTab(v)} />
+      <Segmented testID="library-tab" options={[{ value: 'routines', label: `Routines (${state.routines.filter((r) => !r.archived).length})` }, { value: 'moves', label: 'Activities' }, { value: 'catalog', label: 'Catalog' }]} value={tab} onChange={(v) => setTab(v)} />
 
       {tab === 'catalog' ? <CatalogBrowser /> : tab === 'moves' ? (
         <View style={{ marginTop: 16 }}>
@@ -46,11 +45,11 @@ export default function LibraryScreen() {
           <View style={{ marginTop: 12 }}>
             <Segmented options={[{ value: 'all', label: 'All' }, { value: 'builtin', label: 'Built-in' }, { value: 'custom', label: `Custom (${custom.filter((e) => !e.archived).length})` }]} value={source} onChange={setSource} />
           </View>
-          <Text style={[s.hint, { color: c.mutedForeground }]}>A modest offline set of general yoga, controlled joint mobility and gym examples. Not clinically validated and not affiliated with any certified method.</Text>
+          <Text style={[s.hint, { color: c.mutedForeground }]}>Offline activity knowledge, with no prescribed dosage. Choose personal targets in your routine or date. Source checks are not clinical certification.</Text>
           <View style={{ gap: 8, marginTop: 12 }}>
             {list.length === 0 ? (
-              <EmptyState icon="search" title="No moves match" body={source === 'custom' ? 'You haven’t made a custom move yet. Add your physio’s exercise or a gym machine you use.' : 'Try clearing a filter or searching a body area.'}>
-                <Button compact variant="soft" icon="plus" label="Create custom move" onPress={() => router.push('/exercise-edit')} />
+              <EmptyState icon="search" title="No activities match" body={source === 'custom' ? 'You haven’t made a custom activity yet. Add your physio’s exercise or a gym machine you use.' : 'Try clearing a filter or searching a body area.'}>
+                <Button compact variant="soft" icon="plus" label="Create custom activity" onPress={() => router.push('/exercise-edit')} />
               </EmptyState>
             ) : (
               list.map((e) => <ExerciseRow testID={`move-${e.id}`} key={e.id} e={e} onPress={() => router.push({ pathname: '/exercise-edit', params: { id: e.id } })} />)
@@ -60,13 +59,13 @@ export default function LibraryScreen() {
       ) : (
         <View style={{ marginTop: 16, gap: 10 }}>
           {routines.length === 0 ? (
-            <EmptyState icon="layers" title="Build your first routine" body="Pick moves you actually like, set sets, reps, rest and load, then put it on your calendar. Tempo adapts around it instead of replacing it.">
+            <EmptyState icon="layers" title="Build your first routine" body="Pick activities you actually like, enter personal targets and rest, then put it on your calendar. Tempo preserves your choices.">
               <Button testID="routine-first" compact icon="plus" label="New routine" onPress={() => router.push('/builder')} />
             </EmptyState>
           ) : (
             routines.map((r) => {
               const items = r.items.flatMap((it) => {
-                const d = findExercise(custom, it.exerciseId);
+                const d = it.definition ?? findExercise(custom, it.exerciseId);
                 return d ? [snapItem(it, d)] : [];
               });
               const locked = r.items.filter((i) => i.locked).length;
@@ -77,7 +76,7 @@ export default function LibraryScreen() {
                       <View style={{ flex: 1 }}>
                         <Text style={[s.rTitle, { color: c.foreground }]}>{r.name}</Text>
                         <Text style={[s.rMeta, { color: c.mutedForeground }]}>
-                          {r.items.length} moves · about {minutesLabel(estimateSec(items))} with rest{locked ? ` · ${locked} locked` : ''} · v{r.version}{r.archived ? ' · archived' : ''}
+                          {r.items.length} activities · {minutesLabel(estimateSec(items))}{locked ? ` · ${locked} locked` : ''} · v{r.version}{r.archived ? ' · archived' : ''}
                         </Text>
                       </View>
                       <Feather name="edit-3" size={18} color={c.mutedForeground} />

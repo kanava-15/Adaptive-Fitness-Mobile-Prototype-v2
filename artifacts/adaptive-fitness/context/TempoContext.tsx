@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
+import { useCatalog } from './CatalogContext';
 import {
   ActiveV2,
   ActualSet,
@@ -38,6 +39,14 @@ import {
   snapshotFromGenerated,
   snapshotFromRoutine,
   startActive,
+  dosageFree,
+  knowledgeOf,
+  useCatalogRelease,
+  RoutineItem,
+  snapItem,
+  actualErrors,
+  activityDef,
+  userAuthoredDefinition,
 } from '@/lib/domain';
 import { AdjustKind, PlanDay, Profile, Region, adjustDay, dateKey, newId } from '@/lib/engine';
 
@@ -46,7 +55,7 @@ export type { ImportCheck };
 export type TempoState = StateV2;
 export type ActiveSession = ActiveV2;
 
-const KEY = 'tempo:v2';
+const KEY = 'tempo:v3';
 const LEGACY_KEY = 'tempo:v1';
 
 const pause = (c: ActiveV2['clock']) => ({ accMs: clockMs(c), since: null });
@@ -83,11 +92,11 @@ interface Ctx {
   // execution
   startSession: () => void;
   startSnapshot: (args: { date: string; occurrenceKey: string | null; snapshot: Snapshot; items: SnapItem[]; plannedMinutes?: number; adaptation?: string[] }) => string[];
-  addExerciseToActive: (exerciseId: string) => void;
+  addExerciseToActive: (exerciseId: string, target?: RoutineItem) => void;
   toggleClock: () => void;
   toggleExClock: () => void;
   resetExClock: () => void;
-  logSet: (set: ActualSet) => void;
+  logSet: (set: ActualSet) => string[];
   undoSet: () => void;
   markDone: () => void;
   skipExercise: () => void;
@@ -104,6 +113,8 @@ interface Ctx {
 const TempoCtx = createContext<Ctx | null>(null);
 
 export function TempoProvider({ children }: { children: React.ReactNode }) {
+  const catalog = useCatalog();
+  useCatalogRelease(catalog.state.release);
   const [state, setState] = useState<StateV2>(emptyState);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -117,7 +128,8 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       let s: StateV2 | null = null;
       try {
-        const [v2, v1] = await Promise.all([AsyncStorage.getItem(KEY), AsyncStorage.getItem(LEGACY_KEY)]);
+        const [v3, v2old, v1] = await Promise.all([AsyncStorage.getItem(KEY), AsyncStorage.getItem('tempo:v2'), AsyncStorage.getItem(LEGACY_KEY)]);
+        const v2 = v3 ?? v2old;
         const r = loadStored(v2, v1);
         s = r.state;
         if (r.error) {
@@ -194,12 +206,12 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     setState((s) => {
       const prev = s.customExercises.find((x) => x.id === e.id);
       const now = new Date().toISOString();
-      const next: ExerciseDef = { ...e, custom: true, verified: false, version: prev ? prev.version + 1 : 1, createdAt: prev?.createdAt ?? now, updatedAt: now };
-      return { ...s, customExercises: prev ? s.customExercises.map((x) => (x.id === e.id ? next : x)) : [...s.customExercises, next] };
+      const next = userAuthoredDefinition(e, prev, now);
+      return { ...s, presets: { ...s.presets, [e.id]: { defaultReps: e.defaultReps, defaultSeconds: e.defaultSeconds } }, customExercises: prev ? s.customExercises.map((x) => (x.id === e.id ? next : x)) : [...s.customExercises, next] };
     });
   }, []);
   const setExerciseArchived = useCallback((id: string, archived: boolean) => {
-    setState((s) => ({ ...s, customExercises: s.customExercises.map((x) => (x.id === id ? { ...x, archived, updatedAt: new Date().toISOString() } : x)) }));
+    setState((s) => ({ ...s, customExercises: s.customExercises.map((x) => (x.id === id ? { ...x, archived, activity: x.activity ? { ...x.activity, archived } : undefined, updatedAt: new Date().toISOString() } : x)) }));
   }, []);
 
   // ---- routines
@@ -207,7 +219,10 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     const s = stateRef.current;
     const prev = s.routines.find((x) => x.id === r.id);
     const now = new Date().toISOString();
-    const next: Routine = { ...r, version: prev ? prev.version + 1 : 1, createdAt: prev?.createdAt ?? now, updatedAt: now };
+    const next: Routine = { ...r, items: r.items.map(it => {
+      const d = it.definition ?? findExercise(s.customExercises, it.exerciseId);
+      return d ? { ...it, definition: dosageFree(d) } : it;
+    }), version: prev ? prev.version + 1 : 1, createdAt: prev?.createdAt ?? now, updatedAt: now };
     setState((p) => ({ ...p, routines: prev ? p.routines.map((x) => (x.id === r.id ? next : x)) : [...p.routines, next] }));
     return next;
   }, []);
@@ -268,16 +283,24 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     setState((s) => (s.active ? s : { ...s, active: startActive(args) }));
     return [];
   }, []);
-  const addExerciseToActive = useCallback((exerciseId: string) => {
-    const d = findExercise(stateRef.current.customExercises, exerciseId);
-    if (!d) return;
-    updateActive((a) => addToActive(a, d));
+  const addExerciseToActive = useCallback((exerciseId: string, target?: RoutineItem) => {
+    const d = target?.definition ?? findExercise(stateRef.current.customExercises, exerciseId);
+    if (!d || !target) return;
+    if (snapshotErrors([snapItem(target, d)]).length) return;
+    updateActive((a) => addToActive(a, d, target));
   }, []);
 
   const toggleClock = useCallback(() => updateActive((a) => (a.clock.since ? { ...a, clock: pause(a.clock), exClock: pause(a.exClock) } : { ...a, clock: resume(a.clock) })), []);
   const toggleExClock = useCallback(() => updateActive((a) => (a.exClock.since ? { ...a, exClock: pause(a.exClock) } : { ...a, exClock: resume(a.exClock), clock: resume(a.clock) })), []);
   const resetExClock = useCallback(() => updateActive((a) => ({ ...a, exClock: { accMs: 0, since: null } })), []);
-  const logSet = useCallback((set: ActualSet) => updateActive((a) => logSetOn(a, set)), []);
+  const logSet = useCallback((set: ActualSet) => {
+    const active = stateRef.current.active;
+    if (!active) return ['There is no session running.'];
+    const errors = actualErrors(set, active.items[active.index]);
+    if (errors.length) return errors;
+    updateActive(a => logSetOn(a, set));
+    return [];
+  }, []);
   const undoSet = useCallback(() => updateActive((a) => ({ ...a, logs: a.logs.map((l, i) => (i === a.index ? { ...l, sets: l.sets.slice(0, -1), done: false } : l)) })), []);
   const markDone = useCallback(() => {
     updateActive((a) => {

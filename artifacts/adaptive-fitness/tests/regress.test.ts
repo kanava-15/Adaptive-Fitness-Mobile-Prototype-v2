@@ -25,9 +25,9 @@ test('explicit zero load retains its unit and overrides older weighted sets afte
 });
 
 test('tracking change reps->time blocks scheduling/start until reconciled', () => {
-  const base = D.allExercises([]).find((e) => e.tracking === 'reps' && !e.loadable)!;
+  const base = D.BUILTIN.find((e) => e.tracking === 'reps' && !e.loadable)!;
   const custom = { ...base, id: 'cx-1', custom: true, verified: false, archived: false, version: 1 } as D.ExerciseDef;
-  const routine = { items: [D.makeItem(custom)] };
+  const routine = { items: [{ ...D.makeItem(custom), definition: undefined }] }; // pre-migration legacy target
   const edited: D.ExerciseDef = { ...custom, tracking: 'time', defaultReps: undefined, defaultSeconds: 40, version: 2 };
   assert.equal(D.routineMismatches(routine, [edited]).length, 1);
   const errs = D.snapshotErrors(routine.items.map((it) => D.snapItem(it, edited)));

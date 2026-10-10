@@ -2,3 +2,4 @@
 - [Incremental delivery](incremental-delivery.md) — User requested phase-wise improvements; keep existing local records and app usable between phases.
 - [Catalog content evidence](catalog-content-evidence.md) — Exclude mismatched CARs reference sections and keep Ashtanga naming lineage-qualified.
 - [TypeScript dependency cache](typescript-cache.md) — After pnpm relinking, compare a fresh check before changing UI to address stale React declaration errors.
+- [Personal workout integrity](personal-workout-integrity.md) — Pin personal knowledge, retain both legacy defaults, and preserve established device-authored identifiers.

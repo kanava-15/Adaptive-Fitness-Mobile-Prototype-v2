@@ -2,7 +2,8 @@
 // Same inputs always produce the same plan.
 
 export type Region = 'knees' | 'wrists' | 'shoulders' | 'lowerBack' | 'ankles';
-export type Equipment = 'none' | 'band' | 'dumbbells';
+import { equipmentSchema, type Activity } from '@workspace/activity-catalog';
+export type Equipment = NonNullable<Activity['equipment']>[number];
 export type Goal = 'consistency' | 'strength' | 'mobility' | 'energy';
 export type Category = 'warm' | 'lower' | 'upper' | 'core' | 'mobility';
 export type Minutes = 10 | 20 | 30;
@@ -12,13 +13,12 @@ export interface Exercise {
   name: string;
   category: Category;
   kind: 'reps' | 'time';
-  reps?: number;
-  seconds?: number;
   perSide?: boolean;
   intensity: 1 | 2;
   equipment: Equipment;
   stresses: Region[];
   cues: string[];
+  suitability: { eligible: boolean; loadingKnown: boolean };
 }
 
 export const REGION_LABEL: Record<Region, string> = {
@@ -34,14 +34,11 @@ export const GOAL_LABEL: Record<Goal, string> = {
   mobility: 'Move with less stiffness',
   energy: 'Feel more awake',
 };
-export const EQUIP_LABEL: Record<Equipment, string> = {
-  none: 'Bodyweight',
-  band: 'Resistance band',
-  dumbbells: 'Dumbbells',
-};
+export const EQUIP_LABEL = Object.fromEntries(equipmentSchema.options.map(e => [e, e === 'none' ? 'Bodyweight' : e.replaceAll('-', ' ')])) as Record<Equipment, string>;
 export const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export const LIBRARY: Exercise[] = [
+// Construction seed: personal starter dosage is extracted before publishing knowledge.
+const STARTER_SEED: (Omit<Exercise, 'suitability'> & { reps?: number; seconds?: number })[] = [
   { id: 'march', name: 'March in place', category: 'warm', kind: 'time', seconds: 45, intensity: 1, equipment: 'none', stresses: [], cues: ['Stand tall, lift knees to a comfortable height.', 'Swing arms loosely.', 'Breathe through your nose if you can.'] },
   { id: 'arm-circles', name: 'Arm circles & reach', category: 'warm', kind: 'time', seconds: 40, intensity: 1, equipment: 'none', stresses: [], cues: ['Small circles forward, then back.', 'Finish with a slow overhead reach.', 'Keep shoulders relaxed, away from ears.'] },
   { id: 'step-jacks', name: 'Step jacks', category: 'warm', kind: 'time', seconds: 40, intensity: 2, equipment: 'none', stresses: ['knees', 'ankles'], cues: ['Step one foot out as arms rise.', 'Return and switch sides.', 'No jumping needed.'] },
@@ -65,6 +62,8 @@ export const LIBRARY: Exercise[] = [
   { id: 'hip-flexor', name: 'Standing hip flexor stretch', category: 'mobility', kind: 'time', seconds: 30, perSide: true, intensity: 1, equipment: 'none', stresses: [], cues: ['Step one foot back, hold a wall.', 'Tuck pelvis gently until you feel the front hip.', 'No bouncing.'] },
 ];
 
+export const STARTER_PRESETS = Object.fromEntries(STARTER_SEED.map(e => [e.id, { reps: e.reps, seconds: e.seconds }]));
+export const LIBRARY: Exercise[] = STARTER_SEED.map(({ reps: _r, seconds: _s, ...e }) => ({ ...e, suitability: { eligible: true, loadingKnown: true } }));
 export const exerciseById = (id: string): Exercise | undefined => LIBRARY.find((e) => e.id === id);
 
 export interface Profile {
@@ -223,6 +222,7 @@ export function readiness(history: HistoryLike[], date: string): Readiness {
 
 export function eligible(profile: Profile, opts: SessionOptions): Exercise[] {
   return LIBRARY.filter((e) => {
+    if (!e.suitability.eligible || !e.suitability.loadingKnown) return false;
     if (e.stresses.some((r) => profile.exclusions.includes(r))) return false;
     if (opts.noEquipment && e.equipment !== 'none') return false;
     if (!opts.noEquipment && e.equipment !== 'none' && !profile.equipment.includes(e.equipment)) return false;
@@ -256,14 +256,15 @@ export function buildSession(profile: Profile, date: string, opts: SessionOption
   const factor = Math.min(1, r.factor) * (opts.lowEnergy ? 0.75 : 1);
   const baseSets = opts.minutes === 10 ? 2 : opts.minutes === 20 ? 2 : 3;
   const exercises: PlannedExercise[] = picks.map((e) => {
+    const preset = STARTER_PRESETS[e.id];
     const sets = e.category === 'warm' || e.category === 'mobility' ? 1 : Math.max(1, Math.round(baseSets * (factor < 0.8 ? 0.7 : 1)));
     return {
       exerciseId: e.id,
       name: e.name,
       kind: e.kind,
       sets,
-      reps: e.reps ? Math.max(4, Math.round(e.reps * factor)) : undefined,
-      seconds: e.seconds ? Math.max(15, Math.round((e.seconds * factor) / 5) * 5) : undefined,
+      reps: preset.reps ? Math.max(4, Math.round(preset.reps * factor)) : undefined,
+      seconds: preset.seconds ? Math.max(15, Math.round((preset.seconds * factor) / 5) * 5) : undefined,
       perSide: e.perSide,
       restSec: opts.lowEnergy ? 45 : 30,
     };
