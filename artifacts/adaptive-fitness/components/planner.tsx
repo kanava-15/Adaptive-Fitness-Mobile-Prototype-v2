@@ -21,6 +21,7 @@ import {
   searchLibrary,
 } from '@/lib/domain';
 import { DAY_SHORT, addDays, dateKey, parseKey, weekday } from '@/lib/engine';
+import { numericValue } from '@/lib/numeric-input';
 
 // ---------------------------------------------------------------- segmented control
 export function Segmented<T extends string>({ options, value, onChange, testID }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void; testID?: string }) {
@@ -52,17 +53,10 @@ export function NumField({ label, value, onChange, step = 1, min = 0, max = 9999
   const c = useColors();
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? (value == null ? '' : String(value));
-  const commit = (txt: string) => {
-    setDraft(null);
-    const t = txt.replace(',', '.').trim();
-    if (!t) return onChange(optional ? undefined : min);
-    const n = decimals ? Math.round(Number(t) * 100) / 100 : Math.round(Number(t));
-    if (Number.isNaN(n)) return;
-    onChange(Math.max(min, Math.min(max, n)));
-  };
   const bump = (d: number) => {
-    const base = value ?? 0;
+    const base = draft == null ? value ?? 0 : numericValue(draft, { min, max, optional, decimals }) ?? 0;
     const n = Math.max(min, Math.min(max, Math.round((base + d) * 100) / 100));
+    setDraft(null);
     onChange(n);
   };
   return (
@@ -75,9 +69,16 @@ export function NumField({ label, value, onChange, step = 1, min = 0, max = 9999
         <TextInput
           testID={testID}
           value={shown}
-          onChangeText={setDraft}
-          onBlur={() => draft != null && commit(draft)}
-          onSubmitEditing={() => draft != null && commit(draft)}
+          onChangeText={(text) => {
+            const normalized = text.replace(',', '.') === '.' ? '0.' : text.replace(',', '.');
+            if (!(decimals ? /^\d*(?:\.\d{0,2})?$/ : /^\d*$/).test(normalized)) return;
+            const next = numericValue(normalized, { min, max, optional, decimals });
+            setDraft(normalized);
+            onChange(next);
+          }}
+          // Already committed on edit; blur must not overwrite a subsequent step.
+          onBlur={() => setDraft(null)}
+          onSubmitEditing={() => setDraft(null)}
           keyboardType={decimals ? 'decimal-pad' : 'number-pad'}
           placeholder={optional ? '—' : '0'}
           placeholderTextColor={c.mutedForeground}

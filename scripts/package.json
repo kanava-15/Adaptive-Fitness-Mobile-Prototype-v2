@@ -4,11 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "catalog": "tsx ./src/catalog-release.ts",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:"
+  },
+  "dependencies": {
+    "@workspace/activity-catalog": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "drizzle-orm": "catalog:"
   }
 }

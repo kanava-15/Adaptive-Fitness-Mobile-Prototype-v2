@@ -1,0 +1,10 @@
+{
+  "name": "@workspace/activity-catalog",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "zod": "catalog:" },
+  "devDependencies": { "tsx": "catalog:", "@types/node": "catalog:" },
+  "scripts": { "test": "tsx --test tests/*.test.ts" }
+}

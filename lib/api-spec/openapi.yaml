@@ -11,6 +11,107 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /catalog/manifest:
+    get:
+      operationId: getCatalogManifest
+      tags: [catalog]
+      summary: Active immutable shared catalog release
+      responses:
+        "200":
+          description: Release metadata; no personal data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogManifest"
+        "503":
+          description: No reviewed release is available
+  /catalog/releases/{version}:
+    get:
+      operationId: getCatalogRelease
+      tags: [catalog]
+      summary: Complete release pinned to an immutable content version
+      parameters:
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9][a-z0-9-]{0,95}$"
+      responses:
+        "200":
+          description: Shared release; validate structured definitions using activity-catalog
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogSnapshot"
+        "400":
+          description: Invalid version
+        "404":
+          description: Released version not found
+  /catalog/activities:
+    get:
+      operationId: searchCatalogActivities
+      tags: [catalog]
+      summary: Bounded normal text search of a released catalog
+      parameters:
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9][a-z0-9-]{0,95}$"
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 120
+        - name: discipline
+          in: query
+          schema:
+            type: string
+            enum: [strength, yoga, mobility, conditioning]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [exercise, asana, mobility-drill, conditioning-activity, sequence]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000
+            default: 0
+      responses:
+        "200":
+          description: Ordered activity page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, activities, limit, offset]
+                properties:
+                  version:
+                    type: string
+                  activities:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CatalogDefinition"
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        "400":
+          description: Unsupported or invalid query parameter
+        "404":
+          description: Released version not found
   /healthz:
     get:
       operationId: healthCheck
@@ -26,6 +127,195 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    CatalogManifest:
+      type: object
+      required: [schemaVersion, contentVersion, checksum, publishedAt, count]
+      properties:
+        schemaVersion:
+          type: integer
+        contentVersion:
+          type: string
+        checksum:
+          type: string
+          description: SHA-256 of canonical release JSON
+        publishedAt:
+          type: string
+        count:
+          type: integer
+    CatalogDefinition:
+      type: object
+      description: Activity knowledge only; no dosage fields. Null metadata means unknown; empty arrays mean not applicable.
+      additionalProperties: false
+      required: [id, version, name, englishName, sanskritName, aliases, type, discipline, family, supportedMetrics, distanceUnits, loadUnits, laterality, equipment, difficulty, primaryMuscles, secondaryMuscles, joints, actions, movementPatterns, description, setup, execution, cues, commonMistakes, benefits, precautions, modifications, instructionNeeded, seriesContext, mobility, adaptation, sourceIds, authorship, reviewStatus, archived]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9-]{0,95}$"
+        version:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        englishName: {type: [string, "null"]}
+        sanskritName: {type: [string, "null"]}
+        aliases: {type: array, items: {type: string}}
+        type:
+          type: string
+          enum: [exercise, asana, mobility-drill, conditioning-activity, sequence]
+        discipline:
+          type: string
+          enum: [strength, yoga, mobility, conditioning]
+        family: {type: string, enum: [general, ashtanga-vinyasa, cars]}
+        supportedMetrics:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum: [reps, duration, breaths, distance]
+        distanceUnits: {type: array, items: {type: string, enum: [m, km, mi, yd]}}
+        loadUnits: {type: array, items: {type: string, enum: [kg, lb]}}
+        laterality: {type: string, enum: [bilateral, unilateral, alternating, not-applicable, unknown]}
+        equipment:
+          type: [array, "null"]
+          items:
+            type: string
+            enum: [none, mat, block, strap, wall, chair, band, dumbbells, kettlebell, barbell, plates, rack, bench, machine, cable, pull-up-bar, rings, suspension-trainer, stability-ball, medicine-ball, foam-roller, step, box, jump-rope, treadmill, bike, rower, elliptical, sled, pool]
+        difficulty: {type: string, enum: [beginner, intermediate, advanced, unknown]}
+        primaryMuscles: {type: [array, "null"], items: {$ref: "#/components/schemas/CatalogMuscle"}}
+        secondaryMuscles: {type: [array, "null"], items: {$ref: "#/components/schemas/CatalogMuscle"}}
+        joints: {type: [array, "null"], items: {$ref: "#/components/schemas/CatalogJoint"}}
+        actions:
+          type: [array, "null"]
+          items:
+            type: string
+            enum: [flexion, extension, abduction, adduction, internal-rotation, external-rotation, circumduction, pronation, supination, dorsiflexion, plantarflexion, inversion, eversion, protraction, retraction, elevation, depression, lateral-flexion, rotation]
+        movementPatterns:
+          type: [array, "null"]
+          items: {type: string, enum: [squat, hinge, lunge, push, pull, carry, rotation, locomotion, balance, hold, joint-isolation]}
+        description: {type: string}
+        setup: {type: array, items: {type: string}}
+        execution: {type: array, items: {type: string}}
+        cues: {type: array, items: {type: string}}
+        commonMistakes: {type: [array, "null"], items: {type: string}}
+        benefits:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [text, sourceIds, qualification]
+            properties:
+              text: {type: string}
+              sourceIds: {type: array, minItems: 1, items: {type: string}}
+              qualification: {type: string}
+        precautions: {type: array, items: {type: string}}
+        modifications: {type: array, items: {type: string}}
+        instructionNeeded: {type: boolean}
+        seriesContext:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [label, lineage, sourceId]
+            properties:
+              label: {type: string}
+              lineage: {type: string}
+              sourceId: {type: string}
+        mobility:
+          type: [object, "null"]
+          additionalProperties: false
+          required: [position, stabilization, compensationCues, comfortableRange, intensityCaution, regressions]
+          properties:
+            position: {type: string}
+            stabilization: {type: string}
+            compensationCues: {type: array, items: {type: string}}
+            comfortableRange: {type: string}
+            intensityCaution: {type: string}
+            regressions: {type: array, items: {type: string}}
+        adaptation:
+          type: object
+          additionalProperties: false
+          required: [eligible, loadingKnown, loadedJoints, rationale]
+          properties:
+            eligible: {type: boolean}
+            loadingKnown: {type: boolean}
+            loadedJoints: {type: array, items: {$ref: "#/components/schemas/CatalogJoint"}}
+            rationale: {type: string}
+        sourceIds: {type: array, items: {type: string}}
+        authorship: {type: string, enum: [maintainer, user]}
+        reviewStatus: {$ref: "#/components/schemas/CatalogReviewStatus"}
+        archived: {type: boolean}
+    CatalogMuscle:
+      type: string
+      enum: [quadriceps, hamstrings, glutes, calves, tibialis, adductors, abductors, abdominals, obliques, spinal-erectors, lats, trapezius, rhomboids, pectorals, deltoids, rotator-cuff, biceps, triceps, forearms, neck, feet]
+    CatalogJoint:
+      type: string
+      enum: [cervical-spine, thoracic-spine, lumbar-spine, scapula, shoulder, elbow, forearm, wrist, fingers, hip, knee, ankle, toes]
+    CatalogReviewStatus:
+      type: string
+      enum: [unreviewed, source-checked, expert-reviewed]
+    CatalogSource:
+      type: object
+      additionalProperties: false
+      required: [id, url, title, provenance, retrievedOn, reviewedOn, permittedUse, reviewStatus]
+      properties:
+        id: {type: string}
+        url: {type: string, format: uri}
+        title: {type: string}
+        provenance: {type: string}
+        retrievedOn: {type: [string, "null"]}
+        reviewedOn: {type: [string, "null"]}
+        permittedUse: {type: string}
+        reviewStatus: {$ref: "#/components/schemas/CatalogReviewStatus"}
+    CatalogRelationship:
+      type: object
+      additionalProperties: false
+      required: [from, to, type]
+      properties:
+        from: {type: string}
+        to: {type: string}
+        type: {type: string, enum: [variation-of, regression-of, related-to]}
+    CatalogMembership:
+      type: object
+      additionalProperties: false
+      required: [sequenceId, activityId, order, side]
+      properties:
+        sequenceId: {type: string}
+        activityId: {type: string}
+        order: {type: integer, minimum: 0}
+        side: {type: string, enum: [left, right, both, unspecified]}
+    CatalogSnapshot:
+      type: object
+      required: [schemaVersion, contentVersion, status, publishedAt, reviewStatus, activities, sources, relationships, sequences]
+      properties:
+        schemaVersion:
+          type: integer
+          enum: [1]
+        contentVersion:
+          type: string
+        status:
+          type: string
+          enum: [released]
+        publishedAt:
+          type: string
+        reviewStatus:
+          $ref: "#/components/schemas/CatalogReviewStatus"
+        activities:
+          type: array
+          maxItems: 10000
+          items:
+            $ref: "#/components/schemas/CatalogDefinition"
+        sources:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogSource"
+        relationships:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogRelationship"
+        sequences:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogMembership"
     HealthStatus:
       type: object
       properties:

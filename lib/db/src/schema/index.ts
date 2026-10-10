@@ -17,4 +17,9 @@
 //   export type InsertPost = z.infer<typeof insertPostSchema>;
 //   export type Post = typeof postsTable.$inferSelect;
 
-export {}
+export * from './catalog-releases';
+export * from './catalog-activities';
+export * from './catalog-sources';
+export * from './catalog-aliases';
+export * from './catalog-relationships';
+export * from './catalog-memberships';

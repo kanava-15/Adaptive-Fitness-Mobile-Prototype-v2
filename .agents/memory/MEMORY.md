@@ -1,1 +1,2 @@
 - [Product direction](product-direction.md) — Busy professionals; action-first adaptation, local ownership, and a narrowly scoped fitness prototype.
+- [Incremental delivery](incremental-delivery.md) — User requested phase-wise improvements; keep existing local records and app usable between phases.

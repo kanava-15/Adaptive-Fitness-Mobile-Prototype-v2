@@ -407,7 +407,7 @@ export function nextLoad(item: Pick<SnapItem, 'load' | 'unit'>, sets: ActualSet[
 export function buildSet(item: Pick<SnapItem, 'tracking' | 'loadable' | 'load' | 'unit'>, amount: number, loadState: { load: number; unit: Unit }): ActualSet {
   const base: ActualSet = item.tracking === 'reps' ? { reps: amount } : { seconds: amount };
   const showLoad = item.loadable || item.load != null;
-  return showLoad && loadState.load > 0 ? { ...base, load: loadState.load, unit: loadState.unit } : base;
+  return showLoad ? { ...base, load: loadState.load, unit: loadState.unit } : base;
 }
 
 // ---------------------------------------------------------------- items & snapshots

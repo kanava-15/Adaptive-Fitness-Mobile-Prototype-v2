@@ -1,6 +1,28 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as D from '../lib/domain';
+import { numericValue } from '../lib/numeric-input';
+
+test('numeric edits are available without blur and stepping uses the edited number', () => {
+  const options = { min: 0, max: 1000, decimals: true };
+  const edited = numericValue('12,5', options);
+  assert.equal(edited, 12.5);
+  assert.equal((edited ?? 0) + 2.5, 15);
+  assert.equal(numericValue('0', options), 0);
+  assert.equal(numericValue('', { ...options, optional: true }), undefined);
+  assert.equal(numericValue('Infinity', options), undefined);
+  assert.equal(numericValue('4', { min: 5, max: 3600 }), 4);
+  assert.equal(numericValue('40', { min: 5, max: 3600 }), 40);
+  assert.equal(numericValue('4000', { min: 5, max: 3600, clamp: true }), 3600);
+});
+
+test('explicit zero load retains its unit and overrides older weighted sets after reload', () => {
+  const item = { tracking: 'reps' as const, loadable: true, load: 10, unit: 'kg' as const };
+  const zero = D.buildSet(item, 8, { load: 0, unit: 'lb' });
+  assert.deepEqual(zero, { reps: 8, load: 0, unit: 'lb' });
+  const saved = JSON.parse(JSON.stringify([{ reps: 8, load: 20, unit: 'kg' }, zero]));
+  assert.deepEqual(D.nextLoad(item, saved), { load: 0, unit: 'lb' });
+});
 
 test('tracking change reps->time blocks scheduling/start until reconciled', () => {
   const base = D.allExercises([]).find((e) => e.tracking === 'reps' && !e.loadable)!;
