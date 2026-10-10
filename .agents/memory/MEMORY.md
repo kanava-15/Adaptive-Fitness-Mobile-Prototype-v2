@@ -1,0 +1,1 @@
+- [Product direction](product-direction.md) — Busy professionals; action-first adaptation, local ownership, and a narrowly scoped fitness prototype.

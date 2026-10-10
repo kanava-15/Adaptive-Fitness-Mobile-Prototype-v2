@@ -1,0 +1,208 @@
+# Tempo — progress and completion plan
+
+**Exported:** 10 October 2026  
+**Assignment:** Structured Fitness Activity Library (task 3)  
+**Status:** In progress. Implementation is substantial, but acceptance verification is not complete. Do not mark the assignment complete from this handoff.
+
+## Executive summary
+
+The narrow library has been extended with a structured, versioned activity catalog, PostgreSQL storage, a read-only public API, offline catalog caching, richer discovery/detail screens, separate prescriptions, and measurement-aware logging. A development catalog release has been published.
+
+The latest completed checks passed: 14 shared-catalog tests, 22 mobile/domain tests, targeted package type checks, and focused API requests. However, the attempted browser test was stopped by platform authorization/budget limits before returning results. A separate screenshot captured a blank white app viewport with no JavaScript exception in the returned logs. Treat browser usability as unresolved—not passed.
+
+No production catalog content was loaded. No personal-data upload, login, vector service, embedding or AI-coaching feature was introduced.
+
+## Implemented work
+
+### 1. Shared activity contract and content
+
+Package: `lib/activity-catalog`.
+
+- Distinct activity types: exercise, asana, mobility drill, conditioning activity and sequence.
+- Identity and knowledge are separate from prescriptions and actual results.
+- Supported metrics and units include reps, seconds, breaths, distance (m/km/ft/mi), load (kg/lb), sets and rest.
+- Rich knowledge fields cover instructions, cues, precautions, modifications, anatomy, movement patterns, laterality, evidence qualification, sources and review status.
+- Unknown information is explicit rather than fabricated.
+- Stable IDs, schema/content versions, aliases, typed relationships and ordered sequence membership.
+- Validation rejects dosage on definitions, invalid units, alias collisions, dangling sequence references, cycles and unsafe automatic-eligibility claims.
+- Deterministic text retrieval output; no embeddings.
+
+**Validated starter coverage:**
+
+| Category | Authored identities |
+|---|---:|
+| Gym/home/bodyweight exercises | 234 |
+| Ashtanga asanas/practice elements | 103 |
+| Joint-mobility drills | 35 |
+| Conditioning activities | 15 |
+| Ordered sequences | 2 |
+| Total | 389 |
+
+Sequences do not fill individual-activity quotas; sides and repeated sequence members do not inflate counts.
+
+Source inventory and limitations: `docs/catalog/source-inventory.md`.
+
+### 2. Database, API and maintainer operations
+
+- Catalog schema in `lib/db/src/schema/catalog.ts`, exported through the existing database package.
+- Normalized releases, channel pointer, identities, aliases, sources, source links, relationships and sequence membership.
+- Search indexes and bounded, validated filters.
+- Public read endpoints:
+  - `GET /api/catalog/release`
+  - `GET /api/catalog/activities`
+- Public writes are rejected. Database credentials remain server-side.
+- Maintainer CLI: `scripts/src/catalog.ts`.
+- Operations include validation, dry-run publication, transactional publication, immutable release checks and pointer rollback.
+- Explicit environment selection and independent target-environment confirmation.
+- No startup DDL or production schema scripts.
+- Development release **1.0.0** published; repeat publication succeeded.
+- Development rollback dry run and apply were exercised against the existing 1.0.0 pointer. This confirms that command path, but is not a demonstrated rollback between two distinct published versions.
+
+Operations documentation: `docs/catalog/maintainer.md`.
+
+### 3. Offline and personal-data boundaries
+
+- Validated starter included in the app.
+- Whole-release cache write/readback before current-pointer commit; previous release retained.
+- Serialized cache installation.
+- Failure/incompatible-release handling keeps last-known-good data or starter.
+- Library shows version, origin, publication date and update failures, plus refresh.
+- Cached releases retain archived references, including after server rollback.
+- Catalog hydration precedes local personal-data validation.
+- Personal custom activities, routines, schedules, active sessions and history remain local.
+
+Key files: `lib/activity-catalog/src/cache.ts`, `artifacts/adaptive-fitness/lib/catalog.ts`, `artifacts/adaptive-fitness/hooks/useCatalog.ts`.
+
+### 4. Migration and measurements
+
+- Local state schema advanced to 3 while retaining the existing storage key.
+- Legacy custom dosage moved into separate presets.
+- Exact old local bytes are backed up before migration persistence; saving is blocked if safe migration/storage fails.
+- Existing scheduled/history snapshots and numeric values are retained.
+- Reps, duration, breath and distance targets are supported through prescription and logging.
+- Alternate supported measurements and named sides survive snapshot editing and import/export.
+- Planned targets and actual results stay separate.
+- Breath counts and distances do not silently become seconds; unknown duration is disclosed.
+- Numeric drafts publish immediately, so immediate save and stepping use the displayed value.
+- Explicit zero load retains its unit and does not restore an older weighted set.
+
+Key files: `artifacts/adaptive-fitness/lib/domain.ts`, `lib/engine.ts`, `context/TempoContext.tsx`, `components/planner.tsx`, `components/targets.tsx`.
+
+### 5. User-facing integration
+
+- Relevant library/planning/session copy now uses Activity rather than Move.
+- Search supports aliases and Sanskrit/English names.
+- Added filters for type, muscles, joints, difficulty and supported measurements; expanded equipment vocabulary also reaches profile/adaptation.
+- Rich detail component displays review/evidence limits, sources, anatomy, instructions and ordered sequence members.
+- Routine, date and mid-session additions include target editing.
+- Sequences expand into ordered constituent targets with repetitions and sides retained.
+- Custom activities support the shared schema and user-authored/unreviewed status, with archival.
+- Basic custom editing is supplemented by a strict structured-JSON editor for the full schema. This is functional implementation, not yet browser-verified usability.
+- Newly authored catalog activities are not automatically recommendation-eligible. Unknown loading is not accepted as safe against exclusions.
+
+Key UI files:
+
+- `components/activity-details.tsx`
+- `components/activity-target-editor.tsx`
+- `app/(tabs)/library.tsx`
+- `app/exercise-edit.tsx`
+- `app/builder.tsx`
+- `app/schedule-add.tsx`
+- `app/session.tsx`
+- `app/occurrence.tsx`
+- `app/(tabs)/progress.tsx`
+
+All paths in this list are under `artifacts/adaptive-fitness`.
+
+## Evidence and content limitations
+
+These limits must remain visible in the final delivery:
+
+1. The 35 mobility entries comprise **3 sourced CARs identities and 32 general-mobility drills**. Additional joint-specific CARs variants were not invented to meet a count.
+2. Broad Ashtanga identity/context is source-backed, including Intermediate and Advanced elements, but advanced entry/exit technique has not been independently verified. Unknown execution/modification fields and instruction-needed flags remain.
+3. Review is AI-assisted editorial/source-identity review, not clinical verification or independent expert technique approval.
+4. Many detailed loading, secondary-muscle and laterality fields remain unknown.
+5. Original wording and factual references are used; no copied charts, licensed programming or competitor media are included.
+6. Legacy generated-session definitions remain for compatibility. They do not contribute to sourced coverage or gain new review status retroactively.
+7. No claim of exhaustive Ashtanga coverage, universal sequencing, Kinstretch affiliation, certification or medical benefit.
+
+## Verification record
+
+### Passed
+
+- Shared catalog: **14 tests**.
+- Mobile/domain: **22 tests**.
+- Targeted TypeScript checks: mobile, shared catalog, API server and scripts.
+- Development release validation and publication dry run.
+- Development publication and idempotent repeat publication.
+- Rollback command dry run/apply to the existing release pointer.
+- Public requests:
+  - Complete release: 200, 389 activities.
+  - Sanskrit-name search: 200, expected result.
+  - Mobility/joint filtering: 200.
+  - Limit above 100: 400.
+  - Invalid equipment: 400.
+  - Invalid release-version syntax: 400.
+  - POST release: 405.
+  - DELETE activity search: 405.
+- API workflow starts and serves requests; Metro builds the app.
+
+Tests cover migration/snapshot preservation, metric/unit round trips, zero load, numeric drafts, sequence validation, content coverage, cache failures/incompatibility, aliases and conservative exclusions.
+
+### Unresolved / not demonstrated
+
+- Full browser journey did **not** finish. The tester was rejected by a temporary authorization/budget limit. Later platform messages say automated testing is available again, but no successful report has been received.
+- Screenshot of the running root route was blank white. Logs only showed normal app startup and a shadow-style deprecation warning. Investigate rendering/hydration/font/splash readiness before claiming a working preview.
+- Native first-offline-launch behavior has unit-level catalog fallback coverage, not a completed device test.
+- Sequence addition across routine, date and active-session screens needs interactive verification.
+- Structured custom editing and its validation need interactive verification.
+- Distinct-version database rollback still needs a controlled test.
+- Earlier workspace-wide type checking reported unrelated Canvas component ref-type errors. Targeted changed-package checks passed; workspace-wide status has not been re-established.
+- Completion validation and completion code review have not run.
+
+The workflow also emits a React Native DevTools missing-libglib warning. Metro still bundles; do not assume this warning explains the blank screen.
+
+## Current plan to finish
+
+1. **Resolve the blank preview.** Inspect app startup, font/splash state, catalog hydration and personal-state readiness. Use current logs and focused checks; do not silently reset local data.
+2. **Finish the focused browser journey.** Continue the existing tester if available rather than starting redundant full passes:
+   - Discover an Ashtanga activity through Sanskrit search and inspect evidence limits.
+   - Add it with 7 breaths; type and immediately save.
+   - Add a dumbbell exercise; type 11 reps, step to 12, save/reopen.
+   - Schedule/start, log actuals separately from targets.
+   - Log 10 lb followed by 0 lb, reload/resume and confirm zero remains.
+   - Inspect history/export.
+   - Check sequence expansion and explicit side targets.
+   - Force a catalog update failure and confirm last-known-good remains usable.
+3. **Close remaining acceptance gaps.** Check custom schema consistency, unsupported imports, every add/edit path, archived references and preservation of chosen activities/locks/exclusions.
+4. **Complete release verification.** Demonstrate rollback between distinct versions in a controlled development-only test, preserving existing release records.
+5. **Run only the checks invalidated by fixes.** Restart affected workflows after a coherent code batch; inspect logs. Do not repeat successful unrelated checks.
+6. **Record final evidence and limitations.** Update maintainer/source documentation if implementation changes. Preserve no-clinical-verification and no-production-content-loading disclosures.
+7. **Complete assignment only when acceptance is satisfied.** Present the app, propose only genuinely out-of-scope follow-ups, and invoke the assigned-task completion callback with task reference 3. Do not use this export as a completion claim.
+
+## Useful commands
+
+Run from the workspace root:
+
+```sh
+pnpm --filter @workspace/activity-catalog test
+pnpm --filter @workspace/adaptive-fitness test
+pnpm --filter @workspace/adaptive-fitness typecheck
+pnpm --filter @workspace/api-server exec tsc --noEmit
+pnpm --filter @workspace/scripts exec tsc --noEmit
+
+pnpm --filter @workspace/scripts exec tsx src/export-catalog.ts
+pnpm --filter @workspace/scripts catalog validate \
+  --environment development \
+  --file ../generated-artifacts/catalog-1.0.0.json
+```
+
+Generated outputs belong under the ignored root `generated-artifacts/` directory.
+Read maintainer documentation before any content publication. Do not target
+production or run production DDL as part of verification.
+
+## Handoff status at export
+
+The user requested this progress/plan export, not further implementation in this turn.
+Task 3 remains incomplete. No successful end-to-end browser result or final
+completion review should be inferred from the passing unit/API checks.
