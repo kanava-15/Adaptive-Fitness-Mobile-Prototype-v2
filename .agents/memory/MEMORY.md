@@ -5,3 +5,4 @@
 - [Personal workout integrity](personal-workout-integrity.md) — Pin personal knowledge, retain both legacy defaults, and preserve established device-authored identifiers.
 - [Expo preview transport](expo-preview-transport.md) — For pre-download failures, compare HTTP/HTTPS and test a secure Expo link; native confirmation remains necessary.
 - [Post-merge timing](post-merge-timing.md) — An up-to-date pnpm install can still exceed 20 seconds; budget for the full setup sequence.
+- [Content interoperability](content-interoperability.md) — First exchange JSON activities, sequences, and routines; live AI access and scheduling imports remain deferred.
