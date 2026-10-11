@@ -78,9 +78,17 @@ export default function LibraryScreen() {
         {tab !== 'home' ? <IconButton testID="library-back" icon="arrow-left" label="Back to Library" onPress={() => router.replace('/library')} /> : null}
         <View style={{ flex: 1 }}>
           <Text style={[s.appBarEyebrow, { color: c.mutedForeground }]}>{tab === 'home' ? 'Tempo' : 'Library'}</Text>
-          <Text accessibilityRole="header" style={[s.appBarTitle, title.length > 12 && s.longAppBarTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
+          <Text accessibilityRole="header" style={[s.appBarTitle, title.length > 12 && s.longAppBarTitle, (tab === 'routines' || tab === 'explore') && s.compactAppBarTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
         </View>
-        <Button compact variant="soft" icon="search" label="Search" testID="library-search" onPress={() => router.push('/catalog-search')} />
+        <Button
+          compact
+          variant="soft"
+          icon={tab === 'home' ? 'compass' : 'search'}
+          label={tab === 'home' ? 'Browse' : 'Search'}
+          accessibilityLabel={tab === 'home' ? 'Browse catalog' : 'Search shared catalog'}
+          testID={tab === 'home' ? 'library-browse-top' : 'library-search'}
+          onPress={() => tab === 'home' ? router.push({ pathname: '/library', params: { tab: 'explore' } }) : router.push('/catalog-search')}
+        />
       </View>
       <KeyboardAwareScrollViewCompat style={{ backgroundColor: c.background }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: bottom }} keyboardShouldPersistTaps="handled" bottomOffset={20}>
       {tab === 'home' ? (
@@ -133,9 +141,11 @@ export default function LibraryScreen() {
           <Text style={[s.hint, { color: c.mutedForeground }]}>Custom activities are stored only on this device, visibly unreviewed, and separate from saved shared entries.</Text>
           <View style={{ gap: 8, marginTop: 12 }}>
             {list.length === 0 ? (
-              <EmptyState icon="search" title="No custom activities match" body={custom.length ? 'Try clearing a filter or search.' : 'Create an activity for a gym machine, a coach’s instruction, or a movement you want to track. It stays on this device.'}>
-                <Button compact variant="soft" icon="plus" label="Create custom activity" onPress={() => router.push('/exercise-edit')} />
-              </EmptyState>
+              <EmptyState
+                icon="search"
+                title={custom.length ? 'No custom activities match' : 'No custom activities yet'}
+                body={custom.length ? 'Try clearing a filter or search.' : 'Create an activity for a gym machine, a coach’s instruction, or a movement you want to track. It stays on this device. Use the plus button above to create your first one.'}
+              />
             ) : (
               list.map((e) => <ExerciseRow testID={`move-${e.id}`} key={e.id} e={e} onPress={() => router.push({ pathname: '/exercise-edit', params: { id: e.id } })} />)
             )}
@@ -151,7 +161,9 @@ export default function LibraryScreen() {
           {routines.length === 0 ? (
             <Card style={{ gap: 8 }}>
               <Text style={[s.rTitle, { color: c.foreground }]}>No {showArchived ? 'archived ' : ''}routines here</Text>
-              <Button testID="routine-first" compact icon="plus" label="New routine" onPress={() => router.push('/builder')} />
+              <Text style={[s.hint, { color: c.mutedForeground, marginTop: 0 }]}>
+                {showArchived ? 'Archived routines will appear here.' : 'Build your first routine with activities and confirmed targets. Use the plus button above to create it.'}
+              </Text>
             </Card>
           ) : (
             routines.map((r) => {
@@ -215,6 +227,7 @@ const s = StyleSheet.create({
   appBarEyebrow: { fontFamily: fonts.bodySemi, fontSize: 11, letterSpacing: 1.2, textTransform: 'uppercase' },
   appBarTitle: { fontFamily: fonts.display, fontSize: 27, lineHeight: 33, letterSpacing: -0.7, flexShrink: 1 },
   longAppBarTitle: { fontSize: 22, lineHeight: 27, letterSpacing: -0.4 },
+  compactAppBarTitle: { fontSize: 20, lineHeight: 25, letterSpacing: -0.3 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 21, letterSpacing: -0.4 },
   hint: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 18, marginTop: 10 },
   rHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },

@@ -1,17 +1,28 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { CatalogBrowser } from '@/components/CatalogBrowser';
-import { Button, Card, notify, success } from '@/components/ui';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Button, Card, IconButton, notify, success } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
+import { useCatalog } from '@/context/CatalogContext';
 import { useColors } from '@/hooks/useColors';
-import { estimateSec, minutesLabel, routineLaunchSnapshot } from '@/lib/domain';
+import { DISCIPLINE_LABEL, estimateSec, minutesLabel, routineLaunchSnapshot, type Discipline } from '@/lib/domain';
+
+const browseDisciplines: { id: Discipline; icon: keyof typeof Feather.glyphMap }[] = [
+  { id: 'strength', icon: 'activity' },
+  { id: 'yoga', icon: 'wind' },
+  { id: 'mobility', icon: 'rotate-cw' },
+  { id: 'conditioning', icon: 'zap' },
+];
 
 export function LibraryDashboard({ openTab }: { openTab: (tab: 'saved' | 'personal' | 'routines' | 'explore') => void }) {
   const c = useColors();
   const { state, todayKey, startSnapshot } = useTempo();
+  const catalog = useCatalog();
+  const { width: viewportWidth } = useWindowDimensions();
+  const activityCardWidth = Math.max(164, Math.min(186, (viewportWidth - 48) / 2));
+  const catalogCount = catalog.state.release.activities.length;
   const routines = state.routines
     .filter((routine) => !routine.archived)
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
@@ -50,7 +61,10 @@ export function LibraryDashboard({ openTab }: { openTab: (tab: 'saved' | 'person
       <View>
         <View style={styles.sectionHead}>
           <Text style={[styles.sectionTitle, { color: c.foreground }]}>Routines</Text>
-          <Button compact variant="ghost" label="View all" icon="arrow-right" testID="library-routines-view-all" onPress={() => openTab('routines')} />
+          <View style={styles.headingActions}>
+            <IconButton icon="plus" label="Create a routine" testID="library-new-routine" onPress={() => router.push('/builder')} />
+            <Button compact variant="ghost" label="View all" icon="arrow-right" testID="library-routines-view-all" onPress={() => openTab('routines')} />
+          </View>
         </View>
         {state.active ? (
           <Card style={styles.resumeCard}>
@@ -62,17 +76,7 @@ export function LibraryDashboard({ openTab }: { openTab: (tab: 'saved' | 'person
           </Card>
         ) : null}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
-          <Card style={[styles.routineCard, styles.newCard]}>
-            <View style={[styles.newIcon, { backgroundColor: c.accent }]}>
-              <Feather name="plus" size={20} color={c.accentForeground} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: c.foreground }]}>New Routine</Text>
-              <Text style={[styles.cardMeta, { color: c.mutedForeground }]}>Build a plan with your own targets.</Text>
-            </View>
-            <Button compact label="Create routine" icon="plus" testID="library-new-routine" onPress={() => router.push('/builder')} />
-          </Card>
-          {routines.map((routine) => (
+          {routines.length ? routines.map((routine) => (
             <RoutineLaunchCard
               key={routine.id}
               routine={routine}
@@ -80,34 +84,77 @@ export function LibraryDashboard({ openTab }: { openTab: (tab: 'saved' | 'person
               custom={state.customExercises}
               onStart={() => startRoutine(routine)}
             />
-          ))}
+          )) : (
+            <View style={[styles.emptyRoutine, { borderColor: c.border }]}>
+              <Text style={[styles.cardTitle, { color: c.foreground }]}>No routines yet</Text>
+              <Text style={[styles.cardMeta, { color: c.mutedForeground }]}>Create a routine to save your first plan. Use the plus button above to get started.</Text>
+            </View>
+          )}
         </ScrollView>
       </View>
 
       <View style={{ gap: 10 }}>
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>My Activities</Text>
-        <View style={styles.inventoryRow}>
-          <InventoryTile
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.carousel}
+          accessibilityLabel="My Activities destinations"
+        >
+          <ActivityDestinationCard
             title="Saved Activities"
             count={state.savedActivities.length}
             icon="bookmark"
             testID="library-saved-destination"
             onPress={() => openTab('saved')}
+            width={activityCardWidth}
           />
-          <InventoryTile
+          <ActivityDestinationCard
             title="Custom Activities"
             count={state.customExercises.filter((exercise) => !exercise.archived).length}
             icon="edit-3"
             testID="library-custom-destination"
             onPress={() => openTab('personal')}
+            width={activityCardWidth}
           />
-        </View>
-        <Button compact variant="soft" icon="plus" label="Create custom activity" testID="library-create-custom" onPress={() => router.push('/exercise-edit')} />
+        </ScrollView>
       </View>
 
       <View style={{ gap: 10 }}>
-        <Text style={[styles.sectionTitle, { color: c.foreground }]}>Discover</Text>
-        <CatalogBrowser />
+        <View style={styles.browseHeading}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={[styles.sectionTitle, { color: c.foreground }]}>Browse by discipline</Text>
+            <Text style={[styles.catalogCount, { color: c.mutedForeground }]}>{catalogCount} catalog entries</Text>
+          </View>
+          <IconButton
+            icon="grid"
+            label={`Browse full catalog, ${catalogCount} entries`}
+            testID="library-catalog-destination"
+            onPress={() => openTab('explore')}
+          />
+        </View>
+        <View style={styles.disciplineGrid}>
+          {browseDisciplines.map(({ id, icon }) => {
+            const count = catalog.state.release.activities.filter(activity => activity.discipline === id).length;
+            return (
+              <Pressable
+                key={id}
+                testID={`library-discipline-${id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Browse ${DISCIPLINE_LABEL[id]}, ${count} catalog entries`}
+                onPress={() => router.push({ pathname: '/catalog-search', params: { discipline: id } })}
+                style={({ pressed }) => [
+                  styles.disciplineCard,
+                  { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.86 : 1 },
+                ]}
+              >
+                <Feather name={icon} size={18} color={c.primary} />
+                <Text style={[styles.disciplineName, { color: c.foreground }]}>{DISCIPLINE_LABEL[id]}</Text>
+                <Text style={[styles.disciplineCount, { color: c.mutedForeground }]}>{count} entries</Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -128,33 +175,35 @@ function RoutineLaunchCard({
   const { snapshot, errors } = routineLaunchSnapshot(routine, custom);
   const estimate = estimateSec(snapshot.items);
   const blocked = errors.length > 0;
-  const activityNames = snapshot.items.map((item) => item.name).join(' · ');
   return (
     <View testID={`library-routine-card-${routine.id}`}>
     <Card style={styles.routineCard}>
-      <View style={{ flex: 1, gap: 7 }}>
+      <View style={{ gap: 5 }}>
         <Text style={[styles.cardTitle, { color: c.foreground }]} numberOfLines={2}>{routine.name}</Text>
         <Text style={[styles.cardMeta, { color: c.mutedForeground }]}>
           {routine.items.length} {routine.items.length === 1 ? 'activity' : 'activities'} · {blocked ? 'Targets need review' : minutesLabel(estimate)}
         </Text>
-        {activityNames ? <Text style={[styles.activityNames, { color: c.foreground }]} numberOfLines={2}>{activityNames}</Text> : null}
         {blocked ? <Text style={[styles.blockedHint, { color: c.destructive }]} numberOfLines={2}>{errors[0]}</Text> : null}
       </View>
-      <View style={{ gap: 8 }}>
+      <View style={styles.routineActions}>
         <Button
           compact
           icon={active ? 'play' : blocked ? 'edit-2' : 'play'}
-          label={active ? 'Resume active session' : blocked ? 'Edit targets' : 'Start now'}
+          label={active ? 'Resume' : blocked ? 'Fix targets' : 'Start'}
           testID={`library-start-${routine.id}`}
+          accessibilityLabel={`${active ? 'Resume active session' : blocked ? 'Fix targets' : 'Start'}: ${routine.name}`}
           onPress={blocked && !active ? () => router.push({ pathname: '/builder', params: { id: routine.id } }) : onStart}
+          style={{ flex: 1 }}
         />
         <Button
           compact
           variant="ghost"
           icon="edit-3"
-          label="Edit routine"
+          label="Edit"
           testID={`library-edit-${routine.id}`}
+          accessibilityLabel={`Edit routine: ${routine.name}`}
           onPress={() => router.push({ pathname: '/builder', params: { id: routine.id } })}
+          style={{ flex: 1 }}
         />
       </View>
     </Card>
@@ -162,40 +211,48 @@ function RoutineLaunchCard({
   );
 }
 
-function InventoryTile({ title, count, icon, testID, onPress }: {
-  title: string; count: number; icon: 'bookmark' | 'edit-3'; testID: string; onPress: () => void;
+function ActivityDestinationCard({ title, count, icon, testID, onPress, width }: {
+  title: string; count: number; icon: 'bookmark' | 'edit-3'; testID: string; onPress: () => void; width: number;
 }) {
   const c = useColors();
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${count}`}
+      accessibilityLabel={`${title}, ${count} ${count === 1 ? 'activity' : 'activities'}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.tile, { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.86 : 1 }]}
+      style={({ pressed }) => [styles.activityCard, { width, backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.86 : 1 }]}
     >
       <Feather name={icon} size={18} color={c.primary} />
-      <Text style={[styles.tileCount, { color: c.foreground }]}>{count}</Text>
-      <Text style={[styles.tileTitle, { color: c.mutedForeground }]} numberOfLines={2}>{title}</Text>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[styles.activityTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
+        <Text style={[styles.activityCount, { color: c.mutedForeground }]}>{count} {count === 1 ? 'activity' : 'activities'}</Text>
+      </View>
+      <Feather name="chevron-right" size={18} color={c.mutedForeground} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 },
+  headingActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  browseHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  catalogCount: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 21, letterSpacing: -0.4 },
-  carousel: { gap: 10, paddingRight: 20, paddingBottom: 2 },
-  routineCard: { width: 270, minHeight: 190, padding: 14, justifyContent: 'space-between', gap: 12 },
-  newCard: { borderStyle: 'dashed' },
-  newIcon: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  carousel: { gap: 8, paddingRight: 20, paddingBottom: 2 },
+  routineCard: { width: 252, minHeight: 132, padding: 12, justifyContent: 'space-between', gap: 10 },
+  emptyRoutine: { width: 252, minHeight: 94, borderRadius: 18, borderWidth: 1, borderStyle: 'dashed', padding: 14, justifyContent: 'center', gap: 4 },
   cardTitle: { fontFamily: fonts.display, fontSize: 18, lineHeight: 23, letterSpacing: -0.25 },
   cardMeta: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 18 },
-  activityNames: { fontFamily: fonts.bodyMedium, fontSize: 13, lineHeight: 18 },
   blockedHint: { fontFamily: fonts.bodyMedium, fontSize: 11.5, lineHeight: 16 },
   resumeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10, padding: 13 },
   resumeText: { flex: 1, gap: 2 },
-  inventoryRow: { flexDirection: 'row', gap: 10 },
-  tile: { flex: 1, minHeight: 90, borderRadius: 18, borderWidth: 1, padding: 14, gap: 4 },
-  tileCount: { fontFamily: fonts.display, fontSize: 25, lineHeight: 30 },
-  tileTitle: { fontFamily: fonts.bodyMedium, fontSize: 12, lineHeight: 16 },
+  routineActions: { flexDirection: 'row', gap: 8 },
+  activityCard: { minHeight: 70, borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  activityTitle: { fontFamily: fonts.bodyMedium, fontSize: 13.5, lineHeight: 18 },
+  activityCount: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
+  disciplineGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  disciplineCard: { width: '48%', minHeight: 82, borderRadius: 16, borderWidth: 1, padding: 12, gap: 4 },
+  disciplineName: { fontFamily: fonts.bodySemi, fontSize: 13.5, lineHeight: 17 },
+  disciplineCount: { fontFamily: fonts.body, fontSize: 11, lineHeight: 15 },
 });

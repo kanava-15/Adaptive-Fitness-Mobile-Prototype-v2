@@ -45,7 +45,7 @@ export function useBottomPad() {
 }
 
 type Variant = 'primary' | 'accent' | 'ghost' | 'soft' | 'danger';
-export function Button({ label, onPress, variant = 'primary', icon, disabled, style, testID, compact }: { label: string; onPress: () => void; variant?: Variant; icon?: keyof typeof Feather.glyphMap; disabled?: boolean; style?: StyleProp<ViewStyle>; testID?: string; compact?: boolean }) {
+export function Button({ label, onPress, variant = 'primary', icon, disabled, style, testID, compact, accessibilityLabel }: { label: string; onPress: () => void; variant?: Variant; icon?: keyof typeof Feather.glyphMap; disabled?: boolean; style?: StyleProp<ViewStyle>; testID?: string; compact?: boolean; accessibilityLabel?: string }) {
   const c = useColors();
   const map: Record<Variant, [string, string, string]> = {
     primary: [c.primary, c.primaryForeground, c.primary],
@@ -59,6 +59,8 @@ export function Button({ label, onPress, variant = 'primary', icon, disabled, st
     <Pressable
       testID={testID}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       onPress={() => {
         tap();
         onPress();
@@ -81,6 +83,7 @@ export function IconButton({ icon, onPress, label, tone = 'default', testID }: {
   return (
     <Pressable
       testID={testID}
+      accessibilityRole="button"
       accessibilityLabel={label}
       hitSlop={6}
       onPress={() => {
