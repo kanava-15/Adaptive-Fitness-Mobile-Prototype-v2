@@ -1,11 +1,11 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Activity } from '@workspace/activity-catalog';
-import { activityTypeSchema } from '@workspace/activity-catalog';
+import { activityTypeSchema, equipmentSchema, jointSchema } from '@workspace/activity-catalog';
 import { ActivityDetails } from '@/components/ActivityDetails';
 import { Button, Card, IconButton } from '@/components/ui';
 import { CatalogFilterSheet } from '@/components/CatalogFilterSheet';
@@ -13,7 +13,7 @@ import { useCatalog } from '@/context/CatalogContext';
 import { useTempo } from '@/context/TempoContext';
 import { fonts } from '@/constants/colors';
 import {
-  AREA_LABEL, ActualSet, CatalogSearchFilters, CompletionV2, DISCIPLINE_LABEL, GEAR_LABEL, emptyCatalogSearchFilters,
+  AREA_LABEL, ActualSet, CatalogSearchFilters, CompletionV2, DISCIPLINE_LABEL, GEAR_LABEL, Gear, emptyCatalogSearchFilters,
   searchCatalog,
 } from '@/lib/domain';
 import { useColors } from '@/hooks/useColors';
@@ -29,21 +29,36 @@ const activeCount = (f: CatalogSearchFilters) =>
 export default function CatalogSearchScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ discipline?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    discipline?: string | string[];
+    equipment?: string | string[];
+    joint?: string | string[];
+    activityId?: string | string[];
+  }>();
   const disciplineParam = Array.isArray(params.discipline) ? params.discipline[0] : params.discipline;
+  const equipmentParam = Array.isArray(params.equipment) ? params.equipment[0] : params.equipment;
+  const jointParam = Array.isArray(params.joint) ? params.joint[0] : params.joint;
+  const activityIdParam = Array.isArray(params.activityId) ? params.activityId[0] : params.activityId;
   const initialFilters = (): CatalogSearchFilters => {
     const next = emptyCatalogSearchFilters();
     if (disciplineParam && ['yoga', 'mobility', 'strength', 'conditioning'].includes(disciplineParam)) {
       next.discipline = [disciplineParam as Activity['discipline']];
     }
+    if (equipmentParam && equipmentSchema.options.includes(equipmentParam as Gear)) {
+      next.equipment = equipmentParam as Gear;
+    }
+    if (jointParam && jointSchema.options.includes(jointParam as NonNullable<Activity['joints']>[number])) {
+      next.joint = jointParam;
+    }
     return next;
   };
   const [filters, setFilters] = useState<CatalogSearchFilters>(initialFilters);
   const [query, setQuery] = useState('');
-  const [browseAll, setBrowseAll] = useState(!!disciplineParam);
+  const [browseAll, setBrowseAll] = useState(!!disciplineParam || !!equipmentParam || !!jointParam);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [showCatalogStatus, setShowCatalogStatus] = useState(false);
   const [selected, setSelected] = useState<Activity | null>(null);
-  const { state: catalogState } = useCatalog();
+  const { repository, state: catalogState } = useCatalog();
   const tempo = useTempo();
   const allActivities = catalogState.release.activities;
   const results = useMemo(() => searchCatalog(allActivities, filters, query), [allActivities, filters, query]);
@@ -53,6 +68,11 @@ export default function CatalogSearchScreen() {
   const clearAllFilters = () => setFilters(emptyCatalogSearchFilters());
   const setFacet = <K extends keyof CatalogSearchFilters>(facet: K, value: CatalogSearchFilters[K]) =>
     setFilters(current => ({ ...current, [facet]: value }));
+  useEffect(() => {
+    if (!activityIdParam) return;
+    const activity = allActivities.find(item => item.id === activityIdParam);
+    if (activity) setSelected(activity);
+  }, [activityIdParam, allActivities]);
 
   const filterChips: { key: keyof CatalogSearchFilters; value: string; label: string }[] = [
     ...filters.discipline.map(value => ({ key: 'discipline' as const, value, label: DISCIPLINE_LABEL[value] })),
@@ -70,7 +90,7 @@ export default function CatalogSearchScreen() {
     <KeyboardAvoidingView style={[styles.screen, { backgroundColor: c.background }]} behavior="padding" keyboardVerticalOffset={0}>
       <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: c.border }]}>
         <View style={styles.searchRow}>
-          <IconButton testID="catalog-search-back" icon="arrow-left" label="Back to Explore" onPress={() => router.back()} />
+          <IconButton testID="catalog-search-back" icon="arrow-left" label="Back to Library" onPress={() => router.back()} />
           <View style={[styles.inputShell, { backgroundColor: c.card, borderColor: c.border }]}>
             <Feather name="search" size={18} color={c.mutedForeground} />
             <TextInput
@@ -124,12 +144,42 @@ export default function CatalogSearchScreen() {
       </View>
 
       <View style={[styles.catalogStatus, { borderBottomColor: c.border }]}>
-        <Feather name={catalogState.origin === 'network' ? 'check-circle' : 'download-cloud'} size={14} color={c.mutedForeground} />
-        <Text style={[styles.statusText, { color: c.mutedForeground }]} numberOfLines={2}>
-          {catalogState.origin === 'bundled' ? 'Offline catalog available' : catalogState.origin === 'cache' ? 'Saved offline catalog' : 'Catalog ready'}
-          {catalogState.error ? ` · ${updateErrorSummary(catalogState.error)}` : ''}
-        </Text>
+        <Pressable
+          testID="catalog-search-status-toggle"
+          accessibilityRole="button"
+          accessibilityState={{ expanded: showCatalogStatus }}
+          accessibilityLabel={`Catalog status${catalogState.error ? ', update check needs attention' : ''}`}
+          onPress={() => setShowCatalogStatus(value => !value)}
+          style={styles.catalogStatusSummary}
+        >
+          <Feather name={catalogState.error ? 'alert-circle' : catalogState.origin === 'network' ? 'check-circle' : 'download-cloud'} size={14} color={catalogState.error ? c.destructive : c.mutedForeground} />
+          <Text style={[styles.statusText, { color: c.mutedForeground }]} numberOfLines={2}>
+            {catalogState.origin === 'bundled' ? 'Offline catalog available' : catalogState.origin === 'cache' ? 'Saved offline catalog' : 'Catalog ready'}
+            {catalogState.checking ? ' · Checking for updates…' : ''}
+            {catalogState.error ? ` · ${updateErrorSummary(catalogState.error)}` : ''}
+          </Text>
+          <Feather name={showCatalogStatus ? 'chevron-up' : 'chevron-down'} size={14} color={c.mutedForeground} />
+        </Pressable>
+        <Button
+          testID="catalog-search-refresh"
+          compact
+          variant="ghost"
+          icon="refresh-cw"
+          label={catalogState.checking ? 'Checking…' : 'Refresh'}
+          disabled={catalogState.checking}
+          onPress={() => void repository.refresh()}
+        />
       </View>
+      {showCatalogStatus ? (
+        <Card style={styles.catalogStatusDetails}>
+          <Text testID="catalog-search-freshness" style={[styles.statusText, { color: c.mutedForeground }]}>
+            {catalogState.release.activities.length} shared activities · {catalogState.release.contentVersion}
+            {' · '}{catalogState.origin === 'bundled' ? 'Bundled offline copy' : catalogState.origin === 'cache' ? 'Saved offline copy' : 'Downloaded copy'}
+            {' · '}{catalogState.checkedAt ? `Checked ${new Date(catalogState.checkedAt).toLocaleString()}` : 'Not checked for updates'}
+          </Text>
+          {catalogState.error ? <Text testID="catalog-search-error" accessibilityRole="alert" style={[styles.statusText, { color: c.destructive }]}>{catalogState.error}</Text> : null}
+        </Card>
+      ) : null}
 
       {showResults ? (
         <>
@@ -325,7 +375,9 @@ const styles = StyleSheet.create({
   activeChips: { gap: 7, paddingTop: 9, paddingBottom: 1, paddingHorizontal: 1 },
   activeChip: { minHeight: 34, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
   activeChipText: { fontFamily: fonts.bodyMedium, fontSize: 12 },
-  catalogStatus: { minHeight: 30, borderBottomWidth: 1, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  catalogStatus: { minHeight: 42, borderBottomWidth: 1, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  catalogStatusSummary: { flex: 1, minWidth: 0, minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 7 },
+  catalogStatusDetails: { marginHorizontal: 20, marginTop: 8, gap: 6, padding: 12 },
   statusText: { flex: 1, fontFamily: fonts.body, fontSize: 11, lineHeight: 15 },
   resultSummary: { minHeight: 42, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summaryText: { fontFamily: fonts.bodyMedium, fontSize: 13 },

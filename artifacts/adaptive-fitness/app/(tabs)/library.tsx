@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
@@ -9,7 +9,6 @@ import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { activityDef, estimateSec, minutesLabel, personalCatalog, resolveSavedActivity, routineLaunchSnapshot, searchLibrary } from '@/lib/domain';
-import { CatalogBrowser } from '@/components/CatalogBrowser';
 import { ActivityDetails } from '@/components/ActivityDetails';
 import { useCatalog } from '@/context/CatalogContext';
 import { LibraryDashboard } from '@/components/LibraryDashboard';
@@ -42,7 +41,7 @@ export default function LibraryScreen() {
     activities: currentSaved ? personalCatalog(custom).activities : [...personalCatalog(custom).activities, selectedSaved.fallback],
     sequences: currentSaved ? personalCatalog(custom).sequences : [...personalCatalog(custom).sequences, ...(selectedSaved.sequenceMembers ?? [])],
   } : personalCatalog(custom);
-  const title = tab === 'home' ? 'Library' : tab === 'explore' ? 'Discover' : tab === 'saved' ? 'Saved Activities' : tab === 'personal' ? 'Custom Activities' : 'Routines';
+  const title = tab === 'home' ? 'Library' : tab === 'explore' ? 'Explore' : tab === 'saved' ? 'Saved Activities' : tab === 'personal' ? 'Custom Activities' : 'Routines';
   const startRoutine = (routine: (typeof routines)[number]) => {
     if (state.active) {
       router.push('/session');
@@ -72,28 +71,30 @@ export default function LibraryScreen() {
     router.push('/session');
   };
 
+  if (tab === 'explore') return <Redirect href="/catalog-search" />;
+
   return (
     <View style={{ flex: 1, backgroundColor: c.background }}>
       <View style={[s.appBar, { paddingTop: top + 8, borderBottomColor: c.border, backgroundColor: c.background }]}>
         {tab !== 'home' ? <IconButton testID="library-back" icon="arrow-left" label="Back to Library" onPress={() => router.replace('/library')} /> : null}
         <View style={{ flex: 1 }}>
           <Text style={[s.appBarEyebrow, { color: c.mutedForeground }]}>{tab === 'home' ? 'Tempo' : 'Library'}</Text>
-          <Text accessibilityRole="header" style={[s.appBarTitle, title.length > 12 && s.longAppBarTitle, (tab === 'routines' || tab === 'explore') && s.compactAppBarTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
+          <Text accessibilityRole="header" style={[s.appBarTitle, title.length > 12 && s.longAppBarTitle, tab === 'routines' && s.compactAppBarTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
         </View>
         <Button
           compact
           variant="soft"
-          icon={tab === 'home' ? 'compass' : 'search'}
-          label={tab === 'home' ? 'Browse' : 'Search'}
-          accessibilityLabel={tab === 'home' ? 'Browse catalog' : 'Search shared catalog'}
-          testID={tab === 'home' ? 'library-browse-top' : 'library-search'}
-          onPress={() => tab === 'home' ? router.push({ pathname: '/library', params: { tab: 'explore' } }) : router.push('/catalog-search')}
+          icon="compass"
+          label="Explore"
+          accessibilityLabel="Explore the full activity catalog"
+          testID="library-explore"
+          onPress={() => router.push('/catalog-search')}
         />
       </View>
       <KeyboardAwareScrollViewCompat style={{ backgroundColor: c.background }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 18, paddingBottom: bottom }} keyboardShouldPersistTaps="handled" bottomOffset={20}>
       {tab === 'home' ? (
         <LibraryDashboard openTab={(nextTab) => router.push({ pathname: '/library', params: { tab: nextTab } })} />
-      ) : tab === 'explore' ? <CatalogBrowser /> : tab === 'saved' ? (
+      ) : tab === 'saved' ? (
         <View style={{ marginTop: 16, gap: 10 }}>
           {selectedSaved && savedActivity ? (
             <Card style={{ gap: 10 }}>

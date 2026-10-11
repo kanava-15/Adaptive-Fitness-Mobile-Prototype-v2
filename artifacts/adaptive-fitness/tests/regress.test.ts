@@ -158,6 +158,18 @@ test('catalog facets use OR within disciplines, AND across facets, and count the
   ), 'choices with no prospective results can be identified from metadata');
 });
 
+test('catalog discovery shelves are backed by explicit equipment and joint metadata', () => {
+  const activities = (starter as { release: CatalogRelease }).release.activities;
+  const noEquipment = D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), equipment: 'none' });
+  const matFriendly = D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), equipment: 'mat' });
+  const hipFocused = D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), joint: 'hip' });
+
+  assert.ok(noEquipment.length > 0 && noEquipment.every(activity => activity.equipment?.includes('none')));
+  assert.ok(matFriendly.length > 0 && matFriendly.every(activity => activity.equipment?.includes('mat')));
+  assert.ok(hipFocused.length > 0 && hipFocused.every(activity => activity.joints?.includes('hip')));
+  assert.ok([...noEquipment, ...matFriendly, ...hipFocused].every(activity => !activity.archived));
+});
+
 test('unknown catalog equipment and difficulty never become no-equipment or beginner matches', () => {
   const source = (starter as { release: CatalogRelease }).release.activities;
   const seed = source.find(activity => activity.id === 'yoga-adho-mukha-svanasana')!;

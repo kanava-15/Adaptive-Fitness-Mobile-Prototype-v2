@@ -5,24 +5,15 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import { Button, Card, IconButton, notify, success } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
-import { useCatalog } from '@/context/CatalogContext';
 import { useColors } from '@/hooks/useColors';
-import { DISCIPLINE_LABEL, estimateSec, minutesLabel, routineLaunchSnapshot, type Discipline } from '@/lib/domain';
+import { estimateSec, minutesLabel, routineLaunchSnapshot } from '@/lib/domain';
+import { CatalogBrowser } from '@/components/CatalogBrowser';
 
-const browseDisciplines: { id: Discipline; icon: keyof typeof Feather.glyphMap }[] = [
-  { id: 'strength', icon: 'activity' },
-  { id: 'yoga', icon: 'wind' },
-  { id: 'mobility', icon: 'rotate-cw' },
-  { id: 'conditioning', icon: 'zap' },
-];
-
-export function LibraryDashboard({ openTab }: { openTab: (tab: 'saved' | 'personal' | 'routines' | 'explore') => void }) {
+export function LibraryDashboard({ openTab }: { openTab: (tab: 'saved' | 'personal' | 'routines') => void }) {
   const c = useColors();
   const { state, todayKey, startSnapshot } = useTempo();
-  const catalog = useCatalog();
   const { width: viewportWidth } = useWindowDimensions();
   const activityCardWidth = Math.max(164, Math.min(186, (viewportWidth - 48) / 2));
-  const catalogCount = catalog.state.release.activities.length;
   const routines = state.routines
     .filter((routine) => !routine.archived)
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
@@ -120,42 +111,7 @@ export function LibraryDashboard({ openTab }: { openTab: (tab: 'saved' | 'person
         </ScrollView>
       </View>
 
-      <View style={{ gap: 10 }}>
-        <View style={styles.browseHeading}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[styles.sectionTitle, { color: c.foreground }]}>Browse by discipline</Text>
-            <Text style={[styles.catalogCount, { color: c.mutedForeground }]}>{catalogCount} catalog entries</Text>
-          </View>
-          <IconButton
-            icon="grid"
-            label={`Browse full catalog, ${catalogCount} entries`}
-            testID="library-catalog-destination"
-            onPress={() => openTab('explore')}
-          />
-        </View>
-        <View style={styles.disciplineGrid}>
-          {browseDisciplines.map(({ id, icon }) => {
-            const count = catalog.state.release.activities.filter(activity => activity.discipline === id).length;
-            return (
-              <Pressable
-                key={id}
-                testID={`library-discipline-${id}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Browse ${DISCIPLINE_LABEL[id]}, ${count} catalog entries`}
-                onPress={() => router.push({ pathname: '/catalog-search', params: { discipline: id } })}
-                style={({ pressed }) => [
-                  styles.disciplineCard,
-                  { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.86 : 1 },
-                ]}
-              >
-                <Feather name={icon} size={18} color={c.primary} />
-                <Text style={[styles.disciplineName, { color: c.foreground }]}>{DISCIPLINE_LABEL[id]}</Text>
-                <Text style={[styles.disciplineCount, { color: c.mutedForeground }]}>{count} entries</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
+      <CatalogBrowser />
     </View>
   );
 }
@@ -236,8 +192,6 @@ function ActivityDestinationCard({ title, count, icon, testID, onPress, width }:
 const styles = StyleSheet.create({
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8 },
   headingActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  browseHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  catalogCount: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 21, letterSpacing: -0.4 },
   carousel: { gap: 8, paddingRight: 20, paddingBottom: 2 },
   routineCard: { width: 252, minHeight: 132, padding: 12, justifyContent: 'space-between', gap: 10 },
@@ -251,8 +205,4 @@ const styles = StyleSheet.create({
   activityCard: { minHeight: 70, borderRadius: 16, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 9 },
   activityTitle: { fontFamily: fonts.bodyMedium, fontSize: 13.5, lineHeight: 18 },
   activityCount: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
-  disciplineGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  disciplineCard: { width: '48%', minHeight: 82, borderRadius: 16, borderWidth: 1, padding: 12, gap: 4 },
-  disciplineName: { fontFamily: fonts.bodySemi, fontSize: 13.5, lineHeight: 17 },
-  disciplineCount: { fontFamily: fonts.body, fontSize: 11, lineHeight: 15 },
 });

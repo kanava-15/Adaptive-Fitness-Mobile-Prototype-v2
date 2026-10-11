@@ -1,23 +1,45 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
-import type { Discipline } from '@/lib/domain';
-import { DISCIPLINE_LABEL } from '@/lib/domain';
+import type { Activity } from '@workspace/activity-catalog';
+import { DISCIPLINE_LABEL, emptyCatalogSearchFilters, searchCatalog, type CatalogSearchFilters, type Discipline } from '@/lib/domain';
 import { useCatalog } from '@/context/CatalogContext';
+import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { fonts } from '@/constants/colors';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, IconButton } from '@/components/ui';
+
+const browseDisciplines: { id: Discipline; icon: keyof typeof Feather.glyphMap }[] = [
+  { id: 'strength', icon: 'activity' },
+  { id: 'yoga', icon: 'wind' },
+  { id: 'mobility', icon: 'rotate-cw' },
+  { id: 'conditioning', icon: 'zap' },
+];
+const shelfDefinitions = [
+  { id: 'no-equipment', title: 'No-equipment activities', facet: 'equipment', value: 'none' },
+  { id: 'mat-friendly', title: 'Mat-friendly activities', facet: 'equipment', value: 'mat' },
+  { id: 'hip-joint', title: 'Hip-focused activities', facet: 'joint', value: 'hip' },
+] as const;
 
 export function CatalogBrowser() {
   const c = useColors();
   const { repository, state } = useCatalog();
+  const tempo = useTempo();
+  const { width } = useWindowDimensions();
   const [showStatus, setShowStatus] = useState(false);
-  const browseDisciplines: Discipline[] = ['strength', 'yoga', 'mobility', 'conditioning'];
-  const openSearch = (discipline?: Discipline) => router.push({
+  const cardWidth = Math.max(168, Math.min(206, width * 0.55));
+  const openSearch = (filters: Record<string, string> = {}) => router.push({
     pathname: '/catalog-search',
-    params: discipline ? { discipline } : {},
+    params: filters,
   });
+  const activities = state.release.activities;
+  const shelves = shelfDefinitions
+    .map(definition => {
+      const filters = { ...emptyCatalogSearchFilters(), [definition.facet]: definition.value } as CatalogSearchFilters;
+      return { ...definition, filters, activities: searchCatalog(activities, filters) };
+    })
+    .filter(shelf => shelf.activities.length > 0);
   const statusSummary = state.checking
     ? 'Checking for updates…'
     : state.origin === 'bundled'
@@ -27,6 +49,13 @@ export function CatalogBrowser() {
         : 'Downloaded copy';
   return (
     <View style={styles.container}>
+      <View style={styles.discoverHeading}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text accessibilityRole="header" style={[styles.discoverTitle, { color: c.foreground }]}>Discover</Text>
+          <Text style={[styles.status, { color: c.mutedForeground }]}>{activities.filter(activity => !activity.archived).length} catalog entries</Text>
+        </View>
+        <IconButton icon="grid" label="Explore full catalog" testID="library-discover-explore" onPress={() => openSearch()} />
+      </View>
       <Pressable
         testID="catalog-status-toggle"
         accessibilityRole="button"
@@ -42,7 +71,7 @@ export function CatalogBrowser() {
       {showStatus ? (
         <Card style={{ gap: 8, padding: 14 }}>
           <Text style={[styles.status, { color: c.mutedForeground }]}>
-            {state.release.activities.length} shared activities · {state.release.contentVersion}
+            {activities.length} shared activities · {state.release.contentVersion}
           </Text>
           <Text testID="catalog-freshness" style={[styles.status, { color: c.mutedForeground }]}>
             {state.origin === 'bundled' ? 'Bundled offline copy' : state.origin === 'cache' ? 'Saved offline copy' : 'Downloaded and validated copy'}
@@ -61,57 +90,116 @@ export function CatalogBrowser() {
         </Card>
       ) : null}
 
-      <Pressable
-        testID="catalog-open-search"
-        accessibilityRole="button"
-        onPress={() => openSearch()}
-        style={({ pressed }) => [styles.searchEntry, { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.88 : 1 }]}
-      >
-        <Feather name="search" size={20} color={c.primary} />
-        <Text style={[styles.searchLabel, { color: c.mutedForeground }]}>Search the shared catalog</Text>
-        <Feather name="arrow-up-right" size={18} color={c.mutedForeground} />
-      </Pressable>
-
       <View style={styles.gridHeader}>
         <Text style={[styles.sectionTitle, { color: c.foreground }]}>Browse by discipline</Text>
-        <Text style={[styles.status, { color: c.mutedForeground }]}>Start with a category</Text>
+        <Text style={[styles.status, { color: c.mutedForeground }]}>Choose a starting point</Text>
       </View>
       <View style={styles.grid}>
-        {browseDisciplines.map((discipline, index) => (
+        {browseDisciplines.map(({ id: discipline, icon }, index) => {
+          const count = activities.filter(activity => !activity.archived && activity.discipline === discipline).length;
+          if (!count) return null;
+          return (
           <Pressable
             key={discipline}
             testID={`catalog-discipline-${discipline}`}
             accessibilityRole="button"
-            accessibilityLabel={`Browse ${DISCIPLINE_LABEL[discipline]}`}
-            onPress={() => openSearch(discipline)}
+            accessibilityLabel={`Browse ${DISCIPLINE_LABEL[discipline]}, ${count} catalog entries`}
+            onPress={() => openSearch({ discipline })}
             style={({ pressed }) => [
               styles.disciplineTile,
               { backgroundColor: index % 2 ? c.secondary : c.accent, borderColor: index % 2 ? c.border : c.accent, opacity: pressed ? 0.85 : 1 },
             ]}
           >
-            <Feather name={icons[discipline]} size={21} color={index % 2 ? c.secondaryForeground : c.accentForeground} />
+            <Feather name={icon} size={21} color={index % 2 ? c.secondaryForeground : c.accentForeground} />
             <Text style={[styles.tileName, { color: index % 2 ? c.secondaryForeground : c.accentForeground }]}>{DISCIPLINE_LABEL[discipline]}</Text>
+            <Text style={[styles.tileCount, { color: index % 2 ? c.secondaryForeground : c.accentForeground }]}>{count} activities</Text>
             <Feather name="arrow-up-right" size={16} color={index % 2 ? c.secondaryForeground : c.accentForeground} />
           </Pressable>
-        ))}
+          );
+        })}
       </View>
+      {shelves.map(shelf => (
+        <View key={shelf.id} style={styles.shelf}>
+          <View style={styles.shelfHeading}>
+            <Text style={[styles.sectionTitle, { color: c.foreground }]}>{shelf.title}</Text>
+            <Button
+              compact
+              variant="ghost"
+              label="View all"
+              icon="arrow-right"
+              testID={`catalog-shelf-view-all-${shelf.id}`}
+              onPress={() => openSearch({ [shelf.facet]: shelf.value })}
+            />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelfCards}>
+            {shelf.activities.slice(0, 10).map(activity => (
+              <ActivityShelfCard
+                key={activity.id}
+                activity={activity}
+                width={cardWidth}
+                saved={tempo.state.savedActivities.some(saved => saved.id === activity.id)}
+                onOpen={() => openSearch({ [shelf.facet]: shelf.value, activityId: activity.id })}
+                onToggleSaved={() => tempo.setActivitySaved(activity.id, !tempo.state.savedActivities.some(saved => saved.id === activity.id))}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      ))}
     </View>
   );
 }
 
-const icons: Record<Discipline, keyof typeof Feather.glyphMap> = {
-  yoga: 'wind', mobility: 'rotate-cw', strength: 'activity', conditioning: 'zap',
-};
+function ActivityShelfCard({ activity, width, saved, onOpen, onToggleSaved }: {
+  activity: Activity; width: number; saved: boolean; onOpen: () => void; onToggleSaved: () => void;
+}) {
+  const c = useColors();
+  return (
+    <Card style={[styles.shelfCard, { width }]}>
+      <Pressable
+        testID={`catalog-shelf-activity-${activity.id}`}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${activity.name}`}
+        onPress={onOpen}
+        style={{ flex: 1, gap: 8 }}
+      >
+        <Feather name={activity.type === 'sequence' ? 'layers' : 'activity'} size={18} color={c.primary} />
+        <Text style={[styles.activityName, { color: c.foreground }]} numberOfLines={2}>{activity.name}</Text>
+        <Text style={[styles.activityMeta, { color: c.mutedForeground }]} numberOfLines={2}>
+          {DISCIPLINE_LABEL[activity.discipline]} · {activity.equipment?.includes('none') ? 'No equipment' : activity.equipment?.join(', ') || 'Equipment unknown'}
+        </Text>
+      </Pressable>
+      <View style={[styles.saveAction, { borderTopColor: c.border }]}>
+        <IconButton
+          icon="bookmark"
+          label={saved ? `Remove ${activity.name} from Saved Activities` : `Save ${activity.name}`}
+          testID={`catalog-shelf-save-${activity.id}`}
+          onPress={onToggleSaved}
+        />
+        <Text style={[styles.saveLabel, { color: saved ? c.primary : c.mutedForeground }]}>{saved ? 'Saved' : 'Save'}</Text>
+      </View>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { marginTop: 16, gap: 14 },
+  container: { gap: 14 },
+  discoverHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  discoverTitle: { fontFamily: fonts.display, fontSize: 21, letterSpacing: -0.4 },
   statusToggle: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, borderWidth: 1, borderRadius: 14 },
   statusToggleText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 12, lineHeight: 16 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 19 },
   status: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17 },
-  searchEntry: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, borderRadius: 17, borderWidth: 1 },
-  searchLabel: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 15 },
   gridHeader: { gap: 2, marginTop: 2 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  disciplineTile: { width: '48%', minHeight: 112, borderRadius: 19, borderWidth: 1, padding: 15, justifyContent: 'space-between' },
+  disciplineTile: { flexGrow: 1, flexBasis: '46%', minHeight: 112, borderRadius: 19, borderWidth: 1, padding: 15, justifyContent: 'space-between' },
   tileName: { fontFamily: fonts.bodySemi, fontSize: 15, lineHeight: 20 },
+  tileCount: { fontFamily: fonts.body, fontSize: 11, lineHeight: 15 },
+  shelf: { gap: 8 },
+  shelfHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  shelfCards: { gap: 9, paddingRight: 20, paddingBottom: 2 },
+  shelfCard: { minHeight: 148, padding: 12, gap: 8 },
+  activityName: { fontFamily: fonts.bodySemi, fontSize: 14, lineHeight: 18 },
+  activityMeta: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
+  saveAction: { borderTopWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 3, marginHorizontal: -2 },
+  saveLabel: { fontFamily: fonts.bodySemi, fontSize: 11 },
 });
