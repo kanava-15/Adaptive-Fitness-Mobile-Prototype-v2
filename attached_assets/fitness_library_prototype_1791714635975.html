@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fitness App - Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #e5e5e5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .app-bg { background-color: #F5F3ED; }
+        .card-bg { background-color: #FCFAf5; }
+        .text-primary { color: #1e293b; }
+        .text-secondary { color: #64748b; }
+        .accent-green { background-color: #244A3D; color: white; }
+        .accent-orange { background-color: #DF5B3A; color: white; }
+        
+        /* Smooth transitions */
+        .fade-enter { opacity: 0; transform: translateY(10px); }
+        .fade-enter-active { opacity: 1; transform: translateY(0); transition: opacity 300ms, transform 300ms; }
+        .slide-up { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .slide-up.active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+<!-- Mobile Device Simulator Container -->
+<div id="app-container" class="relative w-full sm:w-[390px] h-[100vh] sm:h-[844px] app-bg sm:rounded-[2.5rem] sm:border-[12px] border-slate-900 overflow-hidden flex flex-col shadow-2xl">
+    
+    <!-- 1. MAIN LIBRARY DASHBOARD -->
+    <div id="view-library" class="flex-1 overflow-y-auto no-scrollbar pb-24">
+        <!-- Top App Bar -->
+        <div class="sticky top-0 z-10 app-bg bg-opacity-95 backdrop-blur-sm px-5 py-4 flex justify-between items-center">
+            <div>
+                <p class="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-1">Library</p>
+                <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
+            </div>
+            <button onclick="openSearch()" class="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center hover:bg-slate-300 transition-colors">
+                <i class="ph ph-magnifying-glass text-xl text-slate-700"></i>
+            </button>
+        </div>
+
+        <!-- Section 1: Routines -->
+        <section class="mt-4 px-5">
+            <h2 class="text-lg font-semibold text-slate-800 mb-3">Your Routines</h2>
+            <div class="flex overflow-x-auto no-scrollbar -mx-5 px-5 space-x-3 pb-4">
+                
+                <!-- Action Card: New Routine -->
+                <button onclick="showToast('Opening Routine Builder')" class="flex-shrink-0 w-36 h-40 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center text-slate-600 hover:bg-slate-100 transition-colors">
+                    <div class="w-10 h-10 accent-orange rounded-full flex items-center justify-center mb-2 shadow-sm">
+                        <i class="ph ph-plus text-xl text-white"></i>
+                    </div>
+                    <span class="font-medium text-sm">New Routine</span>
+                </button>
+
+                <!-- Saved Routine Card 1 -->
+                <div class="flex-shrink-0 w-48 h-40 card-bg rounded-2xl p-4 flex flex-col shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-start mb-auto">
+                        <div class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Strength</div>
+                        <button><i class="ph ph-dots-three text-xl text-slate-400"></i></button>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg leading-tight mt-2">Upper Body Power</h3>
+                    <p class="text-xs text-slate-500 mt-1">45 min • 6 activities</p>
+                    <button class="mt-3 w-full py-2 bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 flex items-center justify-center gap-2">
+                        <i class="ph-fill ph-play-circle text-lg"></i> Start
+                    </button>
+                </div>
+
+                <!-- Saved Routine Card 2 -->
+                <div class="flex-shrink-0 w-48 h-40 card-bg rounded-2xl p-4 flex flex-col shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-start mb-auto">
+                        <div class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">Mobility</div>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-lg leading-tight mt-2">Morning Flow</h3>
+                    <p class="text-xs text-slate-500 mt-1">15 min • Sequence</p>
+                    <button class="mt-3 w-full py-2 bg-slate-100 rounded-lg text-sm font-semibold text-slate-700 flex items-center justify-center gap-2">
+                        <i class="ph-fill ph-play-circle text-lg"></i> Start
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: My Activities -->
+        <section class="mt-4 px-5">
+            <h2 class="text-lg font-semibold text-slate-800 mb-3">My Activities</h2>
+            <div class="flex gap-3">
+                <button onclick="showToast('Opening Saved Activities')" class="flex-1 card-bg py-3 px-2 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors">
+                    <i class="ph-fill ph-bookmark-simple text-2xl text-emerald-700 mb-1"></i>
+                    <span class="font-bold text-slate-800 text-[13px]">Saved</span>
+                    <span class="text-[10px] text-slate-500">12 items</span>
+                </button>
+                
+                <button onclick="showToast('Opening Custom Activities')" class="flex-1 card-bg py-3 px-2 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center hover:bg-slate-50 transition-colors">
+                    <i class="ph-fill ph-user-list text-2xl text-blue-600 mb-1"></i>
+                    <span class="font-bold text-slate-800 text-[13px]">Custom</span>
+                    <span class="text-[10px] text-slate-500">2 items</span>
+                </button>
+
+                <button onclick="showToast('Opening Custom Builder')" class="flex-1 border-2 border-dashed border-slate-300 py-3 px-2 rounded-2xl flex flex-col items-center justify-center hover:bg-slate-50 transition-colors">
+                    <i class="ph ph-plus text-2xl text-slate-400 mb-1"></i>
+                    <span class="font-bold text-slate-600 text-[13px]">Create</span>
+                    <span class="text-[10px] text-slate-400">New</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Section 3: Discover (Passive Discovery) -->
+        <section class="mt-8 px-5">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">Discover</h2>
+            
+            <!-- Explicit Search Entry -->
+            <button onclick="openSearch()" class="w-full bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex items-center gap-4 mb-6 hover:bg-slate-50 transition-colors text-left group">
+                <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
+                    <i class="ph ph-magnifying-glass text-2xl text-slate-600 group-hover:text-emerald-700"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-slate-800 text-lg">Search the shared catalog</h3>
+                    <p class="text-sm text-slate-500">414 activities available</p>
+                </div>
+                <i class="ph ph-caret-right text-xl text-slate-400"></i>
+            </button>
+
+            <!-- Discipline Grid -->
+            <h3 class="text-md font-semibold text-slate-800 mb-3">Browse by Discipline</h3>
+            <div class="grid grid-cols-2 gap-3 pb-8">
+                <button onclick="openSearch('Strength')" class="h-24 rounded-2xl bg-[#E6EBE9] p-4 flex flex-col justify-end relative overflow-hidden text-left">
+                    <i class="ph-fill ph-barbell text-3xl text-emerald-800 opacity-20 absolute top-2 right-2"></i>
+                    <span class="font-bold text-emerald-900">Strength</span>
+                </button>
+                <button onclick="openSearch('Yoga')" class="h-24 rounded-2xl bg-[#F7EBE8] p-4 flex flex-col justify-end relative overflow-hidden text-left">
+                    <i class="ph-fill ph-flower-lotus text-3xl text-orange-800 opacity-20 absolute top-2 right-2"></i>
+                    <span class="font-bold text-orange-900">Yoga</span>
+                </button>
+                <button onclick="openSearch('Joint mobility')" class="h-24 rounded-2xl bg-[#EAE8F2] p-4 flex flex-col justify-end relative overflow-hidden text-left">
+                    <i class="ph-fill ph-arrows-out text-3xl text-indigo-800 opacity-20 absolute top-2 right-2"></i>
+                    <span class="font-bold text-indigo-900">Joint mobility</span>
+                </button>
+                <button onclick="openSearch('Warmup / Cardio')" class="h-24 rounded-2xl bg-[#FDEFD8] p-4 flex flex-col justify-end relative overflow-hidden text-left">
+                    <i class="ph-fill ph-heartbeat text-3xl text-amber-800 opacity-20 absolute top-2 right-2"></i>
+                    <span class="font-bold text-amber-900">Warmup / Cardio</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- 2. GLOBAL SEARCH MODAL (Full Screen Overlay) -->
+    <div id="view-search" class="absolute inset-0 app-bg z-30 flex flex-col slide-up">
+        
+        <!-- Sticky Header -->
+        <div class="bg-white shadow-sm z-10 pt-4 pb-2 px-4">
+            <div class="flex items-center gap-2">
+                <button onclick="closeSearch()" class="p-2 -ml-2 text-slate-600 hover:text-slate-900">
+                    <i class="ph ph-arrow-left text-2xl"></i>
+                </button>
+                
+                <div class="flex-1 relative flex items-center">
+                    <i class="ph ph-magnifying-glass absolute left-3 text-slate-400 text-lg"></i>
+                    <input type="text" id="searchInput" placeholder="Search activities, aliases..." class="w-full bg-slate-100 rounded-full py-2.5 pl-10 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 text-slate-800" onkeyup="filterResults()">
+                    
+                    <!-- Filter Button inside Search Bar -->
+                    <button onclick="openFilters()" class="absolute right-1 w-8 h-8 rounded-full flex items-center justify-center bg-white shadow-sm border border-slate-200">
+                        <i class="ph ph-faders text-slate-700"></i>
+                        <!-- Active filter badge (hidden by default) -->
+                        <span id="filter-badge" class="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 border-2 border-white rounded-full hidden"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Filters Row -->
+            <div id="active-filters-container" class="flex overflow-x-auto no-scrollbar gap-2 mt-3 pb-1 hidden">
+                <span class="flex items-center gap-1 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full whitespace-nowrap">
+                    Yoga <i class="ph ph-x cursor-pointer" onclick="clearFilters()"></i>
+                </span>
+            </div>
+        </div>
+
+        <!-- Results Body -->
+        <div class="flex-1 overflow-y-auto no-scrollbar p-4" id="search-results">
+            <!-- Initial Empty State -->
+            <div id="search-empty-state" class="text-center mt-12 px-6">
+                <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-magnifying-glass text-2xl text-slate-400"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">Search the Shared Catalog</h3>
+                <p class="text-sm text-slate-500">Try searching for "Downward Dog", "Squat", or browse by applying filters.</p>
+            </div>
+
+            <!-- List populated by JS -->
+            <div id="search-list" class="space-y-3 hidden">
+                <!-- Activity items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. FILTER SYSTEM (Bottom Sheet) -->
+    <div id="filter-overlay" class="absolute inset-0 bg-slate-900 bg-opacity-40 z-40 hidden transition-opacity" onclick="closeFilters()"></div>
+    
+    <div id="filter-sheet" class="absolute bottom-0 left-0 right-0 h-[85%] bg-white rounded-t-3xl z-50 flex flex-col slide-up shadow-[-10px_-10px_30px_rgba(0,0,0,0.1)]">
+        <!-- Handle -->
+        <div class="w-full flex justify-center py-3" onclick="closeFilters()">
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full"></div>
+        </div>
+
+        <!-- Header -->
+        <div class="px-5 pb-3 flex justify-between items-center border-b border-slate-100">
+            <h2 class="text-xl font-bold text-slate-800">Filters</h2>
+            <button onclick="clearFilters()" class="text-sm font-medium text-emerald-700">Clear All</button>
+        </div>
+
+        <!-- Filter Body (Scrollable) -->
+        <div class="flex-1 overflow-y-auto px-5 py-4 no-scrollbar">
+            
+            <!-- Section A: Primary Filters -->
+            <div class="mb-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Discipline</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-chip px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-700 bg-white" onclick="toggleChip(this, 'Yoga')">Yoga</button>
+                    <button class="filter-chip px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-700 bg-white" onclick="toggleChip(this)">Strength</button>
+                    <button class="filter-chip px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-700 bg-white" onclick="toggleChip(this)">Joint mobility</button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Equipment</h3>
+                <div class="flex overflow-x-auto no-scrollbar -mx-5 px-5 space-x-2">
+                    <button class="filter-chip flex-shrink-0 px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-700 bg-white" onclick="toggleChip(this)">No Equipment</button>
+                    <button class="filter-chip flex-shrink-0 px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-700 bg-white" onclick="toggleChip(this)">Dumbbells</button>
+                    <button class="filter-chip flex-shrink-0 px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-700 bg-white" onclick="toggleChip(this)">Mat</button>
+                    <button class="filter-chip flex-shrink-0 px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-700 bg-white" onclick="toggleChip(this)">Kettlebell</button>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Difficulty</h3>
+                <div class="flex bg-slate-100 p-1 rounded-xl">
+                    <button class="flex-1 py-1.5 rounded-lg text-sm font-medium text-slate-700 bg-white shadow-sm">Beginner</button>
+                    <button class="flex-1 py-1.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700">Int</button>
+                    <button class="flex-1 py-1.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-700">Adv</button>
+                </div>
+            </div>
+
+            <hr class="border-slate-100 my-6">
+
+            <!-- Section B: Secondary Filters (Progressive Disclosure via Accordions) -->
+            <div class="space-y-2">
+                <!-- Anatomy Accordion -->
+                <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                    <button onclick="toggleAccordion('acc-anatomy')" class="w-full flex justify-between items-center p-4 bg-white text-left font-semibold text-slate-800">
+                        Anatomy & Joints <i id="acc-anatomy-icon" class="ph ph-caret-down text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="acc-anatomy" class="hidden p-4 pt-0 bg-white border-t border-slate-50">
+                        <p class="text-xs text-slate-500 mb-2">Muscles</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Quadriceps</button>
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Lats</button>
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Core</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-2">Joints</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Thoracic Spine</button>
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Hips</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Type Accordion -->
+                <div class="border border-slate-200 rounded-2xl overflow-hidden">
+                    <button onclick="toggleAccordion('acc-type')" class="w-full flex justify-between items-center p-4 bg-white text-left font-semibold text-slate-800">
+                        Activity Type <i id="acc-type-icon" class="ph ph-caret-down text-slate-400 transition-transform"></i>
+                    </button>
+                    <div id="acc-type" class="hidden p-4 pt-0 bg-white border-t border-slate-50">
+                        <div class="flex flex-wrap gap-2">
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Exercise</button>
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Asana</button>
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Sequence</button>
+                            <button class="px-3 py-1.5 rounded-md bg-slate-100 text-xs text-slate-700">Mobility-Drill</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-20"></div> <!-- spacing for sticky footer -->
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="p-4 border-t border-slate-100 bg-white">
+            <button onclick="applyFilters()" id="filter-results-btn" class="w-full accent-green text-white font-bold py-3.5 rounded-xl shadow-md flex justify-center items-center gap-2">
+                Show 414 Results
+            </button>
+        </div>
+    </div>
+
+    <!-- Static Bottom Navigation (Context) -->
+    <div class="absolute bottom-0 w-full bg-white border-t border-slate-200 flex justify-between px-6 py-3 pb-8 z-20">
+        <div class="flex flex-col items-center text-slate-400">
+            <i class="ph ph-sun text-2xl mb-1"></i><span class="text-[10px]">Today</span>
+        </div>
+        <div class="flex flex-col items-center text-slate-400">
+            <i class="ph ph-calendar-blank text-2xl mb-1"></i><span class="text-[10px]">Plan</span>
+        </div>
+        <div class="flex flex-col items-center text-orange-600">
+            <i class="ph-fill ph-book-open-text text-2xl mb-1"></i><span class="text-[10px] font-bold">Library</span>
+        </div>
+        <div class="flex flex-col items-center text-slate-400">
+            <i class="ph ph-chart-bar text-2xl mb-1"></i><span class="text-[10px]">Progress</span>
+        </div>
+        <div class="flex flex-col items-center text-slate-400">
+            <i class="ph ph-user text-2xl mb-1"></i><span class="text-[10px]">You</span>
+        </div>
+    </div>
+
+    <!-- Simple Toast Notification -->
+    <div id="toast" class="absolute top-10 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium z-50 opacity-0 transition-opacity duration-300 pointer-events-none">
+        Message
+    </div>
+
+</div>
+
+<script>
+    // --- Mock Data ---
+    const mockActivities = [
+        { title: "Adho Mukha Svanasana", subtitle: "Downward-Facing Dog", type: "Asana", icon: "ph-flower-lotus", color: "text-orange-600", bg: "bg-orange-100" },
+        { title: "Barbell Back Squat", subtitle: "Lower Body Strength", type: "Exercise", icon: "ph-barbell", color: "text-emerald-700", bg: "bg-emerald-100" },
+        { title: "Sun Salutation A", subtitle: "Surya Namaskar A", type: "Sequence", icon: "ph-stack", color: "text-indigo-600", bg: "bg-indigo-100" },
+        { title: "Thoracic Rotations", subtitle: "Spine Mobility", type: "Mobility", icon: "ph-arrows-out", color: "text-blue-600", bg: "bg-blue-100" },
+        { title: "Cable Face Pull", subtitle: "Shoulder Health", type: "Exercise", icon: "ph-barbell", color: "text-emerald-700", bg: "bg-emerald-100" }
+    ];
+
+    // --- DOM Elements ---
+    const viewLibrary = document.getElementById('view-library');
+    const viewSearch = document.getElementById('view-search');
+    const searchInput = document.getElementById('searchInput');
+    const searchEmptyState = document.getElementById('search-empty-state');
+    const searchList = document.getElementById('search-list');
+    
+    const filterOverlay = document.getElementById('filter-overlay');
+    const filterSheet = document.getElementById('filter-sheet');
+    const filterBadge = document.getElementById('filter-badge');
+    const activeFiltersContainer = document.getElementById('active-filters-container');
+    const filterResultsBtn = document.getElementById('filter-results-btn');
+
+    let isFilterActive = false;
+
+    // --- Search Navigation ---
+    function openSearch(query = '') {
+        viewSearch.classList.add('active');
+        if (query) {
+            searchInput.value = query;
+            filterResults();
+        } else {
+            searchInput.focus();
+        }
+    }
+
+    function closeSearch() {
+        viewSearch.classList.remove('active');
+        searchInput.value = '';
+        searchEmptyState.classList.remove('hidden');
+        searchList.classList.add('hidden');
+    }
+
+    // --- Rendering Results ---
+    function filterResults() {
+        const val = searchInput.value.toLowerCase();
+        
+        if (val.length === 0 && !isFilterActive) {
+            searchEmptyState.classList.remove('hidden');
+            searchList.classList.add('hidden');
+            return;
+        }
+
+        searchEmptyState.classList.add('hidden');
+        searchList.classList.remove('hidden');
+        searchList.innerHTML = '';
+
+        // Filter mock data
+        let results = mockActivities.filter(a => a.title.toLowerCase().includes(val) || a.subtitle.toLowerCase().includes(val));
+        
+        // If filter is active (mocking 'Yoga' filter specifically for demo)
+        if(isFilterActive) {
+            results = mockActivities.filter(a => a.type === "Asana" || a.type === "Sequence");
+        }
+
+        if (results.length === 0) {
+            searchList.innerHTML = `<div class="text-center text-slate-500 py-10">No activities found.</div>`;
+            return;
+        }
+
+        results.forEach(item => {
+            searchList.innerHTML += `
+                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg ${item.bg} flex items-center justify-center">
+                            <i class="ph ${item.icon} text-xl ${item.color}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm">${item.title}</h4>
+                            <p class="text-xs text-slate-500">${item.subtitle} • ${item.type}</p>
+                        </div>
+                    </div>
+                    <button onclick="showToast('Added to Routine')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-emerald-100 hover:text-emerald-700 transition-colors">
+                        <i class="ph ph-plus font-bold"></i>
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    // --- Filter Bottom Sheet Logic ---
+    function openFilters() {
+        filterOverlay.classList.remove('hidden');
+        // small timeout to allow display:block to apply before opacity transition
+        setTimeout(() => {
+            filterOverlay.classList.add('opacity-100');
+            filterSheet.classList.add('active');
+        }, 10);
+    }
+
+    function closeFilters() {
+        filterSheet.classList.remove('active');
+        filterOverlay.classList.remove('opacity-100');
+        setTimeout(() => {
+            filterOverlay.classList.add('hidden');
+        }, 300);
+    }
+
+    function toggleAccordion(id) {
+        const content = document.getElementById(id);
+        const icon = document.getElementById(id + '-icon');
+        if (content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+        } else {
+            content.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+        }
+    }
+
+    // Mock chip selection
+    function toggleChip(btn, type) {
+        if(btn.classList.contains('bg-slate-800')) {
+            btn.classList.remove('bg-slate-800', 'text-white', 'border-slate-800');
+            btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+            filterResultsBtn.innerText = "Show 414 Results";
+        } else {
+            // Remove active from siblings for single select demo purposes
+            let siblings = btn.parentNode.children;
+            for(let s of siblings) {
+                 s.classList.remove('bg-slate-800', 'text-white', 'border-slate-800');
+                 s.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+            }
+            btn.classList.remove('bg-white', 'text-slate-700', 'border-slate-200');
+            btn.classList.add('bg-slate-800', 'text-white', 'border-slate-800');
+            
+            // Randomize result count for interaction feel
+            let randomCount = Math.floor(Math.random() * 50) + 5;
+            filterResultsBtn.innerText = `Show ${randomCount} Results`;
+        }
+    }
+
+    function applyFilters() {
+        isFilterActive = true;
+        filterBadge.classList.remove('hidden');
+        activeFiltersContainer.classList.remove('hidden');
+        closeFilters();
+        
+        // ensure we are in search view
+        if(!viewSearch.classList.contains('active')) {
+            openSearch();
+        } else {
+            filterResults(); // refresh list
+        }
+    }
+
+    function clearFilters() {
+        isFilterActive = false;
+        filterBadge.classList.add('hidden');
+        activeFiltersContainer.classList.add('hidden');
+        
+        // Reset chips in UI
+        document.querySelectorAll('.filter-chip').forEach(btn => {
+            btn.classList.remove('bg-slate-800', 'text-white', 'border-slate-800');
+            btn.classList.add('bg-white', 'text-slate-700', 'border-slate-200');
+        });
+        filterResultsBtn.innerText = "Show 414 Results";
+        filterResults();
+        
+        if(filterSheet.classList.contains('active')) {
+            closeFilters();
+        }
+    }
+
+    // --- Utilities ---
+    let toastTimeout;
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.innerText = message;
+        toast.classList.remove('opacity-0');
+        
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.classList.add('opacity-0');
+        }, 2000);
+    }
+</script>
+</body>
+</html>
