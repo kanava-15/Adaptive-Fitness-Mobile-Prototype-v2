@@ -81,6 +81,7 @@ export default function LibraryScreen() {
           <Text style={[s.appBarEyebrow, { color: c.mutedForeground }]}>{tab === 'home' ? 'Svasthic' : 'Library'}</Text>
           <Text accessibilityRole="header" style={[s.appBarTitle, title.length > 12 && s.longAppBarTitle, tab === 'routines' && s.compactAppBarTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
         </View>
+        <IconButton testID="library-content" icon="repeat" label="Import or export content" onPress={() => router.push('/content-exchange')} />
         <Button
           compact
           variant="soft"
@@ -106,6 +107,7 @@ export default function LibraryScreen() {
                 {' · '}{savedActivity.reviewStatus}
               </Text>
               <ActivityDetails activity={savedActivity} release={savedRelease} />
+              <Button compact variant="ghost" icon="upload" label="Export this activity" onPress={() => router.push({ pathname: '/content-exchange', params: { activityId: selectedSaved.id } })} />
               <Button testID={`unsave-${selectedSaved.id}`} variant="soft" icon="bookmark" label="Remove from Saved Activities" onPress={() => { setActivitySaved(selectedSaved.id, false); setSelectedSavedId(null); }} />
               {currentSaved && !currentSaved.archived ? (
                 <Button icon="plus" label={currentSaved.type === 'sequence' ? 'Expand into routine — enter targets' : 'Add to a new routine'} onPress={() => router.push({ pathname: '/builder', params: { activityId: currentSaved.id } })} />
@@ -179,7 +181,7 @@ export default function LibraryScreen() {
                       <View style={{ flex: 1 }}>
                         <Text style={[s.rTitle, { color: c.foreground }]}>{r.name}</Text>
                         <Text style={[s.rMeta, { color: c.mutedForeground }]}>
-                          {r.items.length} activities · {errors.length ? 'Targets need review' : minutesLabel(estimate)}{locked ? ` · ${locked} locked` : ''} · v{r.version}{r.archived ? ' · archived' : ''}
+                          {r.items.length} activities · {errors.length ? 'Targets need review' : minutesLabel(estimate)}{r.contentImport ? ' · externally imported, unverified' : ''}{locked ? ` · ${locked} locked` : ''} · v{r.version}{r.archived ? ' · archived' : ''}
                         </Text>
                       </View>
                       <Feather name="edit-3" size={18} color={c.mutedForeground} />
@@ -195,6 +197,7 @@ export default function LibraryScreen() {
                       </View>
                     ) : null}
                     <View style={[s.actions, { justifyContent: 'flex-end' }]}>
+                      <IconButton testID={`export-routine-${r.id}`} icon="upload" label={`Export ${r.name}`} onPress={() => router.push({ pathname: '/content-exchange', params: { routineId: r.id } })} />
                       <IconButton icon="copy" label="Duplicate" onPress={() => { duplicateRoutine(r.id); success(); }} />
                       <IconButton
                         icon={r.archived ? 'rotate-ccw' : 'archive'}

@@ -17,6 +17,7 @@ import { ActivityDetails } from '@/components/ActivityDetails';
 import { KnowledgeEditor } from '@/components/KnowledgeEditor';
 import { useCatalog } from '@/context/CatalogContext';
 import { knowledgeOf, sequenceDefinitions, personalCatalog, editActivityText } from '@/lib/domain';
+import { DetailDisclosure } from '@/components/ExploreActivityContent';
 
 const blank = (): ExerciseDef => ({
   id: newId('cx'),
@@ -197,7 +198,7 @@ export default function ExerciseEdit() {
       <KeyboardAwareScrollViewCompat contentContainerStyle={[s.root, { paddingTop: top, paddingBottom: 140 }]} keyboardShouldPersistTaps="handled" bottomOffset={90}>
         <View style={s.head}>
           <View style={{ flex: 1 }}>
-            <Eyebrow>{existing ? `User-authored activity · v${existing.version} · unreviewed` : 'New custom activity'}</Eyebrow>
+            <Eyebrow>{existing ? `${existing.contentImport ? 'Externally imported · unverified' : 'User-authored activity'} · v${existing.version} · unreviewed` : 'New custom activity'}</Eyebrow>
             <Text style={[s.title, { color: c.foreground }]}>{existing ? 'Edit activity' : 'Create an activity'}</Text>
           </View>
           <IconButton testID="exercise-close" icon="x" label="Close" onPress={() => router.back()} />
@@ -206,6 +207,14 @@ export default function ExerciseEdit() {
           <Feather name="info" size={16} color={c.secondaryForeground} />
           <Text style={[s.noteText, { color: c.secondaryForeground }]}>User-authored activities are unreviewed and never automatically altered. Edits create a new version; saved routines, sessions and history keep the version they used.</Text>
         </View>
+        {existing?.contentImport ? <Text selectable style={[s.hint, { color: c.mutedForeground }]}>Imported from outside Svasthic · author: {existing.contentImport.author ?? 'not stated'} · origin: {existing.contentImport.origin?.origin.id ?? 'unknown'} v{existing.contentImport.origin?.origin.version ?? 'unknown'}. Original authorship/review claims are attribution only, not local verification.</Text> : null}
+        {existing?.contentImport?.origin ? <DetailDisclosure title="Imported knowledge and original attribution">
+          <ActivityDetails activity={knowledgeOf(existing)} release={{ ...personalCatalog(state.customExercises), sources: [
+            ...existing.contentImport.origin.sources,
+            ...catalog.state.release.sources.filter(s => !existing.contentImport!.origin!.sources.some(origin => origin.id === s.id)),
+          ] }} />
+          <Text selectable style={[s.hint, { color: c.mutedForeground }]}>Original claims (unverified): {(existing.contentImport.origin.attribution?.activity ?? existing.contentImport.origin.activity).authorship} · {(existing.contentImport.origin.attribution?.activity ?? existing.contentImport.origin.activity).reviewStatus}</Text>
+        </DetailDisclosure> : null}
 
         <Text style={[s.label, { color: c.foreground }]}>Name</Text>
         <TextInput testID="exercise-name" value={e.name} onChangeText={(name) => set({ name })} placeholder="e.g. Cable face pull" placeholderTextColor={c.mutedForeground} style={[s.input, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
@@ -285,6 +294,7 @@ export default function ExerciseEdit() {
 
         {existing ? (
           <View style={{ gap: 10, marginTop: 20 }}>
+            <Button testID="exercise-export" label="Export this activity" icon="upload" variant="ghost" onPress={() => router.push({ pathname: '/content-exchange', params: { activityId: existing.id } })} />
             <Button label={existing.activity?.type === 'sequence' ? 'Expand into routine — enter targets' : 'Schedule this activity'} icon="calendar" variant="soft" onPress={() => router.replace(existing.activity?.type === 'sequence' ? { pathname: '/builder', params: { activityId: existing.id } } : { pathname: '/schedule-add', params: { exerciseId: existing.id } })} />
             <Button
               testID="exercise-archive"

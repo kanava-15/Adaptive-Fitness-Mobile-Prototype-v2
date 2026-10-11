@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./authoring": "./src/content/release.ts",
-    "./starter": "./src/starter.json"
+    "./starter": "./src/starter.json",
+    "./content-schema": "./docs/content-package-v1.schema.json"
   },
   "dependencies": {
     "@noble/hashes": "^2.4.0",
@@ -14,9 +15,11 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "zod-to-json-schema": "3.25.1"
   },
   "scripts": {
+    "content-schema": "tsx scripts/content-schema.ts",
     "test": "tsx --test tests/*.test.ts"
   }
 }

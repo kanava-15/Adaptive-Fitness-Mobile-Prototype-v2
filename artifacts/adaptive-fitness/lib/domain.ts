@@ -4,7 +4,7 @@
 // exercised directly by the Node regression tests in tests/domain.test.ts.
 
 import { z } from 'zod';
-import { activitySchema, equipmentSchema, membershipSchema, normalizedIdentity, type Activity, type CatalogRelease, type SequenceMembership, expandSequence } from '@workspace/activity-catalog';
+import { activitySchema, contentImportMetadataSchema, type ContentImportMetadata, equipmentSchema, membershipSchema, normalizedIdentity, type Activity, type CatalogRelease, type SequenceMembership, expandSequence } from '@workspace/activity-catalog';
 import starter from '@workspace/activity-catalog/starter';
 import {
   Category,
@@ -47,6 +47,7 @@ export const GEAR_LABEL = Object.fromEntries(GEARS.map(g => [g, g === 'none' ? '
 export const PRIORITY_LABEL: Record<Priority, string> = { must: 'Must keep', normal: 'Normal', optional: 'Optional' };
 
 export interface ExerciseDef {
+  contentImport?: ContentImportMetadata;
   id: string;
   version: number;
   name: string;
@@ -94,6 +95,7 @@ export interface RoutineItem {
 }
 
 export interface Routine {
+  contentImport?: ContentImportMetadata;
   id: string;
   name: string;
   notes: string;
@@ -465,6 +467,7 @@ function legacyExercises(): ExerciseDef[] {
     !sharedNames.some(names => names.includes(normalizedIdentity(d.name))));
 }
 export function exerciseSourceLabel(e: ExerciseDef): string {
+  if (e.contentImport) return 'Externally imported · unverified · on this device';
   if (e.custom) return 'On this device · user-authored · unreviewed';
   if (e.activity) return `Shared catalog · ${e.activity.reviewStatus}`;
   return 'Legacy built-in · unreviewed';
@@ -1445,7 +1448,7 @@ const disciplineZ = z.enum(['yoga', 'mobility', 'strength', 'conditioning', 'spo
 const posInt = z.number().int().min(1);
 const sideZ = z.enum(['left', 'right', 'both', 'alternating', 'unspecified']);
 const measurements = { breaths: z.number().int().min(0).max(10000).optional(), distance: z.number().min(0).max(1000000).optional(), distanceUnit: z.enum(['m', 'km', 'mi', 'yd']).optional(), side: sideZ.optional() };
-const exerciseZ = z.object({ id: z.string().min(1), version: posInt, name: z.string().min(1), discipline: disciplineZ, gear: z.array(gearZ), areas: z.array(areaZ), tracking, defaultReps: z.number().optional(), defaultSeconds: z.number().optional(), perSide: z.boolean(), loadable: z.boolean(), stresses: z.array(regionZ), intensity: z.union([z.literal(1), z.literal(2)]), instructions: z.string(), cues: z.array(z.string()), custom: z.boolean(), verified: z.boolean(), rehab: z.boolean(), archived: z.boolean(), createdAt: z.string(), updatedAt: z.string(), activity: activitySchema.optional(), sequenceMembers: z.array(membershipSchema).max(500).optional() }).strict();
+const exerciseZ = z.object({ contentImport: contentImportMetadataSchema.optional(), id: z.string().min(1), version: posInt, name: z.string().min(1), discipline: disciplineZ, gear: z.array(gearZ), areas: z.array(areaZ), tracking, defaultReps: z.number().optional(), defaultSeconds: z.number().optional(), perSide: z.boolean(), loadable: z.boolean(), stresses: z.array(regionZ), intensity: z.union([z.literal(1), z.literal(2)]), instructions: z.string(), cues: z.array(z.string()), custom: z.boolean(), verified: z.boolean(), rehab: z.boolean(), archived: z.boolean(), createdAt: z.string(), updatedAt: z.string(), activity: activitySchema.optional(), sequenceMembers: z.array(membershipSchema).max(500).optional() }).strict();
 const itemZ = z.object({ key: z.string().min(1), exerciseId: z.string().min(1), sets: posInt.max(20), reps: z.number().min(0).max(200).optional(), seconds: z.number().min(0).max(3600).optional(), ...measurements, definition: exerciseZ.optional(), confirmed: z.boolean().optional(), restSec: z.number().min(0).max(600), load: z.number().min(0).max(1000).optional(), unit: unitZ, perSide: z.boolean(), priority: z.enum(['must', 'normal', 'optional']), locked: z.boolean(), note: z.string().optional() }).strict();
 const snapItemZ = itemZ.extend({ name: z.string(), tracking, discipline: disciplineZ, defVersion: z.number(), stresses: z.array(regionZ), gear: z.array(gearZ), loadable: z.boolean(), custom: z.boolean(), verified: z.boolean(), rehab: z.boolean(), intensity: z.union([z.literal(1), z.literal(2)]), cues: z.array(z.string()), instructions: z.string() });
 const sourceZ = z.discriminatedUnion('kind', [
@@ -1457,7 +1460,7 @@ const sourceZ = z.discriminatedUnion('kind', [
 const snapshotZ = z.object({ id: z.string(), title: z.string(), source: sourceZ, items: z.array(snapItemZ), createdAt: z.string() });
 const exceptionZ = z.object({ deleted: z.boolean().optional(), moveTo: dateZ.optional(), snapshot: snapshotZ.optional() });
 const entryZ = z.object({ id: z.string(), rootId: z.string(), owner: z.literal('user'), start: dateZ, weekdays: z.array(z.number().int().min(0).max(6)).nullable(), until: dateZ.nullable(), snapshot: snapshotZ, exceptions: z.record(dateZ, exceptionZ), createdAt: z.string() });
-const routineZ = z.object({ id: z.string().min(1), name: z.string().min(1), notes: z.string(), items: z.array(itemZ), version: posInt, archived: z.boolean(), createdAt: z.string(), updatedAt: z.string() });
+const routineZ = z.object({ contentImport: contentImportMetadataSchema.optional(), id: z.string().min(1), name: z.string().min(1), notes: z.string(), items: z.array(itemZ), version: posInt, archived: z.boolean(), createdAt: z.string(), updatedAt: z.string() });
 const actualZ = z.object({ reps: z.number().min(0).optional(), seconds: z.number().min(0).optional(), ...measurements, load: z.number().min(0).optional(), unit: unitZ.optional() }).strict();
 const logZ = z.object({ itemKey: z.string(), exerciseId: z.string(), name: z.string(), kind: tracking, planned: z.object({ sets: z.number(), reps: z.number().optional(), seconds: z.number().optional(), ...measurements, load: z.number().optional(), unit: unitZ.optional(), perSide: z.boolean().optional(), restSec: z.number().optional() }).strict(), sets: z.array(actualZ), done: z.boolean(), skipped: z.boolean(), added: z.boolean() });
 const completionZ = z.object({ id: z.string(), date: dateZ, occurrenceKey: z.string().nullable(), sessionId: z.string(), title: z.string(), plannedMinutes: z.number(), estimateSec: z.number().nullable(), startedAt: z.string(), finishedAt: z.string(), activeSeconds: z.number().min(0), snapshot: snapshotZ.nullable(), executedItems: z.array(snapItemZ).optional(), exercises: z.array(logZ), finishedEarly: z.boolean(), stoppedForPain: z.boolean(), difficulty: z.number().min(1).max(5).nullable(), rpe: z.number().int().min(0).max(10).nullable().optional(), adaptation: z.array(z.string()) });

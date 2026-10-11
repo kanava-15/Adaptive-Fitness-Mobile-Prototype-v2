@@ -1,0 +1,1780 @@
+{
+  "$ref": "#/definitions/SvasthicContentV1",
+  "definitions": {
+    "SvasthicContentV1": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "const": "svasthic-content"
+        },
+        "version": {
+          "type": "number",
+          "const": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "author": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+              },
+              "origin": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "catalog",
+                      "local",
+                      "legacy",
+                      "external"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "version",
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              "activity": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "englishName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sanskritName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "aliases": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "maxItems": 100
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "exercise",
+                      "asana",
+                      "mobility-drill",
+                      "conditioning-activity",
+                      "sport",
+                      "practice-element",
+                      "sequence"
+                    ]
+                  },
+                  "discipline": {
+                    "type": "string",
+                    "enum": [
+                      "strength",
+                      "yoga",
+                      "mobility",
+                      "conditioning",
+                      "sports"
+                    ]
+                  },
+                  "family": {
+                    "type": "string",
+                    "enum": [
+                      "general",
+                      "ashtanga-vinyasa",
+                      "cars"
+                    ]
+                  },
+                  "supportedMetrics": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "reps",
+                        "duration",
+                        "breaths",
+                        "distance"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "distanceUnits": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "m",
+                        "km",
+                        "mi",
+                        "yd"
+                      ]
+                    }
+                  },
+                  "loadUnits": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "kg",
+                        "lb"
+                      ]
+                    }
+                  },
+                  "laterality": {
+                    "type": "string",
+                    "enum": [
+                      "bilateral",
+                      "unilateral",
+                      "alternating",
+                      "not-applicable",
+                      "unknown"
+                    ]
+                  },
+                  "equipment": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "mat",
+                            "block",
+                            "strap",
+                            "wall",
+                            "chair",
+                            "band",
+                            "dumbbells",
+                            "kettlebell",
+                            "barbell",
+                            "plates",
+                            "rack",
+                            "bench",
+                            "machine",
+                            "cable",
+                            "pull-up-bar",
+                            "rings",
+                            "suspension-trainer",
+                            "stability-ball",
+                            "medicine-ball",
+                            "foam-roller",
+                            "step",
+                            "box",
+                            "jump-rope",
+                            "treadmill",
+                            "bike",
+                            "rower",
+                            "elliptical",
+                            "sled",
+                            "pool",
+                            "parallel-bars"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "difficulty": {
+                    "type": "string",
+                    "enum": [
+                      "beginner",
+                      "intermediate",
+                      "advanced",
+                      "unknown"
+                    ]
+                  },
+                  "primaryMuscles": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "quadriceps",
+                            "hamstrings",
+                            "glutes",
+                            "calves",
+                            "tibialis",
+                            "adductors",
+                            "abductors",
+                            "abdominals",
+                            "obliques",
+                            "spinal-erectors",
+                            "lats",
+                            "trapezius",
+                            "rhomboids",
+                            "pectorals",
+                            "deltoids",
+                            "rotator-cuff",
+                            "biceps",
+                            "triceps",
+                            "forearms",
+                            "neck",
+                            "feet"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "secondaryMuscles": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "quadriceps",
+                            "hamstrings",
+                            "glutes",
+                            "calves",
+                            "tibialis",
+                            "adductors",
+                            "abductors",
+                            "abdominals",
+                            "obliques",
+                            "spinal-erectors",
+                            "lats",
+                            "trapezius",
+                            "rhomboids",
+                            "pectorals",
+                            "deltoids",
+                            "rotator-cuff",
+                            "biceps",
+                            "triceps",
+                            "forearms",
+                            "neck",
+                            "feet"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "joints": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "cervical-spine",
+                            "thoracic-spine",
+                            "lumbar-spine",
+                            "scapula",
+                            "shoulder",
+                            "elbow",
+                            "forearm",
+                            "wrist",
+                            "fingers",
+                            "hip",
+                            "knee",
+                            "ankle",
+                            "toes"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "actions": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "flexion",
+                            "extension",
+                            "abduction",
+                            "adduction",
+                            "internal-rotation",
+                            "external-rotation",
+                            "circumduction",
+                            "pronation",
+                            "supination",
+                            "dorsiflexion",
+                            "plantarflexion",
+                            "inversion",
+                            "eversion",
+                            "protraction",
+                            "retraction",
+                            "elevation",
+                            "depression",
+                            "lateral-flexion",
+                            "rotation"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "movementPatterns": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "squat",
+                            "hinge",
+                            "lunge",
+                            "push",
+                            "pull",
+                            "carry",
+                            "rotation",
+                            "locomotion",
+                            "balance",
+                            "hold",
+                            "joint-isolation"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "setup": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "maxItems": 100
+                  },
+                  "execution": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "maxItems": 100
+                  },
+                  "cues": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "maxItems": 100
+                  },
+                  "commonMistakes": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "maxItems": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "benefits": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "sourceIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                          },
+                          "minItems": 1
+                        },
+                        "qualification": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        }
+                      },
+                      "required": [
+                        "text",
+                        "sourceIds",
+                        "qualification"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "precautions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "maxItems": 100
+                  },
+                  "modifications": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "maxItems": 100
+                  },
+                  "instructionNeeded": {
+                    "type": "boolean"
+                  },
+                  "seriesContext": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "lineage": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "sourceId": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "lineage",
+                        "sourceId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "mediaReferences": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "sourceId": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "url",
+                        "sourceId"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 30
+                  },
+                  "mobility": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "position": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          "stabilization": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          "compensationCues": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            },
+                            "maxItems": 100
+                          },
+                          "comfortableRange": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          "intensityCaution": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          "regressions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            },
+                            "maxItems": 100
+                          }
+                        },
+                        "required": [
+                          "position",
+                          "stabilization",
+                          "compensationCues",
+                          "comfortableRange",
+                          "intensityCaution",
+                          "regressions"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "adaptation": {
+                    "type": "object",
+                    "properties": {
+                      "eligible": {
+                        "type": "boolean"
+                      },
+                      "loadingKnown": {
+                        "type": "boolean"
+                      },
+                      "loadedJoints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "cervical-spine",
+                            "thoracic-spine",
+                            "lumbar-spine",
+                            "scapula",
+                            "shoulder",
+                            "elbow",
+                            "forearm",
+                            "wrist",
+                            "fingers",
+                            "hip",
+                            "knee",
+                            "ankle",
+                            "toes"
+                          ]
+                        }
+                      },
+                      "rationale": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      }
+                    },
+                    "required": [
+                      "eligible",
+                      "loadingKnown",
+                      "loadedJoints",
+                      "rationale"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                    }
+                  },
+                  "authorship": {
+                    "type": "string",
+                    "enum": [
+                      "maintainer",
+                      "user"
+                    ]
+                  },
+                  "reviewStatus": {
+                    "type": "string",
+                    "enum": [
+                      "unreviewed",
+                      "source-checked",
+                      "expert-reviewed"
+                    ]
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "version",
+                  "name",
+                  "englishName",
+                  "sanskritName",
+                  "aliases",
+                  "type",
+                  "discipline",
+                  "family",
+                  "supportedMetrics",
+                  "distanceUnits",
+                  "loadUnits",
+                  "laterality",
+                  "equipment",
+                  "difficulty",
+                  "primaryMuscles",
+                  "secondaryMuscles",
+                  "joints",
+                  "actions",
+                  "movementPatterns",
+                  "description",
+                  "setup",
+                  "execution",
+                  "cues",
+                  "commonMistakes",
+                  "benefits",
+                  "precautions",
+                  "modifications",
+                  "instructionNeeded",
+                  "seriesContext",
+                  "mobility",
+                  "adaptation",
+                  "sourceIds",
+                  "authorship",
+                  "reviewStatus",
+                  "archived"
+                ],
+                "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "provenance": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "retrievedOn": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "reviewedOn": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "permittedUse": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "reviewStatus": {
+                      "type": "string",
+                      "enum": [
+                        "unreviewed",
+                        "source-checked",
+                        "expert-reviewed"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url",
+                    "title",
+                    "provenance",
+                    "retrievedOn",
+                    "reviewedOn",
+                    "permittedUse",
+                    "reviewStatus"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 100
+              },
+              "attribution": {
+                "type": "object",
+                "properties": {
+                  "activity": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      },
+                      "englishName": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "sanskritName": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "aliases": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "maxItems": 100
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "exercise",
+                          "asana",
+                          "mobility-drill",
+                          "conditioning-activity",
+                          "sport",
+                          "practice-element",
+                          "sequence"
+                        ]
+                      },
+                      "discipline": {
+                        "type": "string",
+                        "enum": [
+                          "strength",
+                          "yoga",
+                          "mobility",
+                          "conditioning",
+                          "sports"
+                        ]
+                      },
+                      "family": {
+                        "type": "string",
+                        "enum": [
+                          "general",
+                          "ashtanga-vinyasa",
+                          "cars"
+                        ]
+                      },
+                      "supportedMetrics": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "reps",
+                            "duration",
+                            "breaths",
+                            "distance"
+                          ]
+                        },
+                        "minItems": 1
+                      },
+                      "distanceUnits": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "m",
+                            "km",
+                            "mi",
+                            "yd"
+                          ]
+                        }
+                      },
+                      "loadUnits": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "lb"
+                          ]
+                        }
+                      },
+                      "laterality": {
+                        "type": "string",
+                        "enum": [
+                          "bilateral",
+                          "unilateral",
+                          "alternating",
+                          "not-applicable",
+                          "unknown"
+                        ]
+                      },
+                      "equipment": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "none",
+                                "mat",
+                                "block",
+                                "strap",
+                                "wall",
+                                "chair",
+                                "band",
+                                "dumbbells",
+                                "kettlebell",
+                                "barbell",
+                                "plates",
+                                "rack",
+                                "bench",
+                                "machine",
+                                "cable",
+                                "pull-up-bar",
+                                "rings",
+                                "suspension-trainer",
+                                "stability-ball",
+                                "medicine-ball",
+                                "foam-roller",
+                                "step",
+                                "box",
+                                "jump-rope",
+                                "treadmill",
+                                "bike",
+                                "rower",
+                                "elliptical",
+                                "sled",
+                                "pool",
+                                "parallel-bars"
+                              ]
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "difficulty": {
+                        "type": "string",
+                        "enum": [
+                          "beginner",
+                          "intermediate",
+                          "advanced",
+                          "unknown"
+                        ]
+                      },
+                      "primaryMuscles": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "quadriceps",
+                                "hamstrings",
+                                "glutes",
+                                "calves",
+                                "tibialis",
+                                "adductors",
+                                "abductors",
+                                "abdominals",
+                                "obliques",
+                                "spinal-erectors",
+                                "lats",
+                                "trapezius",
+                                "rhomboids",
+                                "pectorals",
+                                "deltoids",
+                                "rotator-cuff",
+                                "biceps",
+                                "triceps",
+                                "forearms",
+                                "neck",
+                                "feet"
+                              ]
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "secondaryMuscles": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "quadriceps",
+                                "hamstrings",
+                                "glutes",
+                                "calves",
+                                "tibialis",
+                                "adductors",
+                                "abductors",
+                                "abdominals",
+                                "obliques",
+                                "spinal-erectors",
+                                "lats",
+                                "trapezius",
+                                "rhomboids",
+                                "pectorals",
+                                "deltoids",
+                                "rotator-cuff",
+                                "biceps",
+                                "triceps",
+                                "forearms",
+                                "neck",
+                                "feet"
+                              ]
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "joints": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "cervical-spine",
+                                "thoracic-spine",
+                                "lumbar-spine",
+                                "scapula",
+                                "shoulder",
+                                "elbow",
+                                "forearm",
+                                "wrist",
+                                "fingers",
+                                "hip",
+                                "knee",
+                                "ankle",
+                                "toes"
+                              ]
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "actions": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "flexion",
+                                "extension",
+                                "abduction",
+                                "adduction",
+                                "internal-rotation",
+                                "external-rotation",
+                                "circumduction",
+                                "pronation",
+                                "supination",
+                                "dorsiflexion",
+                                "plantarflexion",
+                                "inversion",
+                                "eversion",
+                                "protraction",
+                                "retraction",
+                                "elevation",
+                                "depression",
+                                "lateral-flexion",
+                                "rotation"
+                              ]
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "movementPatterns": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "squat",
+                                "hinge",
+                                "lunge",
+                                "push",
+                                "pull",
+                                "carry",
+                                "rotation",
+                                "locomotion",
+                                "balance",
+                                "hold",
+                                "joint-isolation"
+                              ]
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      },
+                      "setup": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "maxItems": 100
+                      },
+                      "execution": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "maxItems": 100
+                      },
+                      "cues": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "maxItems": 100
+                      },
+                      "commonMistakes": {
+                        "anyOf": [
+                          {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            },
+                            "maxItems": 100
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "benefits": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            },
+                            "sourceIds": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                              },
+                              "minItems": 1
+                            },
+                            "qualification": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            }
+                          },
+                          "required": [
+                            "text",
+                            "sourceIds",
+                            "qualification"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "precautions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "maxItems": 100
+                      },
+                      "modifications": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "maxItems": 100
+                      },
+                      "instructionNeeded": {
+                        "type": "boolean"
+                      },
+                      "seriesContext": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            },
+                            "lineage": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            },
+                            "sourceId": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "lineage",
+                            "sourceId"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "mediaReferences": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 4000
+                            },
+                            "url": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "sourceId": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                            }
+                          },
+                          "required": [
+                            "title",
+                            "url",
+                            "sourceId"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 30
+                      },
+                      "mobility": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "position": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 4000
+                              },
+                              "stabilization": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 4000
+                              },
+                              "compensationCues": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 4000
+                                },
+                                "maxItems": 100
+                              },
+                              "comfortableRange": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 4000
+                              },
+                              "intensityCaution": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 4000
+                              },
+                              "regressions": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 4000
+                                },
+                                "maxItems": 100
+                              }
+                            },
+                            "required": [
+                              "position",
+                              "stabilization",
+                              "compensationCues",
+                              "comfortableRange",
+                              "intensityCaution",
+                              "regressions"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "adaptation": {
+                        "type": "object",
+                        "properties": {
+                          "eligible": {
+                            "type": "boolean"
+                          },
+                          "loadingKnown": {
+                            "type": "boolean"
+                          },
+                          "loadedJoints": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "cervical-spine",
+                                "thoracic-spine",
+                                "lumbar-spine",
+                                "scapula",
+                                "shoulder",
+                                "elbow",
+                                "forearm",
+                                "wrist",
+                                "fingers",
+                                "hip",
+                                "knee",
+                                "ankle",
+                                "toes"
+                              ]
+                            }
+                          },
+                          "rationale": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 4000
+                          }
+                        },
+                        "required": [
+                          "eligible",
+                          "loadingKnown",
+                          "loadedJoints",
+                          "rationale"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "sourceIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                        }
+                      },
+                      "authorship": {
+                        "type": "string",
+                        "enum": [
+                          "maintainer",
+                          "user"
+                        ]
+                      },
+                      "reviewStatus": {
+                        "type": "string",
+                        "enum": [
+                          "unreviewed",
+                          "source-checked",
+                          "expert-reviewed"
+                        ]
+                      },
+                      "archived": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "version",
+                      "name",
+                      "englishName",
+                      "sanskritName",
+                      "aliases",
+                      "type",
+                      "discipline",
+                      "family",
+                      "supportedMetrics",
+                      "distanceUnits",
+                      "loadUnits",
+                      "laterality",
+                      "equipment",
+                      "difficulty",
+                      "primaryMuscles",
+                      "secondaryMuscles",
+                      "joints",
+                      "actions",
+                      "movementPatterns",
+                      "description",
+                      "setup",
+                      "execution",
+                      "cues",
+                      "commonMistakes",
+                      "benefits",
+                      "precautions",
+                      "modifications",
+                      "instructionNeeded",
+                      "seriesContext",
+                      "mobility",
+                      "adaptation",
+                      "sourceIds",
+                      "authorship",
+                      "reviewStatus",
+                      "archived"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "provenance": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "retrievedOn": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "reviewedOn": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "permittedUse": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4000
+                        },
+                        "reviewStatus": {
+                          "type": "string",
+                          "enum": [
+                            "unreviewed",
+                            "source-checked",
+                            "expert-reviewed"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "url",
+                        "title",
+                        "provenance",
+                        "retrievedOn",
+                        "reviewedOn",
+                        "permittedUse",
+                        "reviewStatus"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "activity",
+                  "sources"
+                ],
+                "additionalProperties": false
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "activityRef": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                    },
+                    "side": {
+                      "type": "string",
+                      "enum": [
+                        "left",
+                        "right",
+                        "both",
+                        "unspecified"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "activityRef",
+                    "side"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 500
+              }
+            },
+            "required": [
+              "ref",
+              "origin",
+              "activity",
+              "sources",
+              "members"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 500
+        },
+        "routines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+              },
+              "originId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "activityRef": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+                    },
+                    "sets": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 20
+                    },
+                    "reps": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 200
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 5,
+                      "maximum": 3600
+                    },
+                    "breaths": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10000
+                    },
+                    "distance": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 1000000
+                    },
+                    "distanceUnit": {
+                      "type": "string",
+                      "enum": [
+                        "m",
+                        "km",
+                        "mi",
+                        "yd"
+                      ]
+                    },
+                    "side": {
+                      "type": "string",
+                      "enum": [
+                        "left",
+                        "right",
+                        "both",
+                        "alternating",
+                        "unspecified"
+                      ]
+                    },
+                    "restSec": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 600
+                    },
+                    "load": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "kg",
+                        "lb"
+                      ]
+                    },
+                    "perSide": {
+                      "type": "boolean"
+                    },
+                    "priority": {
+                      "type": "string",
+                      "enum": [
+                        "must",
+                        "normal",
+                        "optional"
+                      ]
+                    },
+                    "locked": {
+                      "type": "boolean"
+                    },
+                    "note": {
+                      "type": "string",
+                      "maxLength": 4000
+                    }
+                  },
+                  "required": [
+                    "activityRef",
+                    "sets",
+                    "restSec",
+                    "unit",
+                    "perSide",
+                    "priority",
+                    "locked"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 500
+              }
+            },
+            "required": [
+              "ref",
+              "originId",
+              "name",
+              "notes",
+              "items"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        },
+        "selection": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "activity",
+                  "routine"
+                ]
+              },
+              "ref": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9_-]{0,95}$"
+              }
+            },
+            "required": [
+              "kind",
+              "ref"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 600
+        }
+      },
+      "required": [
+        "format",
+        "version",
+        "title",
+        "author",
+        "activities",
+        "routines",
+        "selection"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:svasthic:content:v1",
+  "description": "Portable content, not a device backup. Runtime additionally enforces exact dependencies, sources, supported measurements, sequence cycles/depth/expansion and 2 MiB size. Incoming authorship/review/adaptation are attribution, never local trust."
+}

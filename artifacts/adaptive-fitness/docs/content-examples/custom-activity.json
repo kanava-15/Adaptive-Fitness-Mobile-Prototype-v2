@@ -1,0 +1,81 @@
+{
+  "format": "svasthic-content",
+  "version": 1,
+  "title": "Custom activity example",
+  "author": "Example, not a coach or expert",
+  "activities": [
+    {
+      "ref": "chair-rise",
+      "origin": {
+        "id": "chair-rise",
+        "version": 1,
+        "kind": "external"
+      },
+      "activity": {
+        "id": "chair-rise",
+        "version": 1,
+        "name": "Chair rise",
+        "englishName": null,
+        "sanskritName": null,
+        "aliases": [],
+        "type": "exercise",
+        "discipline": "strength",
+        "family": "general",
+        "supportedMetrics": [
+          "reps"
+        ],
+        "distanceUnits": [],
+        "loadUnits": [
+          "kg",
+          "lb"
+        ],
+        "laterality": "bilateral",
+        "equipment": [
+          "chair"
+        ],
+        "difficulty": "unknown",
+        "primaryMuscles": null,
+        "secondaryMuscles": null,
+        "joints": null,
+        "actions": null,
+        "movementPatterns": null,
+        "description": "External example only. Check suitability and instructions with a qualified professional.",
+        "setup": [
+          "Use a stable chair that cannot slide."
+        ],
+        "execution": [
+          "Stand up slowly and sit back down with control."
+        ],
+        "cues": [],
+        "commonMistakes": null,
+        "benefits": [],
+        "precautions": [
+          "Stop if anything hurts."
+        ],
+        "modifications": [],
+        "instructionNeeded": false,
+        "seriesContext": [],
+        "mobility": null,
+        "adaptation": {
+          "eligible": false,
+          "loadingKnown": false,
+          "loadedJoints": [],
+          "rationale": "External, unverified content. Suitability not established."
+        },
+        "sourceIds": [],
+        "authorship": "user",
+        "reviewStatus": "unreviewed",
+        "archived": false
+      },
+      "sources": [],
+      "members": []
+    }
+  ],
+  "routines": [],
+  "selection": [
+    {
+      "kind": "activity",
+      "ref": "chair-rise"
+    }
+  ]
+}

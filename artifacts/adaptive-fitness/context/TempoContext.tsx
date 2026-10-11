@@ -49,6 +49,7 @@ import {
   setSavedActivity as updateSavedActivity,
 } from '@/lib/domain';
 import { Profile, Region, dateKey, newId } from '@/lib/engine';
+import { persistContentImport, type ContentReview } from '@/lib/content-exchange';
 
 export { clockMs };
 export type { ImportCheck };
@@ -105,6 +106,7 @@ interface Ctx {
   checkImport: (raw: string) => ImportCheck;
   replaceAll: (data: StateV2) => void;
   resetAll: () => void;
+  commitContentImport: (review: ContentReview, options: { intentionalCopy: boolean; approveTargets: boolean }) => Promise<{ added: number }>;
 }
 
 const TempoCtx = createContext<Ctx | null>(null);
@@ -119,8 +121,15 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
   const storageBlocked = useRef(false);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const stateRef = useRef(state);
+  const importWriting = useRef(false);
+  const deferredUpdates = useRef<React.SetStateAction<StateV2>[]>([]);
+  const importSubmissions = useRef(new Map<string, Promise<{ added: number }>>());
   // Imperative confirmations must see all earlier writes, even before the next render.
   const setState = useCallback((update: React.SetStateAction<StateV2>) => {
+    if (importWriting.current) {
+      deferredUpdates.current.push(update);
+      return;
+    }
     const next = typeof update === 'function' ? update(stateRef.current) : update;
     stateRef.current = next;
     setReactState(next);
@@ -154,9 +163,9 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!ready || storageBlocked.current) return;
-    const payload = JSON.stringify(state);
     saveQueue.current = saveQueue.current
-      .then(() => AsyncStorage.setItem(KEY, payload))
+      // Read when the queue executes; an old render must not overwrite a durable import.
+      .then(() => AsyncStorage.setItem(KEY, JSON.stringify(stateRef.current)))
       .catch(() => setLoadError('Couldn’t save to device storage. Export your data to be safe.'));
   }, [state, ready]);
 
@@ -323,13 +332,39 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     setState(emptyState());
   }, []);
   const dismissLoadError = useCallback(() => { if (!storageBlocked.current) setLoadError(null); }, []);
+  const commitContentImport = useCallback((review: ContentReview, options: { intentionalCopy: boolean; approveTargets: boolean }): Promise<{ added: number }> => {
+    const existing = importSubmissions.current.get(review.token);
+    if (existing) return existing;
+    const commit = saveQueue.current.then(async () => {
+      if (!ready || storageBlocked.current) throw new Error('Device storage is unavailable. Resolve the storage warning before importing content.');
+      // Queue unrelated mutations while one atomic storage write is in flight.
+      // They are replayed against the committed state, never discarded.
+      importWriting.current = true;
+      try {
+        const result = await persistContentImport(stateRef.current, review, options, next => AsyncStorage.setItem(KEY, JSON.stringify(next)));
+        stateRef.current = result.state;
+        setReactState(result.state);
+        return { added: result.added };
+      } catch (error) {
+        importSubmissions.current.delete(review.token);
+        throw error;
+      } finally {
+        importWriting.current = false;
+        const updates = deferredUpdates.current.splice(0);
+        if (updates.length) setState(current => updates.reduce<StateV2>((s, update) => typeof update === 'function' ? update(s) : update, current));
+      }
+    });
+    importSubmissions.current.set(review.token, commit);
+    saveQueue.current = commit.then(() => {}, () => {});
+    return commit;
+  }, [ready, setState]);
 
   const value: Ctx = {
     ready, loadError, dismissLoadError, state, todayKey, todayOccurrences, saveProfile,
     saveExercise, setActivitySaved, setExerciseArchived, saveRoutine, duplicateRoutine, setRoutineArchived, futureUses, pushRoutineToFuture,
     addSchedule, occurrence, occurrencesIn, moveOcc, deleteOcc, editOcc, previewAdapt,
     startSnapshot, addSelectionToActive, toggleClock, toggleExClock, resetExClock, logSet, undoSet, markDone, skipExercise, goTo, finish, discardActive,
-    exportJson, checkImport, replaceAll, resetAll,
+    exportJson, checkImport, replaceAll, resetAll, commitContentImport,
   };
   return <TempoCtx.Provider value={value}>{children}</TempoCtx.Provider>;
 }

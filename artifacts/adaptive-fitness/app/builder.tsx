@@ -261,9 +261,10 @@ function BuilderDraft() {
       <KeyboardAwareScrollViewCompat contentContainerStyle={{ paddingHorizontal: 20, paddingTop: top, paddingBottom: 160 }} keyboardShouldPersistTaps="handled" bottomOffset={90}>
         <View style={s.head}>
           <View style={{ flex: 1 }}>
-            <Eyebrow>{occ ? `Scheduled · ${prettyDate(occ.date)}` : routine ? `Routine · v${routine.version}` : 'New routine'}</Eyebrow>
+            <Eyebrow>{occ ? `Scheduled · ${prettyDate(occ.date)}` : routine ? `Routine · v${routine.version}${routine.contentImport ? ' · externally imported, unverified' : ''}` : 'New routine'}</Eyebrow>
             <Text style={[s.title, { color: c.foreground }]}>{occ ? 'Edit session' : routine ? 'Edit routine' : 'Build a routine'}</Text>
           </View>
+          {routine && !occ ? <IconButton testID="builder-export" icon="upload" label="Export saved routine" onPress={() => router.push({ pathname: '/content-exchange', params: { routineId: routine.id } })} /> : null}
           <IconButton testID="builder-close" icon="x" label="Close" onPress={closeDraft} />
         </View>
 

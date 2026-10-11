@@ -137,7 +137,7 @@ function RoutineLaunchCard({
       <View style={{ gap: 5 }}>
         <Text style={[styles.cardTitle, { color: c.foreground }]} numberOfLines={2}>{routine.name}</Text>
         <Text style={[styles.cardMeta, { color: c.mutedForeground }]}>
-          {routine.items.length} {routine.items.length === 1 ? 'activity' : 'activities'} · {blocked ? 'Targets need review' : minutesLabel(estimate)}
+          {routine.items.length} {routine.items.length === 1 ? 'activity' : 'activities'} · {blocked ? 'Targets need review' : minutesLabel(estimate)}{routine.contentImport ? ' · externally imported, unverified' : ''}
         </Text>
         {blocked ? <Text style={[styles.blockedHint, { color: c.destructive }]} numberOfLines={2}>{errors[0]}</Text> : null}
       </View>

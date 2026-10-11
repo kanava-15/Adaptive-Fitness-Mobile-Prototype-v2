@@ -74,13 +74,19 @@ export default function Settings() {
         <Feather name="lock" size={20} color={c.done} />
         <View style={{ flex: 1 }}>
           <Text style={[s.privTitle, { color: c.accentForeground }]}>Stays on this device</Text>
-          <Text style={[s.privBody, { color: c.accentMuted }]}>No account, cloud sync, AI, or analytics. Your profile, routines, and workout history stay in this app’s local storage. Svasthic may request shared exercise-catalog updates; it does not send your profile or workouts. If you export, the app you choose in the share sheet receives a JSON backup. Deleting Svasthic removes local data unless you exported it.</Text>
+          <Text style={[s.privBody, { color: c.accentMuted }]}>No account, cloud sync, in-app AI calls, or analytics. Your profile, routines, and workout history stay in this app’s local storage. Svasthic may request shared exercise-catalog updates; it does not send your profile or workouts. If you export, the app you choose receives either your selected content or a whole-device JSON backup. Deleting Svasthic removes local data unless you exported it.</Text>
         </View>
       </View>
 
       <Card style={{ marginTop: 14 }}>
-        <Eyebrow>Export</Eyebrow>
-        <Text style={[s.body, { color: c.mutedForeground }]}>Save a JSON copy of your profile, plan versions, and every completed session.</Text>
+        <Eyebrow>Activities and routines</Eyebrow>
+        <Text style={[s.body, { color: c.mutedForeground }]}>Import or export selected activities and routines, with a guide for your own AI assistant. Separate from whole-device backup below.</Text>
+        <Button testID="open-content-exchange" label="Import & export content" icon="repeat" variant="soft" onPress={() => router.push('/content-exchange')} style={{ marginTop: 12 }} />
+      </Card>
+
+      <Card style={{ marginTop: 14 }}>
+        <Eyebrow>Whole-device backup</Eyebrow>
+        <Text style={[s.body, { color: c.mutedForeground }]}>Save a JSON copy of your profile, plan versions, and every completed session. Restore below replaces everything on this device.</Text>
         <Button testID="export" label="Export data" icon="share" variant="accent" onPress={doExport} style={{ marginTop: 12 }} />
         {showExport ? (
           <>
@@ -93,7 +99,7 @@ export default function Settings() {
       </Card>
 
       <Card style={{ marginTop: 14 }}>
-        <Eyebrow>Import</Eyebrow>
+        <Eyebrow>Whole-device restore</Eyebrow>
         <Text style={[s.body, { color: c.mutedForeground }]}>Paste a Svasthic backup. Earlier Tempo backups are still supported. It’s checked first, and you’ll confirm before anything is replaced.</Text>
         <TextInput
           testID="import-input"

@@ -1,0 +1,261 @@
+{
+  "format": "svasthic-content",
+  "version": 1,
+  "title": "Mixed routine example",
+  "author": "Example, not a coach or expert",
+  "activities": [
+    {
+      "ref": "chair-rise",
+      "origin": {
+        "id": "chair-rise",
+        "version": 1,
+        "kind": "external"
+      },
+      "activity": {
+        "id": "chair-rise",
+        "version": 1,
+        "name": "Chair rise",
+        "englishName": null,
+        "sanskritName": null,
+        "aliases": [],
+        "type": "exercise",
+        "discipline": "strength",
+        "family": "general",
+        "supportedMetrics": [
+          "reps"
+        ],
+        "distanceUnits": [],
+        "loadUnits": [
+          "kg",
+          "lb"
+        ],
+        "laterality": "bilateral",
+        "equipment": [
+          "chair"
+        ],
+        "difficulty": "unknown",
+        "primaryMuscles": null,
+        "secondaryMuscles": null,
+        "joints": null,
+        "actions": null,
+        "movementPatterns": null,
+        "description": "External example only. Check suitability and instructions with a qualified professional.",
+        "setup": [
+          "Use a stable chair that cannot slide."
+        ],
+        "execution": [
+          "Stand up slowly and sit back down with control."
+        ],
+        "cues": [],
+        "commonMistakes": null,
+        "benefits": [],
+        "precautions": [
+          "Stop if anything hurts."
+        ],
+        "modifications": [],
+        "instructionNeeded": false,
+        "seriesContext": [],
+        "mobility": null,
+        "adaptation": {
+          "eligible": false,
+          "loadingKnown": false,
+          "loadedJoints": [],
+          "rationale": "External, unverified content. Suitability not established."
+        },
+        "sourceIds": [],
+        "authorship": "user",
+        "reviewStatus": "unreviewed",
+        "archived": false
+      },
+      "sources": [],
+      "members": []
+    },
+    {
+      "ref": "quiet-breathing",
+      "origin": {
+        "id": "quiet-breathing",
+        "version": 1,
+        "kind": "external"
+      },
+      "activity": {
+        "id": "quiet-breathing",
+        "version": 1,
+        "name": "Quiet breathing",
+        "englishName": null,
+        "sanskritName": null,
+        "aliases": [],
+        "type": "practice-element",
+        "discipline": "yoga",
+        "family": "general",
+        "supportedMetrics": [
+          "breaths"
+        ],
+        "distanceUnits": [],
+        "loadUnits": [],
+        "laterality": "not-applicable",
+        "equipment": null,
+        "difficulty": "unknown",
+        "primaryMuscles": null,
+        "secondaryMuscles": null,
+        "joints": null,
+        "actions": null,
+        "movementPatterns": null,
+        "description": "External example only. Check suitability and instructions with a qualified professional.",
+        "setup": [],
+        "execution": [],
+        "cues": [],
+        "commonMistakes": null,
+        "benefits": [],
+        "precautions": [
+          "Stop if anything hurts."
+        ],
+        "modifications": [],
+        "instructionNeeded": false,
+        "seriesContext": [],
+        "mobility": null,
+        "adaptation": {
+          "eligible": false,
+          "loadingKnown": false,
+          "loadedJoints": [],
+          "rationale": "External, unverified content. Suitability not established."
+        },
+        "sourceIds": [],
+        "authorship": "user",
+        "reviewStatus": "unreviewed",
+        "archived": false
+      },
+      "sources": [],
+      "members": []
+    },
+    {
+      "ref": "walk",
+      "origin": {
+        "id": "walk",
+        "version": 1,
+        "kind": "external"
+      },
+      "activity": {
+        "id": "walk",
+        "version": 1,
+        "name": "Walking",
+        "englishName": null,
+        "sanskritName": null,
+        "aliases": [],
+        "type": "sport",
+        "discipline": "sports",
+        "family": "general",
+        "supportedMetrics": [
+          "duration",
+          "distance"
+        ],
+        "distanceUnits": [
+          "m",
+          "km",
+          "mi",
+          "yd"
+        ],
+        "loadUnits": [],
+        "laterality": "not-applicable",
+        "equipment": null,
+        "difficulty": "unknown",
+        "primaryMuscles": null,
+        "secondaryMuscles": null,
+        "joints": null,
+        "actions": null,
+        "movementPatterns": null,
+        "description": "External example only. Check suitability and instructions with a qualified professional.",
+        "setup": [],
+        "execution": [],
+        "cues": [],
+        "commonMistakes": null,
+        "benefits": [],
+        "precautions": [
+          "Stop if anything hurts."
+        ],
+        "modifications": [],
+        "instructionNeeded": false,
+        "seriesContext": [],
+        "mobility": null,
+        "adaptation": {
+          "eligible": false,
+          "loadingKnown": false,
+          "loadedJoints": [],
+          "rationale": "External, unverified content. Suitability not established."
+        },
+        "sourceIds": [],
+        "authorship": "user",
+        "reviewStatus": "unreviewed",
+        "archived": false
+      },
+      "sources": [],
+      "members": []
+    }
+  ],
+  "routines": [
+    {
+      "ref": "mixed-routine",
+      "originId": null,
+      "name": "Mixed routine draft",
+      "notes": "Review every target. The last item intentionally has no target.",
+      "items": [
+        {
+          "activityRef": "chair-rise",
+          "sets": 2,
+          "reps": 5,
+          "restSec": 30,
+          "load": 0,
+          "unit": "kg",
+          "perSide": false,
+          "priority": "normal",
+          "locked": false
+        },
+        {
+          "activityRef": "quiet-breathing",
+          "sets": 1,
+          "breaths": 6,
+          "restSec": 0,
+          "unit": "kg",
+          "perSide": false,
+          "priority": "optional",
+          "locked": false
+        },
+        {
+          "activityRef": "walk",
+          "sets": 1,
+          "distance": 0.5,
+          "distanceUnit": "mi",
+          "restSec": 0,
+          "unit": "lb",
+          "perSide": false,
+          "priority": "normal",
+          "locked": false
+        },
+        {
+          "activityRef": "walk",
+          "sets": 1,
+          "seconds": 300,
+          "restSec": 0,
+          "unit": "kg",
+          "perSide": false,
+          "priority": "normal",
+          "locked": false
+        },
+        {
+          "activityRef": "chair-rise",
+          "sets": 1,
+          "restSec": 0,
+          "unit": "lb",
+          "perSide": false,
+          "priority": "normal",
+          "locked": true
+        }
+      ]
+    }
+  ],
+  "selection": [
+    {
+      "kind": "routine",
+      "ref": "mixed-routine"
+    }
+  ]
+}

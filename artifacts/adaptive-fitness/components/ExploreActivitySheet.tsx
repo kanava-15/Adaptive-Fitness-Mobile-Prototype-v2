@@ -1,4 +1,5 @@
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -145,6 +146,8 @@ export function ExploreActivitySheet({ activityId, onClose, saved, onToggleSaved
             ) : null}
 
             <ExploreActivityContent key={currentId} activity={activity} release={release} onOpenRelated={open} />
+
+            <Button compact variant="ghost" icon="upload" label="Export this activity" accessibilityLabel={`Export ${activity.name} as content JSON`} onPress={() => { onClose(); router.push({ pathname: '/content-exchange', params: { activityId: activity.id } }); }} />
 
             <View style={[s.block, { borderColor: c.border, backgroundColor: c.muted, padding: 14, gap: 8 }]}>
               <Text accessibilityRole="header" style={[s.h, { color: c.foreground }]}>Your recorded history</Text>

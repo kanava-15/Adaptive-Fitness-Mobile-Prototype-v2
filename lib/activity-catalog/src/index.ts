@@ -5,3 +5,4 @@ export * from './canonical';
 export * from './release-order';
 export * from './integrity';
 export * from './repository';
+export * from './content-package';
