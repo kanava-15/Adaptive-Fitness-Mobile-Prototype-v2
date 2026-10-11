@@ -8,3 +8,9 @@ The user wants people to use their own AI assistant, which has their life contex
 **Why:** The user chose file-based exchange and content-only imports as the initial scope, while describing outside read/write access and potential AI integration as the long-term direction.
 
 **How to apply:** Keep selective content exchange separate from whole-device backup replacement. Do not add accounts, cloud personal-data storage, live MCP/API access, or scheduling imports without a subsequent scope decision.
+
+The user requested complete planning in simple, clear words before further import/export code: every user journey and touchpoint, what can be exported/imported, what details travel, and the exact format.
+
+**Why:** The user explicitly corrected the planning approach: “do a complete planning before jumping to code.”
+
+**How to apply:** Explain the content-exchange experience and distinguish current behavior from proposed changes before implementation; settle open behavior decisions rather than hiding them inside technical tasks.

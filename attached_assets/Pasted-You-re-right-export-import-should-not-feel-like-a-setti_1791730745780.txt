@@ -1,0 +1,36 @@
+You’re right: export/import should not feel like a settings utility bolted onto the app. It is the user-controlled bridge between their fitness library and their own AI assistant, so it needs one clear home and a few consistent entry points where the content is already visible.
+
+### What the current app exposes
+
+- **Library:** A compact exchange shortcut opens the Export, Import and Guide screens.
+- **Export from existing content:** Activity details, saved activity details, custom activity editing, routine cards and the routine builder have contextual export actions.
+- **Import:** Users choose a JSON file or paste JSON in the exchange screen. Settings also links to that screen, separately from whole-device backup and restore.
+
+That gives users several ways to export, but import is easier to miss: it’s a tab inside the exchange screen, with Settings as an alternate route. And choosing a file inside Svasthic is not the same as receiving a JSON file from another app’s share menu.
+
+### Product direction
+
+**Make Library the home for content exchange; keep Export contextual and Import deliberate.**
+
+| Where | Recommended action | Product reason and boundary |
+|---|---|---|
+| **Library home and Library header** | A compact **Import & export** entry opens the exchange screen. Make **Import** and **Export** equally easy to reach there. | Library is where users manage their content. This should be the dependable, predictable entry point—not only a Settings card or an export-first flow. |
+| **Explore activity details** | **Export this activity** | The user is already reviewing a shared definition. Explain that sequences include their dependencies and that the selected external destination receives the JSON. Do not add Import here. |
+| **Saved activity details** | **Export this saved version** | Useful when the catalog entry is unavailable offline. Export the saved definition and saved sequence membership; report an error if required dependencies cannot be resolved. |
+| **Custom or imported activity details** | **Export this activity** | Preserve its current local definition and origin/attribution. Keep its unverified status visible; do not imply that exporting or editing makes it expert-reviewed. |
+| **Routine list or routine editor** | **Export this routine** | Export the routine’s effective pinned definitions, order, repetitions, sides, notes, loads and targets—not newer definitions just because they share an activity ID. Exporting must not save or change the routine. |
+| **Builder’s activity picker** | No package import action in the middle of an unsaved routine draft. | Import adds library content; it should not silently alter a builder draft. After import, offer a clear route back to the Library or to create a routine using the imported activities. |
+| **Settings** | Keep the existing content-exchange link, but subordinate it to a clearly separate **Whole-device backup and restore** area. | Users coming to Settings for recovery should not confuse a selective content package with replacing the entire device state. |
+
+### Flow and interaction rules
+
+1. **Import should be discoverable before users have anything to export.** It belongs beside Export in the Library’s exchange entry, including for a new or empty library.
+2. **Contextual entry points should initiate export, not selection-less import.** From a detail or routine, preselect that item and its dependency closure; let the user review the package and choose where to send it.
+3. **Explain the handoff at the moment it matters.** Before sharing, tell users that the chosen destination receives the selected content and routine notes. Profile, schedules, history, bookmarks and active sessions stay excluded.
+4. **Treat Import as an approval flow, not an automatic side effect.** Choose a file or paste JSON, inspect included definitions, attribution, collisions and proposed targets, then explicitly add it. Cancel must leave both the library and device backup unchanged.
+5. **Return users somewhere useful.** After importing, offer Library and routine-building actions. Never start or schedule a workout as part of importing.
+6. **Keep recovery actions visibly different.** Whole-device restore can replace device data; content import only appends local content. Their labels, explanations and confirmation language should remain distinct.
+
+One meaningful future improvement is opening a JSON attachment *into* Svasthic directly from the phone’s system share/open menu. The current flow supports choosing a file from inside the app or pasting JSON; it does not yet register Svasthic as a destination for incoming files. That is a separate native-platform decision, not something to imply in the current UI.
+
+I’d use this hierarchy to guide later visual changes: **one Library exchange home, contextual export at content details, and a visibly separate backup/recovery area in Settings.**
