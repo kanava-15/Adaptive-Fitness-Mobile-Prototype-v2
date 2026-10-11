@@ -241,6 +241,7 @@ function ActivityDetailModal({ activity, onClose, onSelectRelated, onToggleSaved
   const insets = useSafeAreaInsets();
   const { state: catalog } = useCatalog();
   const tempo = useTempo();
+  const [routineChoices, setRoutineChoices] = useState(false);
   if (!activity) return null;
   const history = tempo.state.completions
     .map(completion => ({ completion, log: completion.exercises.find(entry => entry.exerciseId === activity.id) }))
@@ -280,13 +281,34 @@ function ActivityDetailModal({ activity, onClose, onSelectRelated, onToggleSaved
           </Card>
           <Button testID={`catalog-save-${activity.id}`} variant="soft" icon="bookmark" label={saved ? 'Saved · remove bookmark' : 'Save to Saved Activities'} onPress={() => onToggleSaved(activity)} />
           {!activity.archived ? (
-            <Button
-              testID="catalog-add-routine"
-              label={activity.type === 'sequence' ? 'Expand into routine — enter targets' : 'Add to new routine'}
-              onPress={() => router.push({ pathname: '/builder', params: { activityId: activity.id } })}
-            />
+            <Button testID="catalog-add-routine" label="Add to a routine" icon="plus" onPress={() => setRoutineChoices(true)} />
           ) : null}
         </ScrollView>
+        <Modal visible={routineChoices} transparent animationType="slide" onRequestClose={() => setRoutineChoices(false)}>
+          <View style={styles.choiceOverlay}>
+            <Pressable accessibilityLabel="Dismiss routine choices" onPress={() => setRoutineChoices(false)} style={StyleSheet.absoluteFill} />
+            <View style={[styles.choiceSheet, { backgroundColor: c.background, borderColor: c.border, paddingBottom: insets.bottom + 14 }]}>
+              <View style={styles.detailHeader}>
+                <Text style={[styles.historyTitle, { color: c.foreground, flex: 1 }]}>Choose a routine draft</Text>
+                <IconButton icon="x" label="Close routine choices" onPress={() => setRoutineChoices(false)} />
+              </View>
+              <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>This adds the activity to an editable draft. Nothing is saved until you confirm in the builder.</Text>
+              <Button testID="catalog-add-new-routine" label="Start a new routine draft" icon="plus" onPress={() => {
+                setRoutineChoices(false);
+                onClose();
+                router.push({ pathname: '/builder', params: { activityId: activity.id } });
+              }} />
+              {tempo.state.routines.filter(routine => !routine.archived).map(routine => (
+                <Button key={routine.id} testID={`catalog-add-existing-${routine.id}`} variant="soft" label={`Add to “${routine.name}” draft`} icon="layers" onPress={() => {
+                  setRoutineChoices(false);
+                  onClose();
+                  router.push({ pathname: '/builder', params: { id: routine.id, activityId: activity.id } });
+                }} />
+              ))}
+              {!tempo.state.routines.some(routine => !routine.archived) ? <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>No saved routines yet. Start a new draft above.</Text> : null}
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -331,4 +353,6 @@ const styles = StyleSheet.create({
   historyTitle: { fontFamily: fonts.bodySemi, fontSize: 16 },
   historyRow: { borderTopWidth: 1, paddingTop: 8, gap: 2 },
   historyDate: { fontFamily: fonts.bodySemi, fontSize: 13 },
+  choiceOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' },
+  choiceSheet: { borderTopWidth: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 18, paddingTop: 18, gap: 10 },
 });

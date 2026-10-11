@@ -1,10 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { PanResponder, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from 'expo-router';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { ExercisePicker, NumField, Segmented, ToggleRow, WeekdayPicker } from '@/components/planner';
+import { CatalogSelectionModal } from '@/components/CatalogSelectionModal';
 import { Button, Chip, Eyebrow, IconButton, confirm, success, tap, notify } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
@@ -20,6 +22,8 @@ import {
   SnapItem,
   estimateSec,
   findExercise,
+  activityDef,
+  itemsFromSelection,
   itemOf,
   makeItem,
   minutesLabel,
@@ -31,13 +35,14 @@ import {
 } from '@/lib/domain';
 import { newId, prettyDate } from '@/lib/engine';
 import { TargetEditor } from '@/components/TargetEditor';
-import { sequenceDefinitions, targetLabel, trackingOf, definitionOfSnap, dosageFree } from '@/lib/domain';
+import { targetLabel, trackingOf, definitionOfSnap, dosageFree } from '@/lib/domain';
 
 export default function Builder() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const { id, occ: occKey, activityId } = useLocalSearchParams<{ id?: string; occ?: string; activityId?: string }>();
   const { state, saveRoutine, futureUses, pushRoutineToFuture, occurrence, editOcc } = useTempo();
+  const navigation = useNavigation();
   const custom = state.customExercises;
   const routine = id ? state.routines.find((r) => r.id === id) : undefined;
   const occ = occKey ? occurrence(occKey) : null;
@@ -46,22 +51,35 @@ export default function Builder() {
   const [name, setName] = useState(routine?.name ?? occ?.snapshot.title ?? '');
   const [notes, setNotes] = useState(routine?.notes ?? '');
   const [initial] = useState(() => {
-    if (routine) return { items: routine.items.map(i => ({ ...i })), error: '' };
-    if (occ) return { items: occ.snapshot.items.map(itemOf), error: '' };
-    const d = activityId ? findExercise(custom, activityId) : undefined;
-    if (!d) return { items: [] as RoutineItem[], error: activityId ? 'Activity unavailable. Choose another activity from the library.' : '' };
-    if (d.activity?.type !== 'sequence') return { items: [makeItem(d, 'kg', state.presets[d.id])], error: '' };
-    try { return { items: sequenceDefinitions(d.id, custom).map(m => ({ ...makeItem(m.definition), side: m.side, confirmed: false })), error: '' }; }
-    catch (err) { return { items: [] as RoutineItem[], error: `Sequence unavailable: ${err instanceof Error ? err.message : 'membership invalid'}. Restore its missing activities or edit membership.` }; }
+    const base = routine
+      ? routine.items.map(i => ({ ...i }))
+      : occ
+        ? occ.snapshot.items.map(itemOf)
+        : [] as RoutineItem[];
+    if (!activityId) return { items: base, error: '' };
+    const saved = state.savedActivities.find(item => item.id === activityId);
+    const d = findExercise(custom, activityId) ?? (saved ? { ...activityDef(saved.fallback), sequenceMembers: saved.sequenceMembers } : undefined);
+    if (!d) return { items: base, error: 'Activity unavailable. Choose another activity from the library.' };
+    const batch = itemsFromSelection([d], custom, state.presets);
+    if (batch.error) return { items: base, error: batch.error };
+    return { items: [...base, ...batch.items], error: '' };
   });
   const [items, setItems] = useState<RoutineItem[]>(initial.items);
   const [open, setOpen] = useState<string | null>(null);
-  const [picker, setPicker] = useState<{ mode: 'add' } | { mode: 'replace'; key: string } | null>(null);
+  const [picker, setPicker] = useState<{ mode: 'replace'; key: string } | null>(null);
+  const [selectionVisible, setSelectionVisible] = useState(false);
   const [errors, setErrors] = useState<string[]>(initial.error ? [initial.error] : []);
+  const [batchError, setBatchError] = useState(initial.error);
   const [scope, setScope] = useState<Scope>('one');
   const [weekdays, setWeekdays] = useState<number[]>(occ?.weekdays ?? []);
   const uses = routine ? futureUses(routine.id) : 0;
   const [updateFuture, setUpdateFuture] = useState(false);
+  const [itemPositions, setItemPositions] = useState<Record<string, { y: number; height: number }>>({});
+  const itemPositionsRef = useRef(itemPositions);
+  itemPositionsRef.current = itemPositions;
+  const allowExitRef = useRef(false);
+  const dragStartRef = useRef<number | null>(null);
+  const dragTargetRef = useRef<string | null>(null);
   const top = Platform.OS === 'web' ? 67 : Platform.OS === 'ios' ? 20 : insets.top + 12;
   const bottom = Platform.OS === 'web' ? 34 : insets.bottom + 16;
 
@@ -84,25 +102,58 @@ export default function Builder() {
       [n[i], n[j]] = [n[j], n[i]];
       return n;
     });
+  const moveItemTo = (key: string, target: number) => setItems(xs => {
+    const from = xs.findIndex(item => item.key === key);
+    if (from < 0 || target < 0 || target >= xs.length || from === target) return xs;
+    const next = [...xs];
+    const [item] = next.splice(from, 1);
+    next.splice(target, 0, item);
+    return next;
+  });
+  const startDrag = (key: string) => {
+    const position = itemPositionsRef.current[key];
+    dragStartRef.current = position ? position.y + position.height / 2 : null;
+    dragTargetRef.current = key;
+  };
+  const dragItem = (key: string, dy: number) => {
+    if (dragTargetRef.current !== key || dragStartRef.current == null) return;
+    const y = dragStartRef.current + dy;
+    const positions = itemPositionsRef.current;
+    const sorted = items.map((item, index) => ({ item, index, position: positions[item.key] }))
+      .filter(entry => !!entry.position)
+      .sort((a, b) => a.position!.y - b.position!.y);
+    const target = Math.max(0, Math.min(items.length - 1,
+      sorted.filter(entry => entry.position!.y + entry.position!.height / 2 < y).length));
+    moveItemTo(key, target);
+  };
+  const endDrag = () => { dragStartRef.current = null; dragTargetRef.current = null; };
   const pick = (e: ExerciseDef) => {
     if (!picker) return;
     if (e.activity?.type === 'sequence') {
-      let expanded: RoutineItem[];
-      try { expanded = sequenceDefinitions(e.id, custom).map(m => ({ ...makeItem(m.definition), side: m.side, confirmed: false })); }
-      catch (err) { notify('Sequence unavailable', `${err instanceof Error ? err.message : 'Cannot expand membership'}. Edit membership or restore its missing activities.`); return; }
-      setItems(xs => picker.mode === 'add' ? [...xs, ...expanded] : xs.flatMap(x => x.key === picker.key ? expanded : [x]));
-      setOpen(expanded[0]?.key ?? null);
+      const expanded = itemsFromSelection([e], custom, state.presets);
+      if (expanded.error) { notify('Sequence unavailable', expanded.error); return; }
+      setItems(xs => xs.flatMap(x => x.key === picker.key ? expanded.items : [x]));
+      setOpen(expanded.items[0]?.key ?? null);
       setPicker(null);
       return;
     }
-    if (picker.mode === 'add') {
-      const it = { ...makeItem(e, 'kg', state.presets[e.id]), definition: dosageFree(e) };
-      setItems((xs) => [...xs, it]);
-      setOpen(it.key);
-    } else {
-      setItems((xs) => xs.map((x) => (x.key === picker.key ? { ...makeItem(e, x.unit), key: newId('it'), sets: x.sets, restSec: x.restSec, priority: x.priority, locked: x.locked } : x)));
-    }
+    setItems((xs) => xs.map((x) => (x.key === picker.key ? { ...makeItem(e, x.unit, state.presets[e.id]), key: newId('it'), sets: x.sets, restSec: x.restSec, priority: x.priority, locked: x.locked } : x)));
     setPicker(null);
+  };
+  const addSelection = (selected: ExerciseDef[]) => {
+    const batch = itemsFromSelection(selected, custom, state.presets);
+    if (batch.error) {
+      setBatchError(batch.error);
+      setErrors([batch.error]);
+      notify('Sequence unavailable', batch.error);
+      setSelectionVisible(false);
+      return;
+    }
+    setItems(current => [...current, ...batch.items]);
+    setOpen(batch.items[0]?.key ?? null);
+    setBatchError('');
+    setErrors([]);
+    setSelectionVisible(false);
   };
 
   const mismatches = routineMismatches({ items }, custom);
@@ -122,16 +173,35 @@ export default function Builder() {
       else validateItem(it, r.tracking).forEach((e) => errs.push(`${r.name}: ${e}`));
     });
     if (mismatches.length) errs.push('Confirm new targets for activities whose tracking changed.');
+    if (batchError) errs.push(batchError);
     if (occ && scope === 'future' && occ.recurring && !weekdays.length) errs.push('Pick at least one weekday for the series.');
     setErrors(errs);
     return errs.length === 0;
   };
+  const hasUnsavedChanges = !!activityId || name !== (routine?.name ?? occ?.snapshot.title ?? '') ||
+    notes !== (routine?.notes ?? '') || JSON.stringify(items) !== JSON.stringify(initial.items) ||
+    scope !== 'one' || updateFuture;
+  useEffect(() => navigation.addListener('beforeRemove', event => {
+    if (!hasUnsavedChanges || allowExitRef.current) return;
+    event.preventDefault();
+    confirm(
+      'Leave without saving?',
+      'Your routine changes are still a draft. Leave now and discard them?',
+      'Leave',
+      () => {
+        allowExitRef.current = true;
+        navigation.dispatch(event.data.action);
+      },
+      true,
+    );
+  }), [hasUnsavedChanges, navigation]);
 
   const save = () => {
     if (!validate()) return;
     if (occ) {
       editOcc(occ, snapshotFromItems(name.trim(), resolved), occ.recurring ? scope : 'one', scope === 'future' ? weekdays : undefined);
       success();
+      allowExitRef.current = true;
       router.back();
       return;
     }
@@ -139,6 +209,7 @@ export default function Builder() {
     const saved = saveRoutine({ ...base, name: name.trim(), notes: notes.trim(), items });
     if (routine && updateFuture && uses) pushRoutineToFuture(saved);
     success();
+    allowExitRef.current = true;
     router.back();
   };
 
@@ -177,27 +248,31 @@ export default function Builder() {
         <Text style={[s.hint, { color: c.mutedForeground, marginTop: 8 }]}>{EST_EXPLAIN}</Text>
 
         <View style={{ gap: 10, marginTop: 18 }}>
+          <View style={{ gap: 10 }}>
           {items.map((it, n) => {
             const r = resolve(it);
             if (!r) return null;
             const isOpen = open === it.key;
             const target = targetLabel(it);
             return (
-              <View key={it.key} testID={`item-${n}`} style={[s.item, { backgroundColor: c.card, borderColor: isOpen ? c.primary : c.border }]}>
-                <Pressable onPress={() => { tap(); setOpen(isOpen ? null : it.key); }} style={s.itemHead}>
-                  <Text style={[s.itemNum, { color: c.mutedForeground }]}>{String(n + 1).padStart(2, '0')}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.itemName, { color: c.foreground }]}>{r.name}</Text>
-                    <Text style={[s.itemMeta, { color: c.mutedForeground }]}>
-                      {it.sets} × {target} · rest {it.restSec}s
-                      {it.priority !== 'normal' ? ` · ${PRIORITY_LABEL[it.priority].toLowerCase()}` : ''}
-                    </Text>
-                  </View>
+              <View key={it.key} onLayout={event => setItemPositions(current => ({ ...current, [it.key]: { y: event.nativeEvent.layout.y, height: event.nativeEvent.layout.height } }))} testID={`item-${n}`} style={[s.item, { backgroundColor: c.card, borderColor: isOpen ? c.primary : c.border }]}>
+                <View style={s.itemHead}>
+                  <DragHandle label={`Drag to reorder ${r.name}`} onStart={() => startDrag(it.key)} onMove={dy => dragItem(it.key, dy)} onEnd={endDrag} color={c.mutedForeground} />
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${r.name} target`} onPress={() => { tap(); setOpen(isOpen ? null : it.key); }} style={s.itemSummary}>
+                    <Text style={[s.itemNum, { color: c.mutedForeground }]}>{String(n + 1).padStart(2, '0')}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[s.itemName, { color: c.foreground }]}>{r.name}</Text>
+                      <Text style={[s.itemMeta, { color: c.mutedForeground }]}>
+                        {it.sets} × {target} · rest {it.restSec}s
+                        {it.priority !== 'normal' ? ` · ${PRIORITY_LABEL[it.priority].toLowerCase()}` : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
                   {r.rehab ? <Feather name="shield" size={16} color={c.secondaryForeground} /> : null}
                   <Pressable accessibilityLabel={it.locked ? 'Unlock activity' : 'Lock activity'} testID={`lock-${n}`} hitSlop={8} onPress={() => { tap(); patch(it.key, { locked: !it.locked }); }} style={[s.lock, { backgroundColor: it.locked ? c.primary : c.muted }]}>
                     <Feather name={it.locked ? 'lock' : 'unlock'} size={14} color={it.locked ? c.primaryForeground : c.mutedForeground} />
                   </Pressable>
-                </Pressable>
+                </View>
                 {isOpen ? (
                   <View style={{ marginTop: 12 }}>
                     <TargetEditor item={it} definition={it.definition ?? definitionOfSnap(r)} index={n} onChange={p => patch(it.key, p)} />
@@ -219,10 +294,7 @@ export default function Builder() {
               </View>
             );
           })}
-          <Pressable testID="builder-add" onPress={() => { tap(); setPicker({ mode: 'add' }); }} style={[s.add, { borderColor: c.primary }]}>
-            <Feather name="plus" size={18} color={c.primary} />
-            <Text style={[s.addText, { color: c.primary }]}>Add an activity</Text>
-          </Pressable>
+          </View>
         </View>
 
         {occ && occ.recurring ? (
@@ -261,10 +333,32 @@ export default function Builder() {
         ) : null}
       </KeyboardAwareScrollViewCompat>
       <View style={[s.footer, { paddingBottom: bottom, backgroundColor: c.background, borderTopColor: c.border }]}>
-        <Button label="Cancel" variant="ghost" onPress={() => router.back()} style={{ flex: 1 }} />
-        <Button testID="builder-save" label={occ ? 'Save session' : 'Save routine'} icon="check" onPress={save} style={{ flex: 1.4 }} />
+        <Button testID="builder-add" label="Add Activity" icon="plus" variant="soft" onPress={() => setSelectionVisible(true)} />
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button label="Cancel" variant="ghost" onPress={() => router.back()} style={{ flex: 1 }} />
+          <Button testID="builder-save" label={occ ? 'Save session' : 'Save routine'} icon="check" onPress={save} style={{ flex: 1.4 }} />
+        </View>
       </View>
-      <ExercisePicker visible={!!picker} custom={custom} title={picker?.mode === 'replace' ? 'Replace with' : 'Add an activity'} onClose={() => setPicker(null)} onPick={pick} />
+      <ExercisePicker visible={!!picker} custom={custom} title="Replace with" onClose={() => setPicker(null)} onPick={pick} />
+      <CatalogSelectionModal visible={selectionVisible} custom={custom} onClose={() => setSelectionVisible(false)} onConfirm={addSelection} />
+    </View>
+  );
+}
+
+function DragHandle({ label, onStart, onMove, onEnd, color }: { label: string; onStart: () => void; onMove: (dy: number) => void; onEnd: () => void; color: string }) {
+  const callbacks = useRef({ onStart, onMove, onEnd });
+  callbacks.current = { onStart, onMove, onEnd };
+  const responder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dy) > 6,
+    onPanResponderGrant: () => callbacks.current.onStart(),
+    onPanResponderMove: (_event, gesture) => callbacks.current.onMove(gesture.dy),
+    onPanResponderRelease: () => callbacks.current.onEnd(),
+    onPanResponderTerminate: () => callbacks.current.onEnd(),
+  }), []);
+  return (
+    <View {...responder.panHandlers} accessibilityRole="button" accessibilityLabel={label} accessibilityHint="Drag vertically to reorder. Move up and Move down buttons are also available." style={s.dragHandle}>
+      <Feather name="menu" size={18} color={color} />
     </View>
   );
 }
@@ -284,6 +378,7 @@ const s = StyleSheet.create({
   hint: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 18 },
   item: { borderRadius: 20, borderWidth: 1.5, padding: 14 },
   itemHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  itemSummary: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   itemNum: { fontFamily: fonts.display, fontSize: 14, width: 22 },
   itemName: { fontFamily: fonts.bodySemi, fontSize: 15 },
   itemMeta: { fontFamily: fonts.body, fontSize: 12.5, marginTop: 2 },
@@ -297,5 +392,6 @@ const s = StyleSheet.create({
   futureBox: { borderWidth: 1, borderRadius: 18, paddingHorizontal: 14, paddingBottom: 14, marginTop: 22 },
   errBox: { borderWidth: 1.5, borderRadius: 14, padding: 12, marginTop: 18, gap: 4 },
   err: { fontFamily: fonts.bodyMedium, fontSize: 13 },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, gap: 8, paddingHorizontal: 20, paddingTop: 10, borderTopWidth: 1 },
+  dragHandle: { width: 26, height: 38, alignItems: 'center', justifyContent: 'center' },
 });

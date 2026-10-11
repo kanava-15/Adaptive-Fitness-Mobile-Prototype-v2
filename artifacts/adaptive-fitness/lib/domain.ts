@@ -391,6 +391,51 @@ export function sequenceDefinitions(id: string, custom: ExerciseDef[] = []): { d
   return expanded.map(m => ({ definition: findExercise(custom, m.activityId)!, side: m.side }));
 }
 
+/** Build a selection batch atomically; sequence leaves stay ordered, repeated, pinned, and target-free. */
+export function itemsFromSelection(
+  selected: ExerciseDef[],
+  custom: ExerciseDef[] = [],
+  presets: StateV2['presets'] = {},
+): { items: RoutineItem[]; error: string | null } {
+  const definitions = [...new Map([...custom, ...selected].map(definition => [definition.id, definition])).values()];
+  const staged: RoutineItem[] = [];
+  try {
+    for (const definition of selected) {
+      if (definition.activity?.type === 'sequence') {
+        const members = sequenceDefinitions(definition.id, definitions);
+        staged.push(...members.map(member => {
+          const item = makeItem(member.definition, 'kg', presets[member.definition.id]);
+          return {
+            ...item,
+            reps: undefined,
+            seconds: undefined,
+            breaths: undefined,
+            distance: undefined,
+            distanceUnit: member.definition.tracking === 'distance'
+              ? member.definition.activity?.distanceUnits[0] ?? item.distanceUnit
+              : undefined,
+            definition: dosageFree(member.definition),
+            side: member.side,
+            confirmed: false,
+          };
+        }));
+      } else {
+        staged.push({
+          ...makeItem(definition, 'kg', presets[definition.id]),
+          definition: dosageFree(definition),
+          ...(definition.activity ? { confirmed: false } : {}),
+        });
+      }
+    }
+    return { items: staged, error: null };
+  } catch (error) {
+    return {
+      items: [],
+      error: `Sequence unavailable: ${error instanceof Error ? error.message : 'membership invalid'}. Restore its missing activities or edit membership.`,
+    };
+  }
+}
+
 const activityNames = (a: Activity) => [a.name, a.englishName, a.sanskritName, ...a.aliases]
   .filter((name): name is string => !!name).map(normalizedIdentity).filter(Boolean);
 function legacyExercises(): ExerciseDef[] {

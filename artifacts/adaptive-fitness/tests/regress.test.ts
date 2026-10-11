@@ -174,3 +174,86 @@ test('unknown catalog equipment and difficulty never become no-equipment or begi
   assert.equal(D.searchCatalog([unknown], { ...D.emptyCatalogSearchFilters(), difficulty: 'beginner' }).length, 0);
   assert.deepEqual(D.catalogAreas(unknown), []);
 });
+
+test('routine batch expansion keeps selection order, repeated sequence leaves, sides, stable keys, and no inferred dose', () => {
+  const release = (starter as { release: CatalogRelease }).release;
+  const sequenceActivity = release.activities.find(activity => activity.type === 'sequence')!;
+  const leafActivity = release.activities.find(activity => activity.type !== 'sequence' && activity.supportedMetrics.length > 0)!;
+  const sequence = {
+    ...D.activityDef({ ...sequenceActivity, id: 'batch-sequence' }),
+    sequenceMembers: [
+      { sequenceId: 'batch-sequence', activityId: 'batch-leaf', order: 0, side: 'right' as const },
+      { sequenceId: 'batch-sequence', activityId: 'batch-leaf', order: 1, side: 'left' as const },
+    ],
+  };
+  const leaf = D.activityDef({ ...leafActivity, id: 'batch-leaf' });
+  const before = D.activityDef({ ...leafActivity, id: 'batch-before', name: 'Before sequence' });
+  const batch = D.itemsFromSelection([before, sequence], [sequence, leaf]);
+  assert.equal(batch.error, null);
+  assert.equal(batch.items.length, 3);
+  assert.deepEqual(batch.items.map(item => item.exerciseId), ['batch-before', 'batch-leaf', 'batch-leaf']);
+  assert.deepEqual(batch.items.slice(1).map(item => item.side), ['right', 'left']);
+  assert.equal(new Set(batch.items.map(item => item.key)).size, 3);
+  assert.ok(batch.items.every(item => item.confirmed === false));
+  assert.ok(batch.items.every(item => item.reps == null && item.seconds == null && item.breaths == null && item.distance == null));
+  assert.ok(batch.items.every(item => item.definition?.activity?.type !== 'sequence'));
+});
+
+test('invalid sequence membership rejects the whole routine batch', () => {
+  const release = (starter as { release: CatalogRelease }).release;
+  const sequenceActivity = release.activities.find(activity => activity.type === 'sequence')!;
+  const broken = {
+    ...D.activityDef({ ...sequenceActivity, id: 'broken-batch-sequence' }),
+    sequenceMembers: [{ sequenceId: 'broken-batch-sequence', activityId: 'absent-batch-leaf', order: 0, side: 'both' as const }],
+  };
+  const single = D.activityDef({ ...release.activities.find(activity => activity.type !== 'sequence')!, id: 'before-broken-sequence' });
+  const batch = D.itemsFromSelection([single, broken], [broken]);
+  assert.equal(batch.items.length, 0);
+  assert.match(batch.error ?? '', /Missing activity absent-batch-leaf/);
+});
+
+test('new batch selections require explicit targets for every supported measurement', () => {
+  const release = (starter as { release: CatalogRelease }).release;
+  const seed = release.activities.find(activity => activity.type !== 'sequence' && activity.supportedMetrics.length > 0)!;
+  const cases = [
+    { metric: 'reps' as const, target: { reps: 8 } },
+    { metric: 'duration' as const, target: { seconds: 30 } },
+    { metric: 'breaths' as const, target: { breaths: 5 } },
+    { metric: 'distance' as const, target: { distance: 10, distanceUnit: 'km' as const } },
+  ];
+  for (const scenario of cases) {
+    const activity = {
+      ...seed,
+      id: `batch-metric-${scenario.metric}`,
+      supportedMetrics: [scenario.metric],
+      distanceUnits: scenario.metric === 'distance' ? ['km' as const] : [],
+    };
+    const definition = D.activityDef(activity);
+    const fresh = D.itemsFromSelection([definition]).items[0];
+    assert.equal(fresh.confirmed, false);
+    assert.ok(D.validateItem(fresh, definition.tracking).length > 0, `${scenario.metric} requires a target`);
+    const confirmed = { ...fresh, ...scenario.target, confirmed: true };
+    assert.deepEqual(D.validateItem(confirmed, definition.tracking), [], `${scenario.metric} accepts its explicit target`);
+  }
+});
+
+test('routine item order, targets, notes, and repeated identities survive backup round trip', () => {
+  const definition = D.BUILTIN.find(item => item.tracking === 'reps')!;
+  const first = { ...D.makeItem(definition), reps: 9, note: 'Keep the range comfortable' };
+  const second = { ...D.makeItem(definition), reps: 12, note: 'Second occurrence', priority: 'must' as const, locked: true };
+  const routine: D.Routine = {
+    id: 'batch-backup-routine', name: 'Ordered routine', notes: 'Local notes', items: [first, second],
+    version: 1, archived: false, createdAt: '2026-10-11T00:00:00.000Z', updatedAt: '2026-10-11T00:00:00.000Z',
+  };
+  const state = { ...D.emptyState(), routines: [routine] };
+  const check = D.checkImport(JSON.stringify(D.exportPayload(state)));
+  assert.ok(check.ok);
+  if (check.ok) {
+    const restored = check.data.routines[0];
+    assert.deepEqual(restored.items.map(item => item.key), [first.key, second.key]);
+    assert.deepEqual(restored.items.map(item => item.reps), [9, 12]);
+    assert.deepEqual(restored.items.map(item => item.note), ['Keep the range comfortable', 'Second occurrence']);
+    assert.equal(restored.items[1].locked, true);
+    assert.equal(restored.items[1].priority, 'must');
+  }
+});

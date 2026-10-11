@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TextInput } from 'react-native';
 import { NumField, Segmented, ToggleRow } from './planner';
 import { Chip } from './ui';
 import { useColors } from '@/hooks/useColors';
@@ -12,7 +12,7 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
   const c = useColors();
   const a = knowledgeOf(definition);
   const tracking: Tracking = item.breaths != null ? 'breaths' : item.distance != null ? 'distance' : item.seconds != null ? 'time' : item.reps != null ? 'reps' : definition.tracking;
-  const change = (p: Partial<RoutineItem>) => onChange({ ...p, confirmed: true });
+  const change = (p: Partial<RoutineItem>) => onChange(definition.activity ? { ...p, confirmed: false } : p);
   const sides = ['unilateral', 'alternating'].includes(a.laterality);
   return (
     <View style={{ gap: 10 }}>
@@ -21,8 +21,11 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
         {a.supportedMetrics.map(m => {
           const t = m === 'duration' ? 'time' : m;
           return <Chip key={m} label={m} active={tracking === t} onPress={() => change({
-            reps: undefined, seconds: undefined, breaths: undefined, distance: undefined,
-            ...(t === 'reps' ? { reps: 1 } : t === 'time' ? { seconds: 5 } : t === 'breaths' ? { breaths: 1 } : { distance: 1, distanceUnit: a.distanceUnits[0] }),
+            reps: undefined,
+            seconds: undefined,
+            breaths: undefined,
+            distance: undefined,
+            distanceUnit: t === 'distance' ? a.distanceUnits[0] : undefined,
           })} />;
         })}
       </View>
@@ -41,6 +44,18 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
         <Segmented options={(['unspecified', 'left', 'right', 'both', 'alternating'] as Side[]).map(v => ({ value: v, label: v }))} value={item.side ?? 'unspecified'} onChange={side => change({ side })} />
         <ToggleRow label="Per side" value={item.perSide} onChange={perSide => change({ perSide })} />
       </> : null}
+      <View style={{ gap: 5 }}>
+        <Text style={{ color: c.mutedForeground, fontSize: 11, fontWeight: '600', letterSpacing: 1 }}>ACTIVITY NOTES</Text>
+        <TextInput
+          testID={`item-note-${index}`}
+          value={item.note ?? ''}
+          onChangeText={note => onChange({ note: note || undefined })}
+          placeholder="Optional note for this routine item"
+          placeholderTextColor={c.mutedForeground}
+          multiline
+          style={{ minHeight: 42, color: c.foreground, borderColor: c.border, borderWidth: 1, borderRadius: 12, padding: 10 }}
+        />
+      </View>
       <ToggleRow testID={`target-confirm-${index}`} label="Confirm this target" hint="Required for new catalog and sequence choices." value={item.confirmed === true} onChange={confirmed => onChange({ confirmed })} />
     </View>
   );
