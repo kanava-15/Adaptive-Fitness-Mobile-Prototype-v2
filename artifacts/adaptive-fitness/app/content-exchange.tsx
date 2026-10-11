@@ -13,7 +13,7 @@ import { copyText, pickContentFile, shareContentFile } from '@/lib/content-trans
 import type { ContentItem } from '@workspace/activity-catalog';
 import { DetailDisclosure } from '@/components/ExploreActivityContent';
 
-type Tab = 'export' | 'import' | 'guide';
+type Tab = 'home' | 'export' | 'import' | 'guide';
 const msg = (e: unknown) => (e instanceof Error ? e.message : 'Something went wrong.');
 const first = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v);
 const MAX_RESULTS = 12;
@@ -62,7 +62,16 @@ export default function ContentExchange() {
     ...(first(params.activityId) ? [{ kind: 'activity' as const, id: first(params.activityId)! }] : []),
     ...(first(params.routineId) ? [{ kind: 'routine' as const, id: first(params.routineId)! }] : []),
   ]).current;
-  const [tab, setTab] = useState<Tab>(first(params.tab) === 'import' ? 'import' : first(params.tab) === 'guide' ? 'guide' : 'export');
+  const hasContextSelection = !!first(params.activityId) || !!first(params.routineId);
+  const requestedTab = first(params.tab);
+  const initialTab: Tab = requestedTab === 'import'
+    ? 'import'
+    : requestedTab === 'guide'
+      ? 'guide'
+      : requestedTab === 'export' || hasContextSelection
+        ? 'export'
+        : 'home';
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [picked, setPicked] = useState<ExportSelection[]>(initial);
   const [q, setQ] = useState('');
   const [output, setOutput] = useState<string | null>(null);
@@ -148,11 +157,28 @@ export default function ContentExchange() {
       </View>
       <KeyboardAwareScrollViewCompat style={{ backgroundColor: c.background }} contentContainerStyle={{ padding: 20, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" bottomOffset={20}>
         <View style={s.chips}>
+          {tab !== 'home' ? <Chip testID="tab-options" label="Options" icon="arrow-left" onPress={() => setTab('home')} /> : null}
           <Chip testID="tab-export" label="Export" icon="upload" active={tab === 'export'} onPress={() => setTab('export')} />
           <Chip testID="tab-import" label="Import" icon="download" active={tab === 'import'} onPress={() => setTab('import')} />
           <Chip testID="tab-guide" label="Guide" icon="book-open" active={tab === 'guide'} onPress={() => setTab('guide')} />
         </View>
         <Text style={[s.small, { color: c.mutedForeground, marginTop: 10 }]}>Move activities and routines to or from your own AI assistant or another device. This is separate from whole-device backup and restore in Settings, and never replaces your library.</Text>
+
+        {tab === 'home' ? (
+          <View testID="content-exchange-options" style={{ marginTop: 16, gap: 12 }}>
+            <Card style={{ gap: 8 }}>
+              <Eyebrow>Bring content into Svasthic</Eyebrow>
+              <Text style={[s.small, { color: c.mutedForeground }]}>Review an activity or routine JSON file, or paste its contents, before adding anything to your library.</Text>
+              <Button testID="content-open-import" compact variant="soft" icon="download" label="Import content" onPress={() => setTab('import')} style={{ alignSelf: 'flex-start' }} />
+            </Card>
+            <Card style={{ gap: 8 }}>
+              <Eyebrow>Take content out of Svasthic</Eyebrow>
+              <Text style={[s.small, { color: c.mutedForeground }]}>Choose activities or routines, then prepare a JSON file to copy or share.</Text>
+              <Button testID="content-open-export" compact variant="soft" icon="upload" label="Export content" onPress={() => setTab('export')} style={{ alignSelf: 'flex-start' }} />
+            </Card>
+            <Button testID="content-open-guide" compact variant="ghost" icon="book-open" label="AI format guide" onPress={() => setTab('guide')} style={{ alignSelf: 'flex-start' }} />
+          </View>
+        ) : null}
 
         {tab === 'export' ? (
           <View style={{ marginTop: 14, gap: 10 }}>

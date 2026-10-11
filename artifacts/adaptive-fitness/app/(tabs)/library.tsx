@@ -81,13 +81,10 @@ export default function LibraryScreen() {
           <Text style={[s.appBarEyebrow, { color: c.mutedForeground }]}>{tab === 'home' ? 'Svasthic' : 'Library'}</Text>
           <Text accessibilityRole="header" style={[s.appBarTitle, title.length > 12 && s.longAppBarTitle, tab === 'routines' && s.compactAppBarTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
         </View>
-        <IconButton testID="library-content" icon="repeat" label="Import or export content" onPress={() => router.push('/content-exchange')} />
-        <Button
-          compact
-          variant="soft"
+        <Button compact variant="soft" testID="library-content" icon="repeat" label="Import & export" accessibilityLabel="Import or export content" onPress={() => router.push('/content-exchange')} />
+        <IconButton
           icon="compass"
-          label="Explore"
-          accessibilityLabel="Explore the full activity catalog"
+          label="Explore the full activity catalog"
           testID="library-explore"
           onPress={() => router.push('/catalog-search')}
         />
