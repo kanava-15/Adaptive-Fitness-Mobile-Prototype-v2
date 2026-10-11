@@ -74,7 +74,7 @@ export default function Settings() {
         <Feather name="lock" size={20} color={c.done} />
         <View style={{ flex: 1 }}>
           <Text style={[s.privTitle, { color: c.accentForeground }]}>Stays on this device</Text>
-          <Text style={[s.privBody, { color: c.accentMuted }]}>No account, no cloud, no AI, no analytics. Your plan and history live only in this app’s local storage. Deleting the app deletes the data unless you export it.</Text>
+          <Text style={[s.privBody, { color: c.accentMuted }]}>No account, cloud sync, AI, or analytics. Your profile, routines, and workout history stay in this app’s local storage. Tempo may request shared exercise-catalog updates; it does not send your profile or workouts. If you export, the app you choose in the share sheet receives a JSON backup. Deleting Tempo removes local data unless you exported it.</Text>
         </View>
       </View>
 
