@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { sha256 } from '@noble/hashes/sha2.js';
-import { bytesToHex } from '@noble/hashes/utils.js';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 import { activitySchema, idSchema, sourceSchema, type Activity } from './schema';
 import { canonicalJson } from './canonical';
 
@@ -55,10 +55,10 @@ export const contentImportMetadataSchema = z.object({
 export type ContentImportMetadata = z.infer<typeof contentImportMetadataSchema>;
 
 export function contentFingerprint(value: unknown): string {
-  return bytesToHex(sha256(new TextEncoder().encode(canonicalJson(value))));
+  return bytesToHex(sha256(utf8ToBytes(canonicalJson(value))));
 }
 export function utf8Size(text: string): number {
-  return new TextEncoder().encode(text).length;
+  return utf8ToBytes(text).length;
 }
 export function sourceReferences(a: Activity): string[] {
   return [...new Set([...a.sourceIds, ...a.seriesContext.map(s => s.sourceId), ...a.benefits.flatMap(b => b.sourceIds), ...(a.mediaReferences ?? []).map(m => m.sourceId)])];
