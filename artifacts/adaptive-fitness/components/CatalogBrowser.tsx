@@ -15,6 +15,7 @@ const browseDisciplines: { id: Discipline; icon: keyof typeof Feather.glyphMap }
   { id: 'yoga', icon: 'wind' },
   { id: 'mobility', icon: 'rotate-cw' },
   { id: 'conditioning', icon: 'zap' },
+  { id: 'sports', icon: 'target' },
 ];
 const shelfDefinitions = [
   { id: 'no-equipment', title: 'No-equipment activities', facet: 'equipment', value: 'none' },

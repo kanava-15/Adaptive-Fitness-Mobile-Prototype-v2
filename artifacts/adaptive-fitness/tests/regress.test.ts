@@ -82,7 +82,7 @@ test('routine launch requires confirmed targets and refuses partial snapshots wi
   const restored = D.loadStored(JSON.stringify({ ...D.emptyState(), routines: [routine], schedule: [], active: run }), null).state!;
   assert.equal(restored.active?.occurrenceKey, null, 'routine starts remain unscheduled after restore');
   assert.equal(restored.schedule.length, 0, 'starting now does not create a schedule entry');
-  const completion = D.completeActive(restored.active!, { difficulty: 3 }, Date.parse('2026-10-11T09:05:00.000Z'));
+  const completion = D.completeActive(restored.active!, { rpe: 3 }, Date.parse('2026-10-11T09:05:00.000Z'));
   const afterFinish = D.loadStored(JSON.stringify({
     ...restored,
     active: null,

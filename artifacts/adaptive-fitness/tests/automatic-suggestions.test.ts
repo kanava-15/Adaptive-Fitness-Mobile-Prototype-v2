@@ -16,7 +16,7 @@ function legacyState(): D.StateV2 {
   const snapshot = D.snapshotFromRoutine(routine, []);
   let active = D.startActive({ date, occurrenceKey: null, snapshot, items: [...snapshot.items] });
   active = D.logSetOn(active, { reps: 10, load: 0, unit: 'kg' });
-  const completion = D.completeActive(active, { difficulty: 3 });
+  const completion = D.completeActive(active, { rpe: 3 });
   const plan = buildPlan(DEFAULT_PROFILE, date, [], 7);
   return {
     ...D.emptyState(), plan, routines: [routine],

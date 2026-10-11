@@ -156,7 +156,7 @@ export interface Completion {
   difficulty: number | null; // 1-5
 }
 
-export type HistoryLike = Pick<Completion, 'date' | 'finishedAt' | 'stoppedForPain' | 'difficulty' | 'finishedEarly'>;
+export type HistoryLike = Pick<Completion, 'date' | 'finishedAt' | 'stoppedForPain' | 'difficulty' | 'finishedEarly'> & { rpe?: number | null };
 
 // ---------- date helpers ----------
 export function dateKey(d: Date = new Date()): string {
@@ -213,7 +213,9 @@ export function readiness(history: HistoryLike[], date: string): Readiness {
     return { factor: 0.7, note: 'You stopped for discomfort recently, so this is lighter. Skip anything that doesn’t feel right.' };
   if (daysBetween(last.date, date) > 14)
     return { factor: 0.8, note: 'It’s been a while. This eases back in — nothing to catch up on.' };
-  if ((last.difficulty ?? 3) >= 4 && daysBetween(last.date, date) <= 4)
+  const highLegacyRating = last.difficulty != null && last.difficulty >= 4;
+  const highRpe = last.rpe != null && last.rpe >= 8;
+  if ((highLegacyRating || highRpe) && daysBetween(last.date, date) <= 4)
     return { factor: 0.8, note: 'Your last session felt hard, so today is trimmed back.' };
   if (last.finishedEarly && daysBetween(last.date, date) <= 4)
     return { factor: 0.9, note: 'Last time ended early. Slightly less today keeps it doable.' };

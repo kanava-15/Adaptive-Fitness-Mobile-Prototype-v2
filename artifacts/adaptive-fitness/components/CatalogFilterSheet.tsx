@@ -34,6 +34,9 @@ export function CatalogFilterSheet({ visible, activities, filters, query, onAppl
   const [draft, setDraft] = useState(filters);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const shownCount = searchCatalog(activities, draft, query).length;
+  const facetCandidates = searchCatalog(activities, { ...draft, muscle: null, joint: null }, query);
+  const showMuscles = facetCandidates.some(activity => !!(activity.primaryMuscles?.length || activity.secondaryMuscles?.length));
+  const showJoints = facetCandidates.some(activity => !!activity.joints?.length);
   const sheetHeight = Math.min(windowHeight * 0.82, windowHeight - insets.top - 20);
 
   const toggleDiscipline = (discipline: Activity['discipline']) => setDraft(current => ({
@@ -124,8 +127,8 @@ export function CatalogFilterSheet({ visible, activities, filters, query, onAppl
             {section('Equipment', chips(equipmentSchema.options, 'equipment', draft.equipment, value => value === 'none' ? 'No equipment' : GEAR_LABEL[value]))}
             {section('Difficulty', chips(difficulties, 'difficulty', draft.difficulty, value => facetLabels[value]))}
             {accordion('area', 'Movement area', chips(AREAS, 'area', draft.area, value => AREA_LABEL[value]), !!draft.area)}
-            {accordion('muscle', 'Muscles', chips(muscleSchema.options, 'muscle', draft.muscle, titleCase), !!draft.muscle)}
-            {accordion('joint', 'Joints', chips(jointSchema.options, 'joint', draft.joint, titleCase), !!draft.joint)}
+            {showMuscles ? accordion('muscle', 'Muscles', chips(muscleSchema.options, 'muscle', draft.muscle, titleCase), !!draft.muscle) : null}
+            {showJoints ? accordion('joint', 'Joints', chips(jointSchema.options, 'joint', draft.joint, titleCase), !!draft.joint) : null}
             {accordion('type', 'Activity type', chips(activityTypeSchema.options, 'type', draft.type, titleCase), !!draft.type)}
             {accordion('family', 'Family', chips(families, 'family', draft.family, value => facetLabels[value]), !!draft.family)}
             {accordion('metric', 'Supported measurements', chips(metrics, 'metric', draft.metric, value => facetLabels[value]), !!draft.metric)}

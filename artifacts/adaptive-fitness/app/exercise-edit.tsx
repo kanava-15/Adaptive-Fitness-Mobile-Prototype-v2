@@ -9,7 +9,7 @@ import { Button, Chip, Eyebrow, IconButton, confirm, success } from '@/component
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
-import { AREAS, AREA_LABEL, DISCIPLINES, DISCIPLINE_LABEL, DistanceUnit, ExerciseDef, GEARS, GEAR_LABEL, PersonalPreset, REGIONS, Tracking, findExercise, validateExercise } from '@/lib/domain';
+import { AREAS, AREA_LABEL, DISCIPLINES, DISCIPLINE_LABEL, DistanceUnit, Discipline, ExerciseDef, GEARS, GEAR_LABEL, PersonalPreset, REGIONS, Tracking, findExercise, validateExercise } from '@/lib/domain';
 import { REGION_LABEL, newId } from '@/lib/engine';
 import { activitySchema, membershipSchema, type Activity } from '@workspace/activity-catalog';
 import { z } from 'zod';
@@ -76,6 +76,22 @@ export default function ExerciseEdit() {
     const next = editActivityText(knowledge, { steps });
     setKnowledge(next);
     syncAdvanced({ execution: next.execution });
+  };
+  const chooseDiscipline = (discipline: Discipline) => {
+    set({ discipline, ...(discipline === 'sports' ? { tracking: 'time' as const, areas: [] } : {}) });
+    setKnowledge(current => {
+      const type = discipline === 'sports' ? 'sport'
+        : current.type === 'sport' ? discipline === 'yoga' ? 'asana' : discipline === 'mobility' ? 'mobility-drill' : discipline === 'conditioning' ? 'conditioning-activity' : 'exercise'
+          : current.type;
+      const next: Activity = {
+        ...current,
+        discipline,
+        type,
+        ...(discipline === 'sports' ? { supportedMetrics: ['duration'], distanceUnits: [], laterality: 'not-applicable' as const } : {}),
+      };
+      syncAdvanced(next);
+      return next;
+    });
   };
   const editAdvanced = (text: string) => {
     setAdvanced(text);
@@ -195,13 +211,15 @@ export default function ExerciseEdit() {
         <TextInput testID="exercise-name" value={e.name} onChangeText={(name) => set({ name })} placeholder="e.g. Cable face pull" placeholderTextColor={c.mutedForeground} style={[s.input, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
 
         <Text style={[s.label, { color: c.foreground }]}>Category</Text>
-        <View style={s.wrap}>{DISCIPLINES.map((d) => <Chip key={d} label={DISCIPLINE_LABEL[d]} active={e.discipline === d} onPress={() => set({ discipline: d })} />)}</View>
+        <View style={s.wrap}>{DISCIPLINES.map((d) => <Chip key={d} label={DISCIPLINE_LABEL[d]} active={e.discipline === d} onPress={() => chooseDiscipline(d)} />)}</View>
 
         <Text style={[s.label, { color: c.foreground }]}>Equipment needed</Text>
         <View style={s.wrap}>{GEARS.map((g) => <Chip key={g} label={GEAR_LABEL[g]} active={e.gear.includes(g)} onPress={() => set({ gear: g === 'none' ? ['none'] : toggle(e.gear.filter((x) => x !== 'none'), g) })} />)}</View>
 
-        <Text style={[s.label, { color: c.foreground }]}>Movement areas</Text>
-        <View style={s.wrap}>{AREAS.map((a) => <Chip key={a} label={AREA_LABEL[a]} active={e.areas.includes(a)} onPress={() => set({ areas: toggle(e.areas, a) })} />)}</View>
+        {e.discipline !== 'sports' ? <>
+          <Text style={[s.label, { color: c.foreground }]}>Movement areas</Text>
+          <View style={s.wrap}>{AREAS.map((a) => <Chip key={a} label={AREA_LABEL[a]} active={e.areas.includes(a)} onPress={() => set({ areas: toggle(e.areas, a) })} />)}</View>
+        </> : <Text style={[s.hint, { color: c.mutedForeground, marginTop: 10 }]}>Sports stay unassigned to movement areas unless you add a specific custom activity with known areas.</Text>}
 
         <Text style={[s.label, { color: c.foreground }]}>Measurement type</Text>
         <Text style={[s.hint, { color: c.mutedForeground }]}>Choose what you can track for this activity. This is separate from your optional personal preset below.</Text>

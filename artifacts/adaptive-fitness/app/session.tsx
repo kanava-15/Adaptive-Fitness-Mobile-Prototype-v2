@@ -14,7 +14,6 @@ import { REGION_LABEL, Region, formatDuration } from '@/lib/engine';
 
 const targetOf = targetLabel;
 
-const DIFFICULTY = ['Very easy', 'Easy', 'About right', 'Hard', 'Too hard'];
 
 function useNow(active: boolean) {
   const [now, setNow] = useState(Date.now());
@@ -32,7 +31,7 @@ export default function SessionScreen() {
   const t = useTempo();
   const a = t.state.active;
   const [stage, setStage] = useState<'run' | 'finish' | 'pain' | 'done'>('run');
-  const [difficulty, setDifficulty] = useState<number | null>(null);
+  const [rpe, setRpe] = useState<number | null>(null);
   const [painRegion, setPainRegion] = useState<Region | null>(null);
   const [result, setResult] = useState<CompletionV2 | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { reps?: number; load?: number; unit?: Unit; distanceUnit?: DistanceUnit; side?: Side }>>({});
@@ -117,7 +116,7 @@ export default function SessionScreen() {
   const { load, unit } = loadState;
 
   const finishNow = (stoppedForPain = false) => {
-    const r = t.finish({ difficulty, stoppedForPain, excludeRegion: stoppedForPain && painRegion ? painRegion : undefined });
+    const r = t.finish({ rpe, stoppedForPain, excludeRegion: stoppedForPain && painRegion ? painRegion : undefined });
     if (r) {
       success();
       setResult(r);
@@ -147,25 +146,28 @@ export default function SessionScreen() {
             {doneCount} of {a.logs.length} activities done in {formatDuration(total)}. Whatever you did gets saved as-is. Nothing carries over as debt.
           </Text>
         )}
-        <Text style={[s.label, { color: c.foreground }]}>How did it feel?</Text>
-        <View style={{ gap: 8 }}>
-          {DIFFICULTY.map((d, i) => (
+        <Text style={[s.label, { color: c.foreground }]}>Session effort (optional RPE)</Text>
+        <Text style={[s.small, { color: c.mutedForeground, marginBottom: 8 }]}>0 = rest · 10 = maximum effort. Leave blank if you prefer.</Text>
+        <View style={s.rpeScale}>
+          {Array.from({ length: 11 }, (_, score) => (
             <Pressable
-              key={d}
-              testID={`difficulty-${i + 1}`}
+              key={score}
+              testID={`rpe-${score}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Rate session effort ${score} out of 10`}
+              accessibilityState={{ selected: rpe === score }}
               onPress={() => {
                 tap();
-                setDifficulty(i + 1);
+                setRpe(rpe === score ? null : score);
               }}
-              style={[s.diff, { backgroundColor: difficulty === i + 1 ? c.accent : c.card, borderColor: difficulty === i + 1 ? c.accent : c.border }]}
+              style={[s.rpeButton, { backgroundColor: rpe === score ? c.accent : c.card, borderColor: rpe === score ? c.accent : c.border }]}
             >
-              <Text style={[s.diffNum, { color: difficulty === i + 1 ? c.done : c.primary }]}>{i + 1}</Text>
-              <Text style={[s.diffText, { color: difficulty === i + 1 ? c.accentForeground : c.foreground }]}>{d}</Text>
+              <Text style={[s.rpeNum, { color: rpe === score ? c.accentForeground : c.foreground }]}>{score}</Text>
             </Pressable>
           ))}
         </View>
         <Button testID="save-completion" label={isPain ? 'Stop and save' : 'Save session'} icon="check" onPress={() => finishNow(isPain)} style={{ marginTop: 22 }} />
-        <Text style={[s.small, { color: c.mutedForeground }]}>Rating is optional. Tempo uses it only to ease off, never to push harder.</Text>
+        <Text style={[s.small, { color: c.mutedForeground }]}>A high rating may make the next plan lighter. A low rating never makes it harder.</Text>
       </ScrollView>
     );
   }
@@ -327,9 +329,9 @@ const s = StyleSheet.create({
   finTitle: { fontFamily: fonts.display, fontSize: 32, letterSpacing: -1, marginBottom: 10 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   label: { fontFamily: fonts.display, fontSize: 18, marginTop: 24, marginBottom: 10 },
-  diff: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, borderRadius: 16, borderWidth: 1, paddingHorizontal: 16 },
-  diffNum: { fontFamily: fonts.display, fontSize: 20, width: 18 },
-  diffText: { fontFamily: 'Inter_500Medium', fontSize: 15 },
+  rpeScale: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  rpeButton: { width: 40, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1 },
+  rpeNum: { fontFamily: fonts.display, fontSize: 17 },
   doneBadge: { width: 76, height: 76, borderRadius: 38, alignItems: 'center', justifyContent: 'center' },
   doneTitle: { fontFamily: fonts.display, fontSize: 36, letterSpacing: -1.2, marginTop: 24, lineHeight: 40 },
   doneBody: { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, marginTop: 12 },

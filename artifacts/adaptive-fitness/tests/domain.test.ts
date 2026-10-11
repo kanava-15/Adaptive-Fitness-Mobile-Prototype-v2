@@ -34,7 +34,7 @@ import {
   snapshotFromRoutine,
   startActive,
 } from '../lib/domain';
-import { DEFAULT_PROFILE, addDays, weekday } from '../lib/engine';
+import { DEFAULT_PROFILE, addDays, readiness, weekday } from '../lib/engine';
 
 const ex = (id: string) => BUILTIN.find((b) => b.id === id)!;
 const MON = '2025-03-03'; // a Monday
@@ -57,9 +57,11 @@ const v1 = {
 
 test('migration v1 -> current keeps profile, history and active session', () => {
   const s = migrateV1(v1 as never);
-  assert.equal(s.schemaVersion, 3);
+  assert.equal(s.schemaVersion, 4);
   assert.deepEqual(s.profile.exclusions, ['knees']);
   assert.equal(s.completions.length, 1);
+  assert.equal(s.completions[0].difficulty, 3, 'legacy 1–5 history stays on its original scale');
+  assert.equal(s.completions[0].rpe, null, 'migration does not reinterpret an old rating as RPE');
   assert.deepEqual(s.completions[0].exercises[1].sets, [{ reps: 10 }, { reps: 8 }]);
   assert.deepEqual(s.completions[0].exercises[0].sets, [{ seconds: 45 }]);
   assert.ok(s.active);
@@ -70,6 +72,43 @@ test('migration v1 -> current keeps profile, history and active session', () => 
   const loaded = loadStored(null, JSON.stringify(v1));
   assert.equal(loaded.migrated, true);
   assert.equal(loaded.state!.completions.length, 1);
+});
+
+test('optional RPE stays separate from legacy ratings and only high ratings ease future plans', () => {
+  const session = routine();
+  const snapshot = snapshotFromRoutine(session, []);
+  const active = startActive({ date: MON, occurrenceKey: null, snapshot, items: [...snapshot.items] }, Date.parse(`${MON}T09:00:00Z`));
+  const finishedAt = Date.parse(`${MON}T09:10:00Z`);
+  const legacy = { ...completeActive(active, { rpe: null }, finishedAt), difficulty: 5 };
+  const current = { ...completeActive(active, { rpe: 8 }, finishedAt + 1), difficulty: null };
+  const state = { ...emptyState(), completions: [legacy, current] };
+  const loaded = loadStored(JSON.stringify(state), null);
+  assert.equal(loaded.error, null);
+  assert.equal(loaded.state?.completions[0].difficulty, 5);
+  assert.equal(loaded.state?.completions[0].rpe, null);
+  assert.equal(loaded.state?.completions[1].difficulty, null);
+  assert.equal(loaded.state?.completions[1].rpe, 8);
+
+  const roundTrip = checkImport(JSON.stringify(exportPayload(loaded.state!)));
+  assert.ok(roundTrip.ok);
+  if (roundTrip.ok) {
+    assert.equal(roundTrip.data.completions[0].difficulty, 5);
+    assert.equal(roundTrip.data.completions[0].rpe, null);
+    assert.equal(roundTrip.data.completions[1].difficulty, null);
+    assert.equal(roundTrip.data.completions[1].rpe, 8);
+  }
+
+  const previous = { date: MON, finishedAt: `${MON}T09:00:00Z`, stoppedForPain: false, difficulty: null, finishedEarly: false };
+  assert.equal(readiness([{ ...previous, rpe: 2 }], addDays(MON, 1)).factor, 1, 'low RPE does not increase load');
+  assert.equal(readiness([{ ...previous, rpe: 8 }], addDays(MON, 1)).factor, 0.8, 'high RPE only trims the next plan');
+  assert.equal(readiness([{ ...previous, difficulty: 5 }], addDays(MON, 1)).factor, 0.8, 'legacy hard ratings retain conservative behavior');
+  let invalidRpeRejected = false;
+  try {
+    completeActive(active, { rpe: 11 });
+  } catch (error) {
+    invalidRpeRejected = error instanceof Error && /0 to 10/.test(error.message);
+  }
+  assert.ok(invalidRpeRejected, 'ratings outside 0–10 are rejected');
 });
 
 test('corrupt stored v2 is reported, not silently replaced', () => {
@@ -130,7 +169,7 @@ test('routine edits never change scheduled snapshots or completed history unless
   assert.ok(Object.isFrozen(snap) && Object.isFrozen(snap.items[0]));
   let sch = [scheduleEntry(snap, MON, [1], null)];
   const active = startActive({ date: MON, occurrenceKey: `${sch[0].rootId}@${MON}`, snapshot: snap, items: [...snap.items] });
-  const done = completeActive(logSetOn(active, { reps: 10 }), { difficulty: 3 });
+  const done = completeActive(logSetOn(active, { reps: 10 }), { rpe: 3 });
   const edited: Routine = { ...r, version: 2, items: r.items.slice(0, 1) };
   r.items[0].sets = 9; // mutate source: snapshot must not follow
   assert.notEqual(snap.items[0].sets, 9);
@@ -210,7 +249,7 @@ test('mid-session add keeps logged work; completion stores planned and actual se
   assert.equal(a.logs.length, 2);
   assert.deepEqual(a.logs[0].sets, [{ reps: 8, load: 12.5, unit: 'kg' }]);
   assert.equal(a.logs[1].added, true);
-  const c = completeActive(a, { difficulty: null });
+  const c = completeActive(a, { rpe: null });
   assert.equal(c.exercises[0].planned.reps, 10);
   assert.equal(c.exercises[0].sets[0].reps, 8);
   assert.equal(c.snapshot!.items.length, 1);

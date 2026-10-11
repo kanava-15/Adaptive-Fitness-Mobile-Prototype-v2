@@ -78,6 +78,32 @@ test('practice elements are yoga-only and educational media references require a
   }), /HTTPS/);
   assert.throws(() => validateRelease(release([{ ...practice, mediaReferences: [{ title: 'Uncited', url: 'https://example.test/video', sourceId: 'missing-source' }] }])), /missing source/);
 });
+test('sports require canonical IDs, unknown anatomy and no automatic-adaptation permission', () => {
+  const sport: Activity = {
+    ...activity,
+    id: 'sports-road-running',
+    name: 'Road running',
+    englishName: 'Road running',
+    type: 'sport',
+    discipline: 'sports',
+    supportedMetrics: ['duration', 'distance'],
+    distanceUnits: ['m', 'km', 'mi'],
+    loadUnits: [],
+    laterality: 'not-applicable',
+    equipment: null,
+    difficulty: 'unknown',
+    primaryMuscles: null,
+    secondaryMuscles: null,
+    joints: null,
+    actions: null,
+    movementPatterns: null,
+  };
+  assert.equal(coverage(validateRelease(release([sport]))).sports, 1);
+  assert.throws(() => validateRelease(release([{ ...sport, id: 'sports-running' }])), /canonical/);
+  assert.throws(() => validateRelease(release([{ ...sport, primaryMuscles: ['glutes'] }])), /unknown\/not-applicable anatomy/);
+  assert.throws(() => validateRelease(release([{ ...sport, adaptation: { ...sport.adaptation, eligible: true } }])), /cannot be eligible/);
+  assert.throws(() => validateRelease(release([{ ...sport, supportedMetrics: ['duration', 'reps'] }])), /only duration and distance/);
+});
 test('advanced yoga can be browsed but cannot become automatically eligible', () => {
   const advanced = { ...activity, difficulty: 'advanced' as const, discipline: 'yoga' as const, type: 'asana' as const, family: 'ashtanga-vinyasa' as const, instructionNeeded: true };
   assert.equal(validateRelease(release([advanced])).activities[0].difficulty, 'advanced');
@@ -98,7 +124,7 @@ test('sequence repetition, order and side survive expansion; cycles and dangling
   assert.throws(() => validateRelease({ ...r, relationships: [{ from: activity.id, to: 'missing', type: 'variation-of' }] }), /Dangling relationship/);
 });
 test('coverage cannot be inflated by aliases or sequences, and incomplete releases cannot publish', () => {
-  assert.deepEqual(coverage(release([{ ...activity, aliases: ['Alias one', 'Alias two'] }])), { strength: 1, ashtanga: 0, mobility: 0, conditioning: 0 });
+  assert.deepEqual(coverage(release([{ ...activity, aliases: ['Alias one', 'Alias two'] }])), { strength: 1, ashtanga: 0, mobility: 0, conditioning: 0, sports: 0 });
   assert.throws(() => requireCoverage(release()), /strength 1\/200/);
 });
 test('canonical representation and retrieval text are deterministic', () => {

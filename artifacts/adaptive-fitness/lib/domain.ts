@@ -23,10 +23,10 @@ import {
   weekday,
 } from './engine';
 
-export const SCHEMA_VERSION = 3 as const;
+export const SCHEMA_VERSION = 4 as const;
 
 // ---------------------------------------------------------------- types
-export type Discipline = 'yoga' | 'mobility' | 'strength' | 'conditioning';
+export type Discipline = 'yoga' | 'mobility' | 'strength' | 'conditioning' | 'sports';
 export type Area = 'hips' | 'spine' | 'shoulders' | 'knees' | 'ankles' | 'wrists' | 'core' | 'upper' | 'lower' | 'full';
 export type Gear = Activity['equipment'] extends (infer T)[] | null ? T : never;
 export type Tracking = 'reps' | 'time' | 'breaths' | 'distance';
@@ -36,12 +36,12 @@ export type Unit = 'kg' | 'lb';
 export type Priority = 'must' | 'normal' | 'optional';
 export type Scope = 'one' | 'future';
 
-export const DISCIPLINES: Discipline[] = ['yoga', 'mobility', 'strength', 'conditioning'];
+export const DISCIPLINES: Discipline[] = ['yoga', 'mobility', 'strength', 'conditioning', 'sports'];
 export const AREAS: Area[] = ['hips', 'spine', 'shoulders', 'knees', 'ankles', 'wrists', 'core', 'upper', 'lower', 'full'];
 export const GEARS: Gear[] = equipmentSchema.options;
 export const REGIONS: Region[] = ['knees', 'wrists', 'shoulders', 'lowerBack', 'ankles'];
 
-export const DISCIPLINE_LABEL: Record<Discipline, string> = { yoga: 'Yoga', mobility: 'Joint mobility', strength: 'Strength', conditioning: 'Warm-up & cardio' };
+export const DISCIPLINE_LABEL: Record<Discipline, string> = { yoga: 'Yoga', mobility: 'Joint mobility', strength: 'Strength', conditioning: 'Warm-up & cardio', sports: 'Sports' };
 export const AREA_LABEL: Record<Area, string> = { hips: 'Hips', spine: 'Spine', shoulders: 'Shoulders', knees: 'Knees', ankles: 'Ankles', wrists: 'Wrists', core: 'Core', upper: 'Upper body', lower: 'Lower body', full: 'Full body' };
 export const GEAR_LABEL = Object.fromEntries(GEARS.map(g => [g, g === 'none' ? 'No equipment' : g.replaceAll('-', ' ')])) as Record<Gear, string>;
 export const PRIORITY_LABEL: Record<Priority, string> = { must: 'Must keep', normal: 'Normal', optional: 'Optional' };
@@ -218,7 +218,9 @@ export interface CompletionV2 {
   exercises: LogV2[];
   finishedEarly: boolean;
   stoppedForPain: boolean;
+  /** Retained only for historical 1–5 ratings; new completions use rpe. */
   difficulty: number | null;
+  rpe: number | null;
   adaptation: string[];
 }
 
@@ -245,7 +247,7 @@ export interface ActiveV2 {
 }
 
 export interface StateV2 {
-  schemaVersion: 3;
+  schemaVersion: 4;
   profile: Profile;
   plan: Plan | null;
   events: PlanEvent[];
@@ -274,7 +276,7 @@ export interface SavedActivity {
   savedAt: string;
 }
 
-export const emptyState = (): StateV2 => ({ schemaVersion: 3, profile: DEFAULT_PROFILE, plan: null, events: [], completions: [], active: null, customExercises: [], savedActivities: [], routines: [], schedule: [], presets: {} });
+export const emptyState = (): StateV2 => ({ schemaVersion: 4, profile: DEFAULT_PROFILE, plan: null, events: [], completions: [], active: null, customExercises: [], savedActivities: [], routines: [], schedule: [], presets: {} });
 
 // ---------------------------------------------------------------- built-in library
 const T0 = '2024-01-01T00:00:00.000Z';
@@ -352,7 +354,7 @@ const JOINT_REGION: Partial<Record<string, Region>> = { knee: 'knees', wrist: 'w
 export function activityDef(a: Activity): ExerciseDef {
   return {
     id: a.id, version: a.version, name: a.name, discipline: a.discipline,
-    gear: a.equipment ?? [], areas: ['full'], tracking: a.supportedMetrics[0] === 'duration' ? 'time' : a.supportedMetrics[0],
+    gear: a.equipment ?? [], areas: a.type === 'sport' ? [] : ['full'], tracking: a.supportedMetrics[0] === 'duration' ? 'time' : a.supportedMetrics[0],
     perSide: a.laterality === 'unilateral', loadable: a.loadUnits.length > 0,
     stresses: a.adaptation.loadedJoints.flatMap(j => JOINT_REGION[j] ? [JOINT_REGION[j]!] : []),
     intensity: a.difficulty === 'advanced' ? 2 : 1, instructions: a.description,
@@ -365,7 +367,7 @@ export function knowledgeOf(d: ExerciseDef): Activity {
   if (d.activity) return d.activity;
   return {
     id: d.id, version: d.version, name: d.name, englishName: d.name, sanskritName: null, aliases: [],
-    type: d.discipline === 'yoga' ? 'asana' : d.discipline === 'mobility' ? 'mobility-drill' : d.discipline === 'conditioning' ? 'conditioning-activity' : 'exercise',
+    type: d.discipline === 'yoga' ? 'asana' : d.discipline === 'mobility' ? 'mobility-drill' : d.discipline === 'conditioning' ? 'conditioning-activity' : d.discipline === 'sports' ? 'sport' : 'exercise',
     discipline: d.discipline, family: 'general', supportedMetrics: [d.tracking === 'time' ? 'duration' : d.tracking],
     distanceUnits: d.tracking === 'distance' ? ['m', 'km', 'mi', 'yd'] : [], loadUnits: d.loadable ? ['kg', 'lb'] : [],
     laterality: d.perSide ? 'unilateral' : 'bilateral', equipment: d.gear, difficulty: 'unknown',
@@ -580,11 +582,11 @@ export function catalogFacetCount(
 }
 
 // ---------------------------------------------------------------- validation
-export function validateExercise(e: Pick<ExerciseDef, 'name' | 'tracking' | 'defaultReps' | 'defaultSeconds' | 'areas' | 'gear'>): string[] {
+export function validateExercise(e: Pick<ExerciseDef, 'name' | 'tracking' | 'defaultReps' | 'defaultSeconds' | 'areas' | 'gear' | 'discipline'>): string[] {
   const errs: string[] = [];
   if (!e.name.trim()) errs.push('Give the activity a name.');
   if (e.name.trim().length > 60) errs.push('Keep the name under 60 characters.');
-  if (!e.areas.length) errs.push('Pick at least one movement area.');
+  if (e.discipline !== 'sports' && !e.areas.length) errs.push('Pick at least one movement area.');
   if (!e.gear.length) errs.push('Pick equipment, or “No equipment”.');
   return errs;
 }
@@ -679,15 +681,16 @@ export function buildSet(item: Pick<SnapItem, 'tracking' | 'loadable' | 'load' |
 // ---------------------------------------------------------------- items & snapshots
 export function makeItem(d: ExerciseDef, unit: Unit = 'kg', preset?: StateV2['presets'][string]): RoutineItem {
   const dose = preset ?? legacyPresets[d.id] ?? { defaultReps: d.defaultReps, defaultSeconds: d.defaultSeconds };
+  const isSport = d.activity?.type === 'sport' || d.discipline === 'sports';
   return {
     key: newId('it'),
     exerciseId: d.id,
-    sets: d.discipline === 'yoga' || d.discipline === 'mobility' ? 1 : 3,
+    sets: d.discipline === 'yoga' || d.discipline === 'mobility' || isSport ? 1 : 3,
     reps: d.tracking === 'reps' ? dose.defaultReps : undefined,
     seconds: d.tracking === 'time' ? dose.defaultSeconds : undefined,
     breaths: d.tracking === 'breaths' ? dose.defaultBreaths : undefined,
     distance: d.tracking === 'distance' ? dose.defaultDistance : undefined,
-    distanceUnit: d.tracking === 'distance' ? dose.defaultDistanceUnit ?? d.activity?.distanceUnits[0] ?? 'm' : undefined,
+    distanceUnit: d.tracking === 'distance' ? dose.defaultDistanceUnit ?? (isSport ? undefined : d.activity?.distanceUnits[0] ?? 'm') : undefined,
     restSec: d.discipline === 'strength' ? 60 : 20,
     unit,
     perSide: d.perSide,
@@ -1195,7 +1198,10 @@ export function logSetOn(a: ActiveV2, set: ActualSet): ActiveV2 {
 
 export const clockMs = (c: Clock, now = Date.now()) => c.accMs + (c.since ? now - c.since : 0);
 
-export function completeActive(a: ActiveV2, opts: { difficulty: number | null; stoppedForPain?: boolean }, nowMs = Date.now()): CompletionV2 {
+export function completeActive(a: ActiveV2, opts: { rpe: number | null; stoppedForPain?: boolean }, nowMs = Date.now()): CompletionV2 {
+  if (opts.rpe !== null && (!Number.isInteger(opts.rpe) || opts.rpe < 0 || opts.rpe > 10)) {
+    throw new Error('RPE must be a whole number from 0 to 10, or left blank.');
+  }
   const allDone = a.logs.every((l) => l.done);
   return deepFreeze({
     id: newId('done'),
@@ -1213,7 +1219,8 @@ export function completeActive(a: ActiveV2, opts: { difficulty: number | null; s
     exercises: a.logs.map((l) => ({ ...l, sets: l.sets.map((s) => ({ ...s })), planned: { ...l.planned }, done: l.done || l.sets.length > 0 })),
     finishedEarly: !allDone,
     stoppedForPain: !!opts.stoppedForPain,
-    difficulty: opts.difficulty,
+    difficulty: null,
+    rpe: opts.rpe,
     adaptation: [...a.adaptation],
   });
 }
@@ -1260,13 +1267,20 @@ export function migrateV2(raw: AnyRec): StateV2 {
     const d = it.definition ?? findExercise(s.customExercises, it.exerciseId);
     return d ? { ...it, definition: dosageFree(d) } : it;
   }) }));
-  s.schemaVersion = 3;
+  s.schemaVersion = 4;
+  s.completions = s.completions.map(c => ({ ...c, rpe: c.rpe ?? null }));
   s.savedActivities = Array.isArray(s.savedActivities) ? s.savedActivities : [];
   s.presets = presets;
   return freezeSaved(s);
 }
 function normalizeCurrentState(s: StateV2): StateV2 {
-  return freezeSaved({ ...s, savedActivities: s.savedActivities ?? [], presets: s.presets ?? {} });
+  return freezeSaved({
+    ...s,
+    schemaVersion: 4,
+    completions: s.completions.map(c => ({ ...c, rpe: c.rpe ?? null })),
+    savedActivities: s.savedActivities ?? [],
+    presets: s.presets ?? {},
+  });
 }
 function freezeSaved(s: StateV2): StateV2 {
   s.schedule.forEach(e => { deepFreeze(e.snapshot); Object.values(e.exceptions).forEach(x => x.snapshot && deepFreeze(x.snapshot)); });
@@ -1311,6 +1325,7 @@ export function migrateV1(raw: AnyRec): StateV2 {
       finishedEarly: !!v.finishedEarly,
       stoppedForPain: !!v.stoppedForPain,
       difficulty: typeof v.difficulty === 'number' ? v.difficulty : null,
+      rpe: null,
       adaptation: [],
     };
   });
@@ -1368,11 +1383,11 @@ const tracking = z.enum(['reps', 'time', 'breaths', 'distance']);
 const unitZ = z.enum(['kg', 'lb']);
 const gearZ = equipmentSchema;
 const areaZ = z.enum(['hips', 'spine', 'shoulders', 'knees', 'ankles', 'wrists', 'core', 'upper', 'lower', 'full']);
-const disciplineZ = z.enum(['yoga', 'mobility', 'strength', 'conditioning']);
+const disciplineZ = z.enum(['yoga', 'mobility', 'strength', 'conditioning', 'sports']);
 const posInt = z.number().int().min(1);
 const sideZ = z.enum(['left', 'right', 'both', 'alternating', 'unspecified']);
 const measurements = { breaths: z.number().int().min(0).max(10000).optional(), distance: z.number().min(0).max(1000000).optional(), distanceUnit: z.enum(['m', 'km', 'mi', 'yd']).optional(), side: sideZ.optional() };
-const exerciseZ = z.object({ id: z.string().min(1), version: posInt, name: z.string().min(1), discipline: disciplineZ, gear: z.array(gearZ), areas: z.array(areaZ).min(1), tracking, defaultReps: z.number().optional(), defaultSeconds: z.number().optional(), perSide: z.boolean(), loadable: z.boolean(), stresses: z.array(regionZ), intensity: z.union([z.literal(1), z.literal(2)]), instructions: z.string(), cues: z.array(z.string()), custom: z.boolean(), verified: z.boolean(), rehab: z.boolean(), archived: z.boolean(), createdAt: z.string(), updatedAt: z.string(), activity: activitySchema.optional(), sequenceMembers: z.array(membershipSchema).max(500).optional() }).strict();
+const exerciseZ = z.object({ id: z.string().min(1), version: posInt, name: z.string().min(1), discipline: disciplineZ, gear: z.array(gearZ), areas: z.array(areaZ), tracking, defaultReps: z.number().optional(), defaultSeconds: z.number().optional(), perSide: z.boolean(), loadable: z.boolean(), stresses: z.array(regionZ), intensity: z.union([z.literal(1), z.literal(2)]), instructions: z.string(), cues: z.array(z.string()), custom: z.boolean(), verified: z.boolean(), rehab: z.boolean(), archived: z.boolean(), createdAt: z.string(), updatedAt: z.string(), activity: activitySchema.optional(), sequenceMembers: z.array(membershipSchema).max(500).optional() }).strict();
 const itemZ = z.object({ key: z.string().min(1), exerciseId: z.string().min(1), sets: posInt.max(20), reps: z.number().min(0).max(200).optional(), seconds: z.number().min(0).max(3600).optional(), ...measurements, definition: exerciseZ.optional(), confirmed: z.boolean().optional(), restSec: z.number().min(0).max(600), load: z.number().min(0).max(1000).optional(), unit: unitZ, perSide: z.boolean(), priority: z.enum(['must', 'normal', 'optional']), locked: z.boolean(), note: z.string().optional() }).strict();
 const snapItemZ = itemZ.extend({ name: z.string(), tracking, discipline: disciplineZ, defVersion: z.number(), stresses: z.array(regionZ), gear: z.array(gearZ), loadable: z.boolean(), custom: z.boolean(), verified: z.boolean(), rehab: z.boolean(), intensity: z.union([z.literal(1), z.literal(2)]), cues: z.array(z.string()), instructions: z.string() });
 const sourceZ = z.discriminatedUnion('kind', [
@@ -1387,7 +1402,7 @@ const entryZ = z.object({ id: z.string(), rootId: z.string(), owner: z.literal('
 const routineZ = z.object({ id: z.string().min(1), name: z.string().min(1), notes: z.string(), items: z.array(itemZ), version: posInt, archived: z.boolean(), createdAt: z.string(), updatedAt: z.string() });
 const actualZ = z.object({ reps: z.number().min(0).optional(), seconds: z.number().min(0).optional(), ...measurements, load: z.number().min(0).optional(), unit: unitZ.optional() }).strict();
 const logZ = z.object({ itemKey: z.string(), exerciseId: z.string(), name: z.string(), kind: tracking, planned: z.object({ sets: z.number(), reps: z.number().optional(), seconds: z.number().optional(), ...measurements, load: z.number().optional(), unit: unitZ.optional(), perSide: z.boolean().optional(), restSec: z.number().optional() }).strict(), sets: z.array(actualZ), done: z.boolean(), skipped: z.boolean(), added: z.boolean() });
-const completionZ = z.object({ id: z.string(), date: dateZ, occurrenceKey: z.string().nullable(), sessionId: z.string(), title: z.string(), plannedMinutes: z.number(), estimateSec: z.number().nullable(), startedAt: z.string(), finishedAt: z.string(), activeSeconds: z.number().min(0), snapshot: snapshotZ.nullable(), executedItems: z.array(snapItemZ).optional(), exercises: z.array(logZ), finishedEarly: z.boolean(), stoppedForPain: z.boolean(), difficulty: z.number().min(1).max(5).nullable(), adaptation: z.array(z.string()) });
+const completionZ = z.object({ id: z.string(), date: dateZ, occurrenceKey: z.string().nullable(), sessionId: z.string(), title: z.string(), plannedMinutes: z.number(), estimateSec: z.number().nullable(), startedAt: z.string(), finishedAt: z.string(), activeSeconds: z.number().min(0), snapshot: snapshotZ.nullable(), executedItems: z.array(snapItemZ).optional(), exercises: z.array(logZ), finishedEarly: z.boolean(), stoppedForPain: z.boolean(), difficulty: z.number().min(1).max(5).nullable(), rpe: z.number().int().min(0).max(10).nullable().optional(), adaptation: z.array(z.string()) });
 const activeZ = z.object({ id: z.string(), date: dateZ, occurrenceKey: z.string().nullable(), title: z.string(), plannedMinutes: z.number(), estimateSec: z.number().nullable(), snapshot: snapshotZ, items: z.array(snapItemZ), startedAt: z.string(), clock: clockZ, exClock: clockZ, index: z.number().int().min(0), logs: z.array(logZ), adaptation: z.array(z.string()) }).nullable();
 const personalPresetZ = z.object({
   // Keep legacy fields as permissive as the previous v3 backup contract.
@@ -1403,7 +1418,7 @@ const savedActivityZ = z.object({
   sequenceMembers: z.array(membershipSchema).max(500).optional(),
   savedAt: z.string().min(1),
 }).strict();
-export const stateZ = z.object({ schemaVersion: z.union([z.literal(2), z.literal(3)]), profile: profileZ, plan: planZ, events: z.array(eventZ), completions: z.array(completionZ), active: activeZ, customExercises: z.array(exerciseZ), savedActivities: z.array(savedActivityZ).optional(), routines: z.array(routineZ), schedule: z.array(entryZ), presets: z.record(z.string(), personalPresetZ).optional() }).strict();
+export const stateZ = z.object({ schemaVersion: z.union([z.literal(2), z.literal(3), z.literal(4)]), profile: profileZ, plan: planZ, events: z.array(eventZ), completions: z.array(completionZ), active: activeZ, customExercises: z.array(exerciseZ), savedActivities: z.array(savedActivityZ).optional(), routines: z.array(routineZ), schedule: z.array(entryZ), presets: z.record(z.string(), personalPresetZ).optional() }).strict();
 
 /** Cross-entity checks zod can't express. Returns the first problem, or null. */
 export function integrityError(s: StateV2): string | null {
@@ -1476,7 +1491,7 @@ export function integrityError(s: StateV2): string | null {
   return null;
 }
 
-export type ImportCheck = { ok: true; data: StateV2; summary: string; migratedFrom: 1 | 2 | 3 } | { ok: false; error: string };
+export type ImportCheck = { ok: true; data: StateV2; summary: string; migratedFrom: 1 | 2 | 3 | 4 } | { ok: false; error: string };
 
 export function checkImport(raw: string): ImportCheck {
   let parsed: unknown;
@@ -1488,7 +1503,7 @@ export function checkImport(raw: string): ImportCheck {
   if (!isObj(parsed) || parsed.app !== 'tempo' || !isObj(parsed.data)) return { ok: false, error: 'Not a Tempo export: expected {"app": "tempo", "data": {...}}.' };
   const ver = parsed.data.schemaVersion;
   let data: StateV2;
-  let from: 1 | 2 | 3;
+  let from: 1 | 2 | 3 | 4;
   if (ver === 1) {
     const r = v1StateZ.safeParse(parsed.data);
     if (!r.success) {
@@ -1497,7 +1512,7 @@ export function checkImport(raw: string): ImportCheck {
     }
     data = migrateV2(migrateV1(r.data as unknown as AnyRec) as unknown as AnyRec);
     from = 1;
-  } else if (ver === 2 || ver === 3) {
+  } else if (ver === 2 || ver === 3 || ver === 4) {
     const r = stateZ.safeParse(parsed.data);
     if (!r.success) {
       const i = r.error.issues[0];
@@ -1506,7 +1521,7 @@ export function checkImport(raw: string): ImportCheck {
     data = ver === 2 ? migrateV2(r.data as unknown as AnyRec) : normalizeCurrentState(r.data as StateV2);
     from = ver;
   } else {
-    return { ok: false, error: `Unsupported export version (${String(ver)}). This app reads versions 1, 2 and 3. Nothing was changed.` };
+    return { ok: false, error: `Unsupported export version (${String(ver)}). This app reads versions 1 through 4. Nothing was changed.` };
   }
   const bad = integrityError(data);
   if (bad) return { ok: false, error: `${bad} Nothing was changed.` };
@@ -1533,7 +1548,7 @@ export function loadStored(v2raw: string | null, v1raw: string | null): { state:
         const state = r.data.schemaVersion === 2 ? migrateV2(r.data as unknown as AnyRec) : normalizeCurrentState(r.data as StateV2);
         const bad = integrityError(state);
         if (bad) return { state: null, migrated: false, error: `${bad} A backup copy was kept.` };
-        return { state: withoutAutomaticSuggestions(state), migrated: r.data.schemaVersion === 2, error: null };
+        return { state: withoutAutomaticSuggestions(state), migrated: r.data.schemaVersion !== 4, error: null };
       }
       const i = r.error.issues[0];
       return { state: null, migrated: false, error: `Saved data failed a check (${i.path.join('.')}: ${i.message}). A backup copy was kept.` };

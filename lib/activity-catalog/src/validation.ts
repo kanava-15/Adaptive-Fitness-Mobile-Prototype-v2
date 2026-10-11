@@ -32,9 +32,20 @@ export function validateRelease(input: unknown): CatalogRelease {
     if ((a.type === 'asana' && a.discipline !== 'yoga') ||
         (a.type === 'mobility-drill' && a.discipline !== 'mobility') ||
         (a.type === 'conditioning-activity' && a.discipline !== 'conditioning') ||
+        (a.type === 'sport' && a.discipline !== 'sports') ||
+        (a.discipline === 'sports' && a.type !== 'sport') ||
         (a.type === 'practice-element' && a.discipline !== 'yoga') ||
         (a.family === 'ashtanga-vinyasa' && a.discipline !== 'yoga') ||
         (a.family === 'cars' && a.discipline !== 'mobility')) errors.push(`${a.id}: activity type/family conflicts with discipline`);
+    if (a.type === 'sport') {
+      const canonicalName = a.name.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (a.id !== `sports-${canonicalName}`) errors.push(`${a.id}: sport ID must be canonical (sports-${canonicalName})`);
+      if (a.family !== 'general' || a.difficulty !== 'unknown' || a.laterality !== 'not-applicable' ||
+          a.primaryMuscles !== null || a.secondaryMuscles !== null || a.joints !== null ||
+          a.actions !== null || a.movementPatterns !== null) errors.push(`${a.id}: sport categories require unknown/not-applicable anatomy and unknown difficulty`);
+      if (a.loadUnits.length || a.supportedMetrics.some(metric => metric !== 'duration' && metric !== 'distance')) errors.push(`${a.id}: sports support only duration and distance, never external load`);
+      if (a.adaptation.eligible) errors.push(`${a.id}: sports cannot be eligible for automatic adaptation`);
+    }
     for (const name of [a.name, a.englishName, a.sanskritName, ...a.aliases].filter((n): n is string => !!n)) {
       const key = normalizedIdentity(name);
       const owner = identities.get(key);
@@ -111,12 +122,13 @@ export function coverage(release: CatalogRelease) {
     ashtanga: active.filter(a => a.family === 'ashtanga-vinyasa' && a.type !== 'sequence').length,
     mobility: active.filter(a => a.discipline === 'mobility' && a.type === 'mobility-drill').length,
     conditioning: active.filter(a => a.type === 'conditioning-activity').length,
+    sports: active.filter(a => a.discipline === 'sports' && a.type === 'sport').length,
   };
 }
 
 export function requireCoverage(release: CatalogRelease): void {
   const counts = coverage(release);
-  const minimum = { strength: 200, ashtanga: 80, mobility: 35, conditioning: 15 };
+  const minimum = { strength: 200, ashtanga: 80, mobility: 35, conditioning: 15, sports: 10 };
   const gaps = (Object.keys(minimum) as (keyof typeof minimum)[]).filter(k => counts[k] < minimum[k]);
   if (gaps.length) throw new Error(`Coverage gaps: ${gaps.map(k => `${k} ${counts[k]}/${minimum[k]}`).join(', ')}`);
 }

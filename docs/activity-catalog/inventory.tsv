@@ -52,6 +52,19 @@ mobility-tall-kneeling-side-arm-reach	Tall-kneeling side arm reach	mobility	gene
 mobility-three-point-bridge-reach	Three-point bridge reach	mobility	general		gmb-joints
 mobility-traveling-butterfly	Traveling butterfly	mobility	general		gmb-hips
 mobility-wrist-cars	Wrist CARs	mobility	cars		tcm-cars
+sports-association-football	Association football	sports	general		ifab-laws-of-the-game
+sports-baseball	Baseball	sports	general		mlb-official-rules
+sports-basketball	Basketball	sports	general		fiba-basketball-rules
+sports-golf	Golf	sports	general		randa-rules-of-golf
+sports-lap-swimming	Lap swimming	sports	general		world-aquatics-swimming-rules
+sports-open-water-swimming	Open-water swimming	sports	general		world-aquatics-swimming-rules
+sports-road-cycling	Road cycling	sports	general		uci-road-cycling
+sports-road-running	Road running	sports	general		world-athletics-rules
+sports-rowing	Rowing	sports	general		world-rowing-rules
+sports-tennis	Tennis	sports	general		itf-rules-of-tennis
+sports-track-running	Track running	sports	general		world-athletics-rules
+sports-trail-running	Trail running	sports	general		world-athletics-rules
+sports-volleyball	Volleyball	sports	general		fivb-volleyball-rules
 strength-archer-pull-up	Archer pull-up	strength	general		ref-archer-pull-up
 strength-archer-push-up	Archer push-up	strength	general		ref-archer-push-up
 strength-band-assisted-chin-up	Band-assisted chin-up	strength	general		ref-band-assisted-chin-up

@@ -83,7 +83,8 @@ export default function Progress() {
                   </Pressable>
                   <Text style={[s.sub, { color: c.mutedForeground, marginTop: 10 }]}>
                     {moves}/{x.exercises.length} activities · {sets} sets · planned {x.estimateSec === null ? 'duration unknown' : `${x.plannedMinutes} min`}
-                    {x.difficulty ? ` · felt ${DIFF[x.difficulty].toLowerCase()}` : ''}
+                    {x.rpe != null ? ` · RPE ${x.rpe}/10` : ''}
+                    {x.difficulty != null ? ` · earlier 1–5 rating: ${DIFF[x.difficulty]}` : ''}
                     {x.stoppedForPain ? ' · stopped for discomfort' : x.finishedEarly ? ' · finished early' : ''}
                   </Text>
                   {open === x.id ? (

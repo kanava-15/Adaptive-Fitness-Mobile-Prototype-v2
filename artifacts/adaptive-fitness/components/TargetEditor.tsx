@@ -11,6 +11,7 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
 }) {
   const c = useColors();
   const a = knowledgeOf(definition);
+  const isSport = a.type === 'sport';
   const tracking: Tracking = item.breaths != null ? 'breaths' : item.distance != null ? 'distance' : item.seconds != null ? 'time' : item.reps != null ? 'reps' : definition.tracking;
   const change = (p: Partial<RoutineItem>) => onChange(definition.activity ? { ...p, confirmed: false } : p);
   const sides = ['unilateral', 'alternating'].includes(a.laterality);
@@ -25,7 +26,7 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
             seconds: undefined,
             breaths: undefined,
             distance: undefined,
-            distanceUnit: t === 'distance' ? a.distanceUnits[0] : undefined,
+            distanceUnit: t === 'distance' ? (isSport ? undefined : a.distanceUnits[0]) : undefined,
           })} />;
         })}
       </View>
@@ -38,7 +39,14 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
         <NumField label="Rest" suffix="s" step={15} value={item.restSec} max={600} onChange={v => change({ restSec: v ?? 0 })} />
         {a.loadUnits.length || item.load != null ? <NumField testID={`load-${index}`} label="Load" optional decimals step={item.unit === 'kg' ? 2.5 : 5} max={1000} value={item.load} suffix={item.unit} onChange={v => change({ load: v })} /> : null}
       </View>
-      {tracking === 'distance' ? <Segmented testID={`distance-unit-${index}`} options={a.distanceUnits.map(u => ({ value: u, label: u }))} value={item.distanceUnit ?? a.distanceUnits[0] ?? 'm'} onChange={(distanceUnit: DistanceUnit) => change({ distanceUnit })} /> : null}
+      {tracking === 'distance' && isSport ? (
+        <View style={{ gap: 6 }}>
+          <Text style={{ color: c.mutedForeground }}>Choose a distance unit</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {a.distanceUnits.map(unit => <Chip key={unit} label={unit} active={item.distanceUnit === unit} onPress={() => change({ distanceUnit: unit as DistanceUnit })} />)}
+          </View>
+        </View>
+      ) : tracking === 'distance' ? <Segmented testID={`distance-unit-${index}`} options={a.distanceUnits.map(u => ({ value: u, label: u }))} value={item.distanceUnit ?? a.distanceUnits[0] ?? 'm'} onChange={(distanceUnit: DistanceUnit) => change({ distanceUnit })} /> : null}
       {a.loadUnits.length || item.load != null ? <Segmented options={(a.loadUnits.length ? a.loadUnits : ['kg', 'lb'] as const).map(unit => ({ value: unit, label: unit }))} value={item.unit} onChange={unit => change({ unit })} /> : null}
       {sides ? <>
         <Segmented options={(['unspecified', 'left', 'right', 'both', 'alternating'] as Side[]).map(v => ({ value: v, label: v }))} value={item.side ?? 'unspecified'} onChange={side => change({ side })} />

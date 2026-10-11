@@ -49,7 +49,7 @@ test('HTML server failures preserve the catalog and personal storage without dis
 test('source-reviewed authored inventory, bundle and portable checksum agree', () => {
   const release = authoredRelease();
   assert.deepEqual(release, bundle.release);
-  assert.deepEqual(coverage(release), { strength: 240, ashtanga: 119, mobility: 36, conditioning: 16 });
+  assert.deepEqual(coverage(release), { strength: 240, ashtanga: 119, mobility: 36, conditioning: 16, sports: 13 });
   assert.equal(release.activities.filter(a => a.family === 'cars').length, 8);
   assert.ok(release.activities.some(a => a.seriesContext.some(s => s.label.includes('Advanced'))));
   assert.ok(release.activities.every(a => !a.adaptation.eligible));

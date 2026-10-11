@@ -99,7 +99,7 @@ interface Ctx {
   markDone: () => void;
   skipExercise: () => void;
   goTo: (index: number) => void;
-  finish: (opts: { difficulty: number | null; stoppedForPain?: boolean; excludeRegion?: Region }) => CompletionV2 | null;
+  finish: (opts: { rpe: number | null; stoppedForPain?: boolean; excludeRegion?: Region }) => CompletionV2 | null;
   discardActive: () => void;
   // data
   exportJson: () => string;
@@ -286,7 +286,7 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const goTo = useCallback((index: number) => updateActive((a) => ({ ...a, index: Math.max(0, Math.min(a.logs.length - 1, index)), exClock: { accMs: 0, since: null } })), []);
 
-  const finish = useCallback((opts: { difficulty: number | null; stoppedForPain?: boolean; excludeRegion?: Region }) => {
+  const finish = useCallback((opts: { rpe: number | null; stoppedForPain?: boolean; excludeRegion?: Region }) => {
     const a = stateRef.current.active;
     if (!a) return null;
     const c = completeActive(a, opts);

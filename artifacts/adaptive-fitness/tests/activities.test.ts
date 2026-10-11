@@ -28,7 +28,7 @@ test('migration separates every legacy numeric default and leaves dated/exceptio
   schedule.exceptions[date] = { snapshot: snap, moveTo: '2026-10-11' };
   const active = D.startActive({ date, occurrenceKey: null, snapshot: snap, items: [...snap.items] }, 100);
   active.logs[0].sets.push({ seconds: 38, load: 0, unit: 'lb' });
-  const history = D.completeActive(active, { difficulty: null }, 2000);
+  const history = D.completeActive(active, { rpe: null }, 2000);
   const old = { ...D.emptyState(), schemaVersion: 2, customExercises: [legacy], routines: [routine([it])], schedule: [schedule], active, completions: [history] };
   const before = JSON.stringify({ schedule: old.schedule, active: old.active, completions: old.completions });
   const migrated = D.migrateV2(old as never);
@@ -61,6 +61,87 @@ test('published knowledge and legacy compatibility knowledge contain no numeric 
   for (const target of [{ metric: 'reps', value: 0 }, { metric: 'breaths', value: 0 }, { metric: 'duration', value: 0, unit: 's' }, { metric: 'distance', value: 0, unit: 'yd' }]) {
     assert.ok(actualSchema.safeParse({ target, load: { value: 0, unit: 'lb' }, side: 'left' }).success);
   }
+});
+
+test('sports are source-reviewed dose-free entries with blank personal routine targets', () => {
+  const sports = release.activities.filter(a => a.discipline === 'sports');
+  assert.ok(sports.length >= 10 && sports.length <= 20);
+  for (const required of ['Road running', 'Road cycling', 'Lap swimming', 'Association football', 'Basketball', 'Tennis', 'Golf']) {
+    assert.ok(sports.some(a => a.name === required), `missing ${required}`);
+  }
+  for (const sport of sports) {
+    assert.equal(sport.type, 'sport');
+    assert.equal(sport.laterality, 'not-applicable');
+    assert.equal(sport.primaryMuscles, null);
+    assert.equal(sport.secondaryMuscles, null);
+    assert.equal(sport.joints, null);
+    assert.equal(sport.actions, null);
+    assert.equal(sport.difficulty, 'unknown');
+    assert.deepEqual(sport.adaptation, {
+      eligible: false,
+      loadingKnown: false,
+      loadedJoints: [],
+      rationale: 'Sports are excluded from automatic adaptation; no reviewed sport-specific suitability or loading policy is established.',
+    });
+    assert.ok(sport.supportedMetrics.includes('duration'));
+    assert.equal(sport.supportedMetrics.includes('distance'), sport.distanceUnits.length > 0);
+    assert.ok(sport.sourceIds.length > 0 && sport.sourceIds.every(id => release.sources.some(source => source.id === id)));
+    assert.equal(activitySchema.safeParse(sport).success, true);
+  }
+
+  const running = sports.find(a => a.name === 'Road running')!;
+  const sportFilters = { ...D.emptyCatalogSearchFilters(), discipline: ['sports' as const], type: 'sport' as const, metric: 'duration' as const };
+  assert.equal(D.searchCatalog(release.activities, sportFilters).length, sports.length);
+  assert.ok(D.searchCatalog(release.activities, D.emptyCatalogSearchFilters(), 'basketball').some(a => a.name === 'Basketball'));
+  assert.equal(D.catalogFacetCount(release.activities, { ...D.emptyCatalogSearchFilters(), discipline: ['sports'] }, 'muscle', 'glutes'), 0);
+  assert.ok(D.catalogFacetCount(release.activities, { ...D.emptyCatalogSearchFilters(), discipline: ['sports', 'strength'] }, 'muscle', 'glutes') > 0);
+
+  const definition = D.activityDef(running);
+  assert.deepEqual(definition.areas, []);
+  const blank = D.makeItem(definition);
+  assert.equal(blank.sets, 1);
+  assert.equal(blank.seconds, undefined);
+  assert.equal(blank.distance, undefined);
+  assert.equal(blank.distanceUnit, undefined);
+  assert.equal(blank.confirmed, false);
+  assert.ok(D.validateItem(blank, 'time').length > 0, 'blank targets cannot launch');
+  assert.ok(D.validateItem({ ...blank, distance: 5, confirmed: true }, 'distance').some(error => /unit/i.test(error)));
+
+  const runningDuration = { ...blank, seconds: 900, confirmed: true };
+  const runningDistance = { ...blank, seconds: undefined, distance: 5, distanceUnit: 'km' as const, confirmed: true };
+  assert.deepEqual(D.validateItem(runningDuration, 'time'), []);
+  assert.deepEqual(D.validateItem(runningDistance, 'distance'), []);
+
+  const niche = activitySchema.parse({
+    ...running,
+    id: 'cx_niche_pickleball',
+    name: 'Pickleball practice',
+    englishName: null,
+    equipment: ['none'],
+    authorship: 'user',
+    reviewStatus: 'unreviewed',
+  });
+  const nicheDefinition = D.activityDef(niche);
+  assert.equal(nicheDefinition.activity?.type, 'sport');
+  assert.equal(nicheDefinition.discipline, 'sports');
+  assert.deepEqual(nicheDefinition.areas, []);
+  assert.deepEqual(D.validateExercise(nicheDefinition), []);
+  const nicheItem = { ...D.makeItem(nicheDefinition), seconds: 600, confirmed: true };
+  assert.deepEqual(D.validateItem(nicheItem, 'time'), []);
+
+  const preparation = D.makeItem(D.BUILTIN.find(item => item.id === 'march')!);
+  const recovery = D.makeItem(D.BUILTIN.find(item => item.id === 'cat-cow')!);
+  const userRoutine = routine([preparation, runningDuration, recovery]);
+  const launch = D.routineLaunchSnapshot(userRoutine, [], date);
+  assert.deepEqual(launch.errors, []);
+  assert.equal(launch.snapshot.items[1].discipline, 'sports');
+  const schedule = D.scheduleEntry(launch.snapshot, date, null);
+  const startedAt = Date.parse(`${date}T09:00:00Z`);
+  const active = D.startActive({ date, occurrenceKey: null, snapshot: schedule.snapshot, items: [...schedule.snapshot.items] }, startedAt);
+  const completion = D.completeActive(active, { rpe: 9 }, Date.parse(`${date}T10:00:00Z`));
+  const backup = D.checkImport(JSON.stringify(D.exportPayload({ ...D.emptyState(), routines: [userRoutine], schedule: [schedule], completions: [completion] })));
+  assert.ok(backup.ok, backup.ok ? '' : backup.error);
+  if (backup.ok) assert.equal(backup.data.completions[0].rpe, 9);
 });
 test('catalog updates, removal and custom edits never rewrite pinned routines or saved snapshots', () => {
   const a = activity();
@@ -122,7 +203,7 @@ test('saved activity collection survives export/import and old valid v3 data mig
   const oldSnapshot = D.snapshotFromRoutine(oldRoutine, []);
   const oldSchedule = D.scheduleEntry(oldSnapshot, date, [6]);
   const oldActive = D.startActive({ date, occurrenceKey: null, snapshot: oldSnapshot, items: [...oldSnapshot.items] }, 100);
-  const oldHistory = D.completeActive(oldActive, { difficulty: null }, 2000);
+  const oldHistory = { ...D.completeActive(oldActive, { rpe: null }, 2000), difficulty: 4 };
   const old = {
     ...D.emptyState(), schemaVersion: 3 as const,
     routines: [oldRoutine], schedule: [oldSchedule], active: oldActive, completions: [oldHistory],
@@ -130,15 +211,16 @@ test('saved activity collection survives export/import and old valid v3 data mig
   };
   delete (old as Partial<typeof old>).savedActivities;
   const oldStored = JSON.parse(JSON.stringify(old));
+  delete oldStored.completions[0].rpe;
   const oldLoad = D.loadStored(JSON.stringify(old), null);
   assert.equal(oldLoad.error, null);
   assert.deepEqual(oldLoad.state?.savedActivities, []);
   assert.deepEqual(oldLoad.state?.routines, oldStored.routines);
   assert.deepEqual(oldLoad.state?.schedule, oldStored.schedule);
   assert.deepEqual(oldLoad.state?.active, oldStored.active);
-  assert.deepEqual(oldLoad.state?.completions, oldStored.completions);
+  assert.deepEqual(oldLoad.state?.completions, oldStored.completions.map((completion: object) => ({ ...completion, rpe: null })));
   assert.deepEqual(oldLoad.state?.presets, oldStored.presets);
-  const oldImport = D.checkImport(JSON.stringify(D.exportPayload(old)));
+  const oldImport = D.checkImport(JSON.stringify({ app: 'tempo', exportedAt: 'x', data: oldStored }));
   assert.ok(oldImport.ok, oldImport.ok ? '' : oldImport.error);
   if (oldImport.ok) assert.deepEqual(oldImport.data.savedActivities, []);
 
@@ -199,7 +281,7 @@ test('all measurements and units round trip routines, exceptions, running sessio
     assert.deepEqual(D.actualErrors(s, active.items[n]), []);
     active = D.logSetOn(active, s);
   }
-  const completion = D.completeActive(active, { difficulty: null }, 2000);
+  const completion = D.completeActive(active, { rpe: null }, 2000);
   const entry = D.scheduleEntry(snapshot, date, [6]);
   entry.exceptions[date] = { snapshot, moveTo: '2026-10-11' };
   const state = { ...D.emptyState(), customExercises: [d], routines: [r], schedule: [entry], active, completions: [completion] };
@@ -264,7 +346,7 @@ test('stored restart data preserves mixed targets, actuals and running clocks ac
   const nextDay = D.rolloverState(restored, '2026-10-11', 'rollover', 'Test midnight', new Date(returned).toISOString());
   assert.deepEqual(nextDay.active, restored.active);
   assert.deepEqual(nextDay.schedule, restored.schedule);
-  const completion = D.completeActive(nextDay.active!, { difficulty: null }, returned);
+  const completion = D.completeActive(nextDay.active!, { rpe: null }, returned);
   assert.equal(completion.activeSeconds, 180);
   assert.deepEqual(completion.snapshot, restored.active!.snapshot);
   assert.deepEqual(completion.executedItems, JSON.parse(stored).active.items);
@@ -285,7 +367,7 @@ test('paused session and exercise clocks stay paused after a stored-data restart
   const restored = loaded.state!.active!;
   assert.equal(D.clockMs(restored.clock, 3600000), 12500);
   assert.equal(D.clockMs(restored.exClock, 3600000), 4500);
-  assert.equal(D.completeActive(restored, { difficulty: null }, 3600000).activeSeconds, 13);
+  assert.equal(D.completeActive(restored, { rpe: null }, 3600000).activeSeconds, 13);
 });
 
 test('breaths/distance have unknown duration and never produce a false time-fit claim', () => {

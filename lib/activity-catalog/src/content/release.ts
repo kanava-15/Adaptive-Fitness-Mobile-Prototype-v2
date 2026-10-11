@@ -6,11 +6,12 @@ import { strengthContent } from './strength';
 import { yogaContent, yogaSequenceContent, yogaSources } from './yoga';
 import { mobilityContent, mobilitySources } from './mobility';
 import { conditioningContent, conditioningSources } from './conditioning';
+import { sportsContent, sportsSources } from './sports';
 
 export function authoredRelease(): CatalogRelease {
   const strength = strengthContent();
-  const activities = [...strength.activities, ...yogaContent(), ...yogaSequenceContent(), ...mobilityContent(), ...conditioningContent()];
-  const sources = [...strength.sources, ...yogaSources, ...mobilitySources, ...conditioningSources];
+  const activities = [...strength.activities, ...yogaContent(), ...yogaSequenceContent(), ...mobilityContent(), ...conditioningContent(), ...sportsContent()];
+  const sources = [...strength.sources, ...yogaSources, ...mobilitySources, ...conditioningSources, ...sportsSources];
   const sequenceSource = source('maintainer-mobility-order', 'https://gmb.io/joint-mobility/',
     'Maintainer-selected gentle mobility order', 'Original short ordering of separately referenced drills, not a copied GMB or Kinstretch program or a therapeutic prescription.');
   sources.push(sequenceSource);
@@ -27,7 +28,7 @@ export function authoredRelease(): CatalogRelease {
     return activity.id;
   };
   const release = orderRelease(validateRelease({
-    schemaVersion: 1, contentVersion: 'tempo-catalog-2026-10-11-1', status: 'released',
+    schemaVersion: 1, contentVersion: 'tempo-catalog-2026-10-11-2', status: 'released',
     publishedAt: '2026-10-11T00:00:00.000Z', reviewStatus: 'source-checked', sources, activities,
     relationships: [
       { from: id('Incline push-up'), to: id('Push-up'), type: 'regression-of' },

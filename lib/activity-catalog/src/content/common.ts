@@ -12,7 +12,7 @@ export function base(name: string, discipline: Activity['discipline'], sourceIds
     id: `${discipline}-${slug(name)}`, version: 1, name, englishName: name,
     sanskritName: null, aliases: [], discipline,
     type: discipline === 'strength' ? 'exercise' : discipline === 'yoga' ? 'asana'
-      : discipline === 'mobility' ? 'mobility-drill' : 'conditioning-activity',
+      : discipline === 'mobility' ? 'mobility-drill' : discipline === 'sports' ? 'sport' : 'conditioning-activity',
     family: 'general', supportedMetrics: ['reps'], distanceUnits: [], loadUnits: [],
     laterality: 'unknown', equipment: ['none'], difficulty: 'unknown',
     primaryMuscles: null, secondaryMuscles: null, joints: null, actions: null,

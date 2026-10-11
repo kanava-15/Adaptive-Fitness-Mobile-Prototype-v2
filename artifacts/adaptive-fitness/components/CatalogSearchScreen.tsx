@@ -41,7 +41,7 @@ export default function CatalogSearchScreen() {
   const activityIdParam = Array.isArray(params.activityId) ? params.activityId[0] : params.activityId;
   const initialFilters = (): CatalogSearchFilters => {
     const next = emptyCatalogSearchFilters();
-    if (disciplineParam && ['yoga', 'mobility', 'strength', 'conditioning'].includes(disciplineParam)) {
+    if (disciplineParam && ['yoga', 'mobility', 'strength', 'conditioning', 'sports'].includes(disciplineParam)) {
       next.discipline = [disciplineParam as Activity['discipline']];
     }
     if (equipmentParam && equipmentSchema.options.includes(equipmentParam as Gear)) {
