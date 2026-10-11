@@ -1,0 +1,309 @@
+/* ===========================================
+   SEMANTIC TOKENS
+   Maps primitive tokens → contextual meaning
+   =========================================== */
+
+:root {
+    /* ========================================= */
+    /* SEMANTIC TOKENS (Light Mode)              */
+    /* ========================================= */
+
+    /* 1. BACKGROUNDS */
+    --bg-app: var(--color-zinc-50);
+    --bg-surface: var(--color-white);
+    --bg-panel: var(--color-zinc-100);
+    --bg-subtle: var(--color-zinc-200);
+    --bg-surface-raised: var(--color-zinc-50);
+    --bg-surface-sunken: var(--color-zinc-100);
+
+    /* 2. TEXT */
+    --text-primary: var(--color-zinc-900);
+    --text-body: var(--color-zinc-800);
+    --text-secondary: var(--color-zinc-600);
+    --text-muted: var(--color-zinc-500);
+    --text-inverted: var(--color-white);
+
+    /* 3. ACTIONS */
+    --action-primary: var(--color-k-indigo-700);
+    --action-hover: var(--color-k-indigo-800);
+    --action-active: var(--color-k-indigo-900);
+    --action-subtle: var(--color-k-indigo-100);
+
+    /* 4. BORDERS */
+    --border-default: var(--color-zinc-300);
+    --border-subtle: var(--color-zinc-200);
+    --border-input: var(--border-subtle);
+
+    /* 5. STATUS */
+    --status-success: var(--color-grass-600);
+    --status-success-hover: var(--color-grass-700);
+    --status-success-bg: var(--color-grass-50);
+    --status-error: var(--color-red-600);
+    --status-error-hover: var(--color-red-700);
+    --status-error-bg: var(--color-red-50);
+    --status-warning: var(--color-bright-amber-500);
+    --status-warning-hover: var(--color-bright-amber-600);
+    --status-warning-bg: var(--color-bright-amber-50);
+    --status-info: var(--color-blue-600);
+    --status-info-hover: var(--color-blue-700);
+    --status-info-bg: var(--color-blue-50);
+
+    /* 6. SYSTEM (Focus, Scrollbars) */
+    --bg-tooltip: var(--color-zinc-900);
+    --focus-ring-color: var(--action-primary);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --scrollbar-width: 8px;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: var(--border-default);
+    --scrollbar-thumb-hover: var(--color-zinc-400);
+
+    /* ========================================= */
+    /* DECORATIVE / USER PALETTE (Light Mode)    */
+    /* ========================================= */
+    /* Gray */
+    --palette-gray-bg: var(--color-gray-100);
+    --palette-gray-text: var(--color-gray-800);
+    /* Blue */
+    --palette-blue-bg: var(--color-blue-100);
+    --palette-blue-text: var(--color-blue-800);
+    /* Green */
+    --palette-green-bg: var(--color-green-100);
+    --palette-green-text: var(--color-green-800);
+    /* Red */
+    --palette-red-bg: var(--color-red-100);
+    --palette-red-text: var(--color-red-800);
+    /* Amber */
+    --palette-amber-bg: var(--color-amber-100);
+    --palette-amber-text: var(--color-amber-800);
+    /* Purple */
+    --palette-purple-bg: var(--color-purple-100);
+    --palette-purple-text: var(--color-purple-800);
+    /* Slate */
+    --palette-slate-bg: var(--color-slate-100);
+    --palette-slate-text: var(--color-slate-800);
+    /* Zinc */
+    --palette-zinc-bg: var(--color-zinc-100);
+    --palette-zinc-text: var(--color-zinc-800);
+    /* Neutral */
+    --palette-neutral-bg: var(--color-neutral-100);
+    --palette-neutral-text: var(--color-neutral-800);
+    /* Stone */
+    --palette-stone-bg: var(--color-stone-100);
+    --palette-stone-text: var(--color-stone-800);
+    /* Orange */
+    --palette-orange-bg: var(--color-orange-100);
+    --palette-orange-text: var(--color-orange-800);
+    /* Yellow */
+    --palette-yellow-bg: var(--color-yellow-100);
+    --palette-yellow-text: var(--color-yellow-800);
+    /* Lime */
+    --palette-lime-bg: var(--color-lime-100);
+    --palette-lime-text: var(--color-lime-800);
+    /* Emerald */
+    --palette-emerald-bg: var(--color-emerald-100);
+    --palette-emerald-text: var(--color-emerald-800);
+    /* Teal */
+    --palette-teal-bg: var(--color-teal-100);
+    --palette-teal-text: var(--color-teal-800);
+    /* Cyan */
+    --palette-cyan-bg: var(--color-cyan-100);
+    --palette-cyan-text: var(--color-cyan-800);
+    /* Sky */
+    --palette-sky-bg: var(--color-sky-100);
+    --palette-sky-text: var(--color-sky-800);
+    /* Indigo */
+    --palette-indigo-bg: var(--color-indigo-100);
+    --palette-indigo-text: var(--color-indigo-800);
+    /* Violet */
+    --palette-violet-bg: var(--color-violet-100);
+    --palette-violet-text: var(--color-violet-800);
+    /* Fuchsia */
+    --palette-fuchsia-bg: var(--color-fuchsia-100);
+    --palette-fuchsia-text: var(--color-fuchsia-800);
+    /* Pink */
+    --palette-pink-bg: var(--color-pink-100);
+    --palette-pink-text: var(--color-pink-800);
+    /* Rose */
+    --palette-rose-bg: var(--color-rose-100);
+    --palette-rose-text: var(--color-rose-800);
+
+    /* ========================================= */
+    /* DECORATIVE / PALETTE ACCENT (Light Mode)  */
+    /* Medium-intensity for borders & indicators */
+    /* ========================================= */
+    --palette-gray-accent: var(--color-gray-400);
+    --palette-blue-accent: var(--color-blue-400);
+    --palette-green-accent: var(--color-green-400);
+    --palette-red-accent: var(--color-red-400);
+    --palette-amber-accent: var(--color-amber-400);
+    --palette-purple-accent: var(--color-purple-400);
+    --palette-slate-accent: var(--color-slate-400);
+    --palette-zinc-accent: var(--color-zinc-400);
+    --palette-neutral-accent: var(--color-neutral-400);
+    --palette-stone-accent: var(--color-stone-400);
+    --palette-orange-accent: var(--color-orange-400);
+    --palette-yellow-accent: var(--color-yellow-400);
+    --palette-lime-accent: var(--color-lime-400);
+    --palette-emerald-accent: var(--color-emerald-400);
+    --palette-teal-accent: var(--color-teal-400);
+    --palette-cyan-accent: var(--color-cyan-400);
+    --palette-sky-accent: var(--color-sky-400);
+    --palette-indigo-accent: var(--color-indigo-400);
+    --palette-violet-accent: var(--color-violet-400);
+    --palette-fuchsia-accent: var(--color-fuchsia-400);
+    --palette-pink-accent: var(--color-pink-400);
+    --palette-rose-accent: var(--color-rose-400);
+}
+
+.dark {
+    /* ========================================= */
+    /* SEMANTIC TOKENS (Dark Mode)               */
+    /* ========================================= */
+
+    /* 1. BACKGROUNDS */
+    --bg-app: var(--color-zinc-950);
+    --bg-surface: var(--color-zinc-900);
+    --bg-panel: var(--color-zinc-800);
+    --bg-subtle: var(--color-zinc-700);
+    --bg-surface-raised: var(--color-zinc-800);
+    --bg-surface-sunken: var(--color-zinc-950);
+
+    /* 2. TEXT */
+    --text-primary: var(--color-zinc-50);
+    --text-body: var(--color-zinc-200);
+    --text-secondary: var(--color-zinc-400);
+    --text-muted: var(--color-zinc-500);
+    --text-inverted: var(--color-zinc-900);
+
+    /* 3. ACTIONS */
+    --action-primary: var(--color-k-indigo-500);
+    --action-hover: var(--color-k-indigo-400);
+    --action-active: var(--color-k-indigo-300);
+    --action-subtle: var(--color-k-indigo-900);
+
+    /* 4. BORDERS */
+    --border-default: var(--color-zinc-700);
+    --border-subtle: var(--color-zinc-800);
+    --border-input: var(--border-subtle);
+
+    /* 5. STATUS */
+    --status-success: var(--color-grass-500);
+    --status-success-hover: var(--color-grass-600);
+    --status-success-bg: var(--color-grass-950);
+    --status-error: var(--color-red-500);
+    --status-error-hover: var(--color-red-600);
+    --status-error-bg: var(--color-red-950);
+    --status-warning: var(--color-bright-amber-400);
+    --status-warning-hover: var(--color-bright-amber-500);
+    --status-warning-bg: var(--color-bright-amber-950);
+    --status-info: var(--color-blue-400);
+    --status-info-hover: var(--color-blue-500);
+    --status-info-bg: var(--color-blue-950);
+
+    /* 6. SYSTEM */
+    --bg-tooltip: var(--color-zinc-900);
+    --focus-ring-color: var(--action-primary);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --scrollbar-width: 8px;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: var(--border-default);
+    --scrollbar-thumb-hover: var(--color-zinc-600);
+
+    /* ========================================= */
+    /* DECORATIVE / USER PALETTE (Dark Mode)     */
+    /* ========================================= */
+    /* Gray */
+    --palette-gray-bg: var(--color-gray-800);
+    --palette-gray-text: var(--color-gray-200);
+    /* Blue */
+    --palette-blue-bg: var(--color-blue-900);
+    --palette-blue-text: var(--color-blue-200);
+    /* Green */
+    --palette-green-bg: var(--color-green-900);
+    --palette-green-text: var(--color-green-200);
+    /* Red */
+    --palette-red-bg: var(--color-red-900);
+    --palette-red-text: var(--color-red-200);
+    /* Amber */
+    --palette-amber-bg: var(--color-amber-900);
+    --palette-amber-text: var(--color-amber-200);
+    /* Purple */
+    --palette-purple-bg: var(--color-purple-900);
+    --palette-purple-text: var(--color-purple-200);
+    /* Slate */
+    --palette-slate-bg: var(--color-slate-900);
+    --palette-slate-text: var(--color-slate-200);
+    /* Zinc */
+    --palette-zinc-bg: var(--color-zinc-900);
+    --palette-zinc-text: var(--color-zinc-200);
+    /* Neutral */
+    --palette-neutral-bg: var(--color-neutral-900);
+    --palette-neutral-text: var(--color-neutral-200);
+    /* Stone */
+    --palette-stone-bg: var(--color-stone-900);
+    --palette-stone-text: var(--color-stone-200);
+    /* Orange */
+    --palette-orange-bg: var(--color-orange-900);
+    --palette-orange-text: var(--color-orange-200);
+    /* Yellow */
+    --palette-yellow-bg: var(--color-yellow-900);
+    --palette-yellow-text: var(--color-yellow-200);
+    /* Lime */
+    --palette-lime-bg: var(--color-lime-900);
+    --palette-lime-text: var(--color-lime-200);
+    /* Emerald */
+    --palette-emerald-bg: var(--color-emerald-900);
+    --palette-emerald-text: var(--color-emerald-200);
+    /* Teal */
+    --palette-teal-bg: var(--color-teal-900);
+    --palette-teal-text: var(--color-teal-200);
+    /* Cyan */
+    --palette-cyan-bg: var(--color-cyan-900);
+    --palette-cyan-text: var(--color-cyan-200);
+    /* Sky */
+    --palette-sky-bg: var(--color-sky-900);
+    --palette-sky-text: var(--color-sky-200);
+    /* Indigo */
+    --palette-indigo-bg: var(--color-indigo-900);
+    --palette-indigo-text: var(--color-indigo-200);
+    /* Violet */
+    --palette-violet-bg: var(--color-violet-900);
+    --palette-violet-text: var(--color-violet-200);
+    /* Fuchsia */
+    --palette-fuchsia-bg: var(--color-fuchsia-900);
+    --palette-fuchsia-text: var(--color-fuchsia-200);
+    /* Pink */
+    --palette-pink-bg: var(--color-pink-900);
+    --palette-pink-text: var(--color-pink-200);
+    /* Rose */
+    --palette-rose-bg: var(--color-rose-900);
+    --palette-rose-text: var(--color-rose-200);
+
+    /* ========================================= */
+    /* DECORATIVE / PALETTE ACCENT (Dark Mode)   */
+    /* ========================================= */
+    --palette-gray-accent: var(--color-gray-500);
+    --palette-blue-accent: var(--color-blue-500);
+    --palette-green-accent: var(--color-green-500);
+    --palette-red-accent: var(--color-red-500);
+    --palette-amber-accent: var(--color-amber-500);
+    --palette-purple-accent: var(--color-purple-500);
+    --palette-slate-accent: var(--color-slate-500);
+    --palette-zinc-accent: var(--color-zinc-500);
+    --palette-neutral-accent: var(--color-neutral-500);
+    --palette-stone-accent: var(--color-stone-500);
+    --palette-orange-accent: var(--color-orange-500);
+    --palette-yellow-accent: var(--color-yellow-500);
+    --palette-lime-accent: var(--color-lime-500);
+    --palette-emerald-accent: var(--color-emerald-500);
+    --palette-teal-accent: var(--color-teal-500);
+    --palette-cyan-accent: var(--color-cyan-500);
+    --palette-sky-accent: var(--color-sky-500);
+    --palette-indigo-accent: var(--color-indigo-500);
+    --palette-violet-accent: var(--color-violet-500);
+    --palette-fuchsia-accent: var(--color-fuchsia-500);
+    --palette-pink-accent: var(--color-pink-500);
+    --palette-rose-accent: var(--color-rose-500);
+}

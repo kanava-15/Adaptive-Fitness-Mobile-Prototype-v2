@@ -1,0 +1,549 @@
+@import "tailwindcss";
+@import "@fontsource/inter";
+@import "./tokens.css";
+@plugin "@tailwindcss/typography";
+
+@source "../components";
+@source "../modules";
+@source "../App.tsx";
+@source "../main.tsx";
+
+:root {
+    /* ========================================= */
+    /* SEMANTIC TOKENS (Light Mode)              */
+    /* ========================================= */
+
+    /* 1. BACKGROUNDS */
+    --bg-app: var(--color-zinc-50);
+    --bg-surface: var(--color-white);
+    --bg-panel: var(--color-zinc-100);
+    --bg-subtle: var(--color-zinc-200);
+
+    /* 2. TEXT */
+    --text-primary: var(--color-zinc-900);
+    --text-body: var(--color-zinc-800);
+    --text-secondary: var(--color-zinc-600);
+    --text-muted: var(--color-zinc-500);
+    --text-inverted: var(--color-white);
+
+    /* 3. ACTIONS */
+    --action-primary: var(--color-k-indigo-700);
+    --action-hover: var(--color-k-indigo-800);
+    --action-active: var(--color-k-indigo-900);
+    --action-subtle: var(--color-k-indigo-100);
+
+    /* 4. BORDERS */
+    --border-default: var(--color-zinc-300);
+    --border-subtle: var(--color-zinc-200);
+    --border-input: var(--border-subtle);
+
+    /* 5. STATUS */
+    --status-success: var(--color-grass-600);
+    --status-success-hover: var(--color-grass-700);
+    --status-error: var(--color-red-600);
+    --status-error-hover: var(--color-red-700);
+    --status-warning: var(--color-bright-amber-500);
+    --status-warning-hover: var(--color-bright-amber-600);
+
+    /* 6. SYSTEM (Focus, Scrollbars) */
+    --bg-tooltip: var(--color-zinc-900);
+    --focus-ring-color: var(--action-primary);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --scrollbar-width: 8px;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: var(--border-default);
+    --scrollbar-thumb-hover: var(--color-zinc-400);
+
+    /* ========================================= */
+    /* DECORATIVE / USER PALETTE (Light Mode)    */
+    /* ========================================= */
+    /* Gray */
+    --palette-gray-bg: var(--color-gray-100);
+    --palette-gray-text: var(--color-gray-800);
+    /* Blue */
+    --palette-blue-bg: var(--color-blue-100);
+    --palette-blue-text: var(--color-blue-800);
+    /* Green */
+    --palette-green-bg: var(--color-green-100);
+    --palette-green-text: var(--color-green-800);
+    /* Red */
+    --palette-red-bg: var(--color-red-100);
+    --palette-red-text: var(--color-red-800);
+    /* Amber */
+    --palette-amber-bg: var(--color-amber-100);
+    --palette-amber-text: var(--color-amber-800);
+    /* Purple */
+    --palette-purple-bg: var(--color-purple-100);
+    --palette-purple-text: var(--color-purple-800);
+    /* Slate */
+    --palette-slate-bg: var(--color-slate-100);
+    --palette-slate-text: var(--color-slate-800);
+    /* Zinc */
+    --palette-zinc-bg: var(--color-zinc-100);
+    --palette-zinc-text: var(--color-zinc-800);
+    /* Neutral */
+    --palette-neutral-bg: var(--color-neutral-100);
+    --palette-neutral-text: var(--color-neutral-800);
+    /* Stone */
+    --palette-stone-bg: var(--color-stone-100);
+    --palette-stone-text: var(--color-stone-800);
+    /* Orange */
+    --palette-orange-bg: var(--color-orange-100);
+    --palette-orange-text: var(--color-orange-800);
+    /* Yellow */
+    --palette-yellow-bg: var(--color-yellow-100);
+    --palette-yellow-text: var(--color-yellow-800);
+    /* Lime */
+    --palette-lime-bg: var(--color-lime-100);
+    --palette-lime-text: var(--color-lime-800);
+    /* Emerald */
+    --palette-emerald-bg: var(--color-emerald-100);
+    --palette-emerald-text: var(--color-emerald-800);
+    /* Teal */
+    --palette-teal-bg: var(--color-teal-100);
+    --palette-teal-text: var(--color-teal-800);
+    /* Cyan */
+    --palette-cyan-bg: var(--color-cyan-100);
+    --palette-cyan-text: var(--color-cyan-800);
+    /* Sky */
+    --palette-sky-bg: var(--color-sky-100);
+    --palette-sky-text: var(--color-sky-800);
+    /* Indigo */
+    --palette-indigo-bg: var(--color-indigo-100);
+    --palette-indigo-text: var(--color-indigo-800);
+    /* Violet */
+    --palette-violet-bg: var(--color-violet-100);
+    --palette-violet-text: var(--color-violet-800);
+    /* Fuchsia */
+    --palette-fuchsia-bg: var(--color-fuchsia-100);
+    --palette-fuchsia-text: var(--color-fuchsia-800);
+    /* Pink */
+    --palette-pink-bg: var(--color-pink-100);
+    --palette-pink-text: var(--color-pink-800);
+    /* Rose */
+    --palette-rose-bg: var(--color-rose-100);
+    --palette-rose-text: var(--color-rose-800);
+}
+
+.dark {
+    /* ========================================= */
+    /* SEMANTIC TOKENS (Dark Mode)               */
+    /* ========================================= */
+
+    /* 1. BACKGROUNDS */
+    --bg-app: var(--color-zinc-950);
+    --bg-surface: var(--color-zinc-900);
+    --bg-panel: var(--color-zinc-800);
+    --bg-subtle: var(--color-zinc-700);
+
+    /* 2. TEXT */
+    --text-primary: var(--color-zinc-50);
+    --text-body: var(--color-zinc-200);
+    --text-secondary: var(--color-zinc-400);
+    --text-muted: var(--color-zinc-500);
+    --text-inverted: var(--color-zinc-900);
+
+    /* 3. ACTIONS */
+    --action-primary: var(--color-k-indigo-500);
+    --action-hover: var(--color-k-indigo-400);
+    --action-active: var(--color-k-indigo-300);
+    --action-subtle: var(--color-k-indigo-900);
+
+    /* 4. BORDERS */
+    --border-default: var(--color-zinc-700);
+    --border-subtle: var(--color-zinc-800);
+    --border-input: var(--border-subtle);
+
+    /* 5. STATUS */
+    --status-success: var(--color-grass-500);
+    --status-success-hover: var(--color-grass-600);
+    --status-error: var(--color-red-500);
+    --status-error-hover: var(--color-red-600);
+    --status-warning: var(--color-bright-amber-400);
+    --status-warning-hover: var(--color-bright-amber-500);
+
+    /* 6. SYSTEM */
+    --bg-tooltip: var(--color-zinc-900);
+    --focus-ring-color: var(--action-primary);
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --scrollbar-width: 8px;
+    --scrollbar-track: transparent;
+    --scrollbar-thumb: var(--border-default);
+    --scrollbar-thumb-hover: var(--color-zinc-600);
+
+    /* ========================================= */
+    /* DECORATIVE / USER PALETTE (Dark Mode)     */
+    /* ========================================= */
+    /* Gray */
+    --palette-gray-bg: var(--color-gray-800);
+    --palette-gray-text: var(--color-gray-200);
+    /* Blue */
+    --palette-blue-bg: var(--color-blue-900);
+    --palette-blue-text: var(--color-blue-200);
+    /* Green */
+    --palette-green-bg: var(--color-green-900);
+    --palette-green-text: var(--color-green-200);
+    /* Red */
+    --palette-red-bg: var(--color-red-900);
+    --palette-red-text: var(--color-red-200);
+    /* Amber */
+    --palette-amber-bg: var(--color-amber-900);
+    --palette-amber-text: var(--color-amber-200);
+    /* Purple */
+    --palette-purple-bg: var(--color-purple-900);
+    --palette-purple-text: var(--color-purple-200);
+    /* Slate */
+    --palette-slate-bg: var(--color-slate-900);
+    --palette-slate-text: var(--color-slate-200);
+    /* Zinc */
+    --palette-zinc-bg: var(--color-zinc-900);
+    --palette-zinc-text: var(--color-zinc-200);
+    /* Neutral */
+    --palette-neutral-bg: var(--color-neutral-900);
+    --palette-neutral-text: var(--color-neutral-200);
+    /* Stone */
+    --palette-stone-bg: var(--color-stone-900);
+    --palette-stone-text: var(--color-stone-200);
+    /* Orange */
+    --palette-orange-bg: var(--color-orange-900);
+    --palette-orange-text: var(--color-orange-200);
+    /* Yellow */
+    --palette-yellow-bg: var(--color-yellow-900);
+    --palette-yellow-text: var(--color-yellow-200);
+    /* Lime */
+    --palette-lime-bg: var(--color-lime-900);
+    --palette-lime-text: var(--color-lime-200);
+    /* Emerald */
+    --palette-emerald-bg: var(--color-emerald-900);
+    --palette-emerald-text: var(--color-emerald-200);
+    /* Teal */
+    --palette-teal-bg: var(--color-teal-900);
+    --palette-teal-text: var(--color-teal-200);
+    /* Cyan */
+    --palette-cyan-bg: var(--color-cyan-900);
+    --palette-cyan-text: var(--color-cyan-200);
+    /* Sky */
+    --palette-sky-bg: var(--color-sky-900);
+    --palette-sky-text: var(--color-sky-200);
+    /* Indigo */
+    --palette-indigo-bg: var(--color-indigo-900);
+    --palette-indigo-text: var(--color-indigo-200);
+    /* Violet */
+    --palette-violet-bg: var(--color-violet-900);
+    --palette-violet-text: var(--color-violet-200);
+    /* Fuchsia */
+    --palette-fuchsia-bg: var(--color-fuchsia-900);
+    --palette-fuchsia-text: var(--color-fuchsia-200);
+    /* Pink */
+    --palette-pink-bg: var(--color-pink-900);
+    --palette-pink-text: var(--color-pink-200);
+    /* Rose */
+    --palette-rose-bg: var(--color-rose-900);
+    --palette-rose-text: var(--color-rose-200);
+}
+
+@layer base {
+
+    /* Typography */
+    body {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-primary);
+        background-color: var(--bg-app);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Focus Rings */
+    *:focus-visible {
+        outline: var(--focus-ring-width) solid var(--focus-ring-color);
+        outline-offset: var(--focus-ring-offset);
+        opacity: 1;
+    }
+
+    /* Selection */
+    ::selection {
+        background-color: var(--color-k-indigo-200);
+        color: var(--text-primary);
+    }
+
+    /* Scrollbars - Webkit */
+    ::-webkit-scrollbar {
+        width: var(--scrollbar-width);
+        height: var(--scrollbar-width);
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb);
+        border-radius: var(--radius-full);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--scrollbar-thumb-hover);
+    }
+
+    /* Scrollbars - Firefox */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+}
+
+/* Typography Customization for Editor */
+@layer components {
+
+    /* 
+       Override Tailwind Typography defaults 
+       We must avoid :where() to ensure our specificity wins over the plugin's defaults.
+    */
+    /* 
+       Override Tailwind Typography defaults 
+       Targeting .editor-prose specifically to ensure our custom spacing wins.
+    */
+    .editor-prose {
+        @apply prose prose-sm sm:prose-base focus:outline-none max-w-none;
+    }
+
+    /* 1. Remove Quotes */
+    .editor-prose code::before,
+    .editor-prose code::after,
+    .editor-prose blockquote::before,
+    .editor-prose blockquote::after {
+        content: none !important;
+    }
+
+    /* 2. Tighten Spacing (Notion-like Density) */
+
+    /* Paragraphs: ~6px gap (0.25em @ 16px = 4px, but collapsed margins logic implies ~8px visual gap) */
+    .editor-prose p {
+        margin-top: 0.25em;
+        margin-bottom: 0.25em;
+        line-height: 1.6;
+    }
+
+    /* Headings: Tight bottom margin to group with content */
+    .editor-prose h1 {
+        margin-top: 1em;
+        /* ~32px */
+        margin-bottom: 0.2em;
+        /* ~6px */
+        line-height: 1.2;
+    }
+
+    .editor-prose h2 {
+        margin-top: 0.8em;
+        /* ~24px */
+        margin-bottom: 0.2em;
+        /* ~6px */
+        line-height: 1.3;
+    }
+
+    .editor-prose h3 {
+        margin-top: 0.6em;
+        /* ~18px */
+        margin-bottom: 0.1em;
+        /* ~3px */
+        line-height: 1.4;
+    }
+
+    /* Lists: Tighten up */
+    .editor-prose ul,
+    .editor-prose ol {
+        margin-top: 0.25em;
+        margin-bottom: 0.25em;
+        padding-left: 1.2em;
+        /* Ensure bullets are visible */
+    }
+
+    .editor-prose li {
+        margin-top: 0.1em;
+        margin-bottom: 0.1em;
+    }
+}
+
+@theme {
+    /* 1. Spacing System (8px Grid) */
+    --spacing-0_5: var(--space-0-5);
+    --spacing-1: var(--space-1);
+    --spacing-1_5: var(--space-1-5);
+    --spacing-2: var(--space-2);
+    --spacing-2_5: var(--space-2-5);
+    --spacing-3: var(--space-3);
+    --spacing-4: var(--space-4);
+    --spacing-5: var(--space-5);
+    --spacing-6: var(--space-6);
+    --spacing-8: var(--space-8);
+    --spacing-10: var(--space-10);
+    --spacing-12: var(--space-12);
+    --spacing-16: var(--space-16);
+    --spacing-20: var(--space-20);
+    --spacing-24: var(--space-24);
+    --spacing-32: var(--space-32);
+
+    /* 2. Semantic Colors */
+
+    /* Text */
+    --color-text-primary: var(--text-primary);
+    --color-text-body: var(--text-body);
+    --color-text-secondary: var(--text-secondary);
+    --color-text-muted: var(--text-muted);
+    --color-text-inverted: var(--text-inverted);
+
+    /* Backgrounds */
+    --color-bg-app: var(--bg-app);
+    --color-bg-surface: var(--bg-surface);
+    --color-bg-panel: var(--bg-panel);
+    --color-bg-subtle: var(--bg-subtle);
+
+    /* Borders */
+    --color-border-default: var(--border-default);
+    --color-border-subtle: var(--border-subtle);
+    --color-border-input: var(--border-input);
+
+    /* Actions */
+    --color-action-primary: var(--action-primary);
+    --color-action-hover: var(--action-hover);
+    --color-action-active: var(--action-active);
+    --color-action-subtle: var(--action-subtle);
+
+    /* Status */
+    --color-status-success: var(--status-success);
+    --color-status-success-hover: var(--status-success-hover);
+    --color-status-error: var(--status-error);
+    --color-status-error-hover: var(--status-error-hover);
+    --color-status-warning: var(--status-warning);
+    --color-status-warning-hover: var(--status-warning-hover);
+
+    /* System */
+    --color-bg-tooltip: var(--bg-tooltip);
+
+    /* 3. Typography Scale */
+    --font-heading: var(--font-heading);
+    --font-sans: var(--font-body);
+
+    /* Font Sizes */
+    --text-xs: var(--text-xs);
+    --text-xs--line-height: var(--lh-xs);
+    --text-sm: var(--text-sm);
+    --text-sm--line-height: var(--lh-sm);
+    --text-base: var(--text-base);
+    --text-base--line-height: var(--lh-base);
+    --text-lg: var(--text-lg);
+    --text-lg--line-height: var(--lh-lg);
+    --text-xl: var(--text-xl);
+    --text-xl--line-height: var(--lh-xl);
+    --text-2xl: var(--text-2xl);
+    --text-2xl--line-height: var(--lh-2xl);
+    --text-3xl: var(--text-3xl);
+    --text-3xl--line-height: var(--lh-3xl);
+    --text-4xl: var(--text-4xl);
+    --text-4xl--line-height: var(--lh-4xl);
+    --text-display: var(--text-display);
+    --text-display--line-height: var(--lh-display);
+
+    /* 4. Radius Scale */
+    --radius-sm: var(--radius-sm);
+    --radius-md: var(--radius-md);
+    --radius-lg: var(--radius-lg);
+    --radius-full: var(--radius-full);
+
+    /* 5. Animations */
+    --animate-fade-in: fade-in var(--duration-fast) var(--ease-standard);
+    --animate-slide-up: slide-up var(--duration-normal) var(--ease-standard);
+    --animate-slide-down: slide-down var(--duration-normal) var(--ease-standard);
+    --animate-spin: spin var(--duration-spin) linear infinite;
+    --animate-shake: shake var(--duration-slow) var(--ease-shake) both;
+}
+
+/* Keyframes */
+@keyframes fade-in {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    0% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-down {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-4px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(4px);
+    }
+}
+
+/* Notion-like Scrollbar on Hover */
+.view-canvas {
+    overflow: auto;
+}
+
+/* Hide scrollbar thumb by default */
+.view-canvas::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+/* Show scrollbar thumb on hover */
+.view-canvas:hover::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+}
+
+.view-canvas:hover::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+}
