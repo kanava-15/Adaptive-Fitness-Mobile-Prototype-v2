@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Svasthic Catalog - Material You</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Material Symbols Rounded -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <!-- Outfit Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        md: {
+                            surface: '#F8F9FA',
+                            surfaceContainer: '#EDF1F6',
+                            primary: '#0B57D0',
+                            primaryContainer: '#D3E3FD',
+                            onPrimaryContainer: '#041E49',
+                            secondary: '#146C2E',
+                            secondaryContainer: '#C4EED0',
+                            onSecondaryContainer: '#072711',
+                            tertiary: '#93000A',
+                            tertiaryContainer: '#FFDAD6',
+                            onTertiaryContainer: '#410002',
+                            orange: '#B05000',
+                            orangeContainer: '#FFDCC1',
+                            onOrangeContainer: '#2E1500',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #e2e8f0; }
+        
+        .material-symbols-rounded {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-unfilled {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Bottom Sheet Animations */
+        .sheet-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .sheet-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .sheet-content {
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+        }
+        .sheet-overlay.active .sheet-content {
+            transform: translateY(0);
+        }
+        
+        /* Hide Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-800 font-sans antialiased h-screen flex justify-center items-center">
+
+    <!-- Mobile Device Frame -->
+    <div class="w-full max-w-md h-full sm:h-[90vh] bg-md-surface relative overflow-hidden sm:rounded-[40px] shadow-2xl sm:border-[10px] border-slate-900 flex flex-col">
+        
+        <!-- Header & AI Search -->
+        <header class="z-10 bg-md-surface/90 backdrop-blur-xl pt-12 pb-4 px-4 sticky top-0 shrink-0">
+            <h1 class="text-2xl font-bold text-slate-900 mb-4 px-1">Catalog</h1>
+            
+            <!-- AI Search Bar -->
+            <div class="bg-md-surfaceContainer rounded-[24px] h-14 flex items-center px-2 shadow-sm border border-white/60">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-md-primaryContainer to-[#E6B0FF] flex items-center justify-center ml-1">
+                    <span class="material-symbols-rounded text-md-primary" style="font-size: 20px;">auto_awesome</span>
+                </div>
+                <input type="text" placeholder="Describe what you want..." class="bg-transparent border-none outline-none flex-1 px-3 text-slate-800 placeholder:text-slate-500 font-medium text-[15px]">
+                <button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-200/50 transition-colors mr-1">
+                    <span class="material-symbols-rounded text-slate-600 icon-unfilled">search</span>
+                </button>
+            </div>
+
+            <!-- Filter Chips -->
+            <div class="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                <button class="shrink-0 px-5 py-2 bg-md-primaryContainer text-md-onPrimaryContainer rounded-xl text-sm font-semibold tracking-wide">All</button>
+                <button class="shrink-0 px-5 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">Strength</button>
+                <button class="shrink-0 px-5 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">Mobility</button>
+                <button class="shrink-0 px-5 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">Sports</button>
+            </div>
+        </header>
+
+        <!-- Main Scrolling Feed -->
+        <main class="flex-1 overflow-y-auto p-4 space-y-6 pb-24 no-scrollbar">
+            
+            <!-- CARD 1: SINGLE ACTIVITY (Strength) -->
+            <article class="bg-white rounded-[32px] p-3 shadow-sm border border-slate-100/50 transition-transform active:scale-[0.98]">
+                <!-- Media Preview Area (Tappable for Explorer) -->
+                <div class="h-44 rounded-[24px] relative overflow-hidden cursor-pointer group" onclick="openDetailSheet()">
+                    <!-- Simulated Video Thumbnail -->
+                    <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop" alt="Goblet Squat" class="w-full h-full object-cover">
+                    <!-- Play Overlay -->
+                    <div class="absolute inset-0 bg-slate-900/20 flex items-center justify-center group-hover:bg-slate-900/30 transition-colors">
+                        <div class="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-md-primary">
+                            <span class="material-symbols-rounded">play_arrow</span>
+                        </div>
+                    </div>
+                    <!-- Type Badge -->
+                    <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl text-[12px] font-bold text-slate-800 uppercase tracking-wider">
+                        Strength
+                    </div>
+                </div>
+
+                <!-- Info & Actions -->
+                <div class="px-2 mt-4">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 cursor-pointer" onclick="openDetailSheet()">
+                            <h2 class="text-[20px] font-bold text-slate-900 leading-tight">Goblet Squat</h2>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <span class="bg-md-surfaceContainer text-slate-700 px-2.5 py-1 rounded-lg text-[13px] font-medium flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-[16px]">fitness_center</span> Kettlebell
+                                </span>
+                                <span class="bg-md-surfaceContainer text-slate-700 px-2.5 py-1 rounded-lg text-[13px] font-medium flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-[16px]">bolt</span> Intermediate
+                                </span>
+                            </div>
+                        </div>
+                        <!-- Quick Save Action -->
+                        <button class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-md-primary transition-colors shrink-0">
+                            <span class="material-symbols-rounded icon-unfilled">bookmark</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Adder CTA -->
+                    <button onclick="openAddSheet()" class="w-full mt-4 py-3.5 bg-md-primaryContainer text-md-onPrimaryContainer rounded-[20px] text-[15px] font-bold flex items-center justify-center gap-2 hover:bg-[#b9d4fd] transition-colors">
+                        <span class="material-symbols-rounded">add_circle</span> Add to...
+                    </button>
+                </div>
+            </article>
+
+            <!-- CARD 2: SEQUENCE (Mobility) -->
+            <article class="bg-white rounded-[32px] p-3 shadow-sm border border-slate-100/50 transition-transform active:scale-[0.98]">
+                <div class="h-32 bg-md-secondaryContainer rounded-[24px] relative overflow-hidden cursor-pointer group flex items-center justify-center">
+                    <span class="material-symbols-rounded text-md-secondary/40 text-6xl">self_improvement</span>
+                    <div class="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl text-[12px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="material-symbols-rounded text-[14px] text-md-secondary">format_list_bulleted</span> Sequence
+                    </div>
+                </div>
+
+                <div class="px-2 mt-4">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 cursor-pointer">
+                            <h2 class="text-[20px] font-bold text-slate-900 leading-tight">Morning Joint Mobility</h2>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <span class="bg-md-surfaceContainer text-slate-700 px-2.5 py-1 rounded-lg text-[13px] font-medium">12 Movements</span>
+                                <span class="bg-md-surfaceContainer text-slate-700 px-2.5 py-1 rounded-lg text-[13px] font-medium flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-[16px]">timer</span> 15 Min
+                                </span>
+                            </div>
+                        </div>
+                        <button class="w-10 h-10 rounded-full flex items-center justify-center text-md-secondary bg-md-secondaryContainer/50 transition-colors shrink-0">
+                            <span class="material-symbols-rounded">bookmark</span>
+                        </button>
+                    </div>
+                    <button onclick="openAddSheet()" class="w-full mt-4 py-3.5 bg-md-secondaryContainer text-md-onSecondaryContainer rounded-[20px] text-[15px] font-bold flex items-center justify-center gap-2 hover:bg-[#b0dfbf] transition-colors">
+                        <span class="material-symbols-rounded">add_circle</span> Add to...
+                    </button>
+                </div>
+            </article>
+
+            <!-- CARD 3: SPORT (Manual Tracking) -->
+            <article class="bg-white rounded-[32px] p-3 shadow-sm border border-slate-100/50 transition-transform active:scale-[0.98]">
+                <div class="h-28 bg-md-orangeContainer rounded-[24px] relative overflow-hidden cursor-pointer flex items-center justify-center">
+                    <span class="material-symbols-rounded text-md-orange/40 text-6xl">sports_tennis</span>
+                </div>
+                <div class="px-2 mt-4">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 cursor-pointer">
+                            <h2 class="text-[20px] font-bold text-slate-900 leading-tight">Tennis (Singles)</h2>
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <span class="bg-md-surfaceContainer text-slate-700 px-2.5 py-1 rounded-lg text-[13px] font-medium flex items-center gap-1">
+                                    <span class="material-symbols-rounded text-[16px]">monitor_heart</span> High Intensity
+                                </span>
+                            </div>
+                        </div>
+                        <button class="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-md-orange transition-colors shrink-0">
+                            <span class="material-symbols-rounded icon-unfilled">bookmark</span>
+                        </button>
+                    </div>
+                    <button onclick="openAddSheet()" class="w-full mt-4 py-3.5 bg-md-orangeContainer text-md-onOrangeContainer rounded-[20px] text-[15px] font-bold flex items-center justify-center gap-2 transition-colors">
+                        <span class="material-symbols-rounded">add_circle</span> Add to...
+                    </button>
+                </div>
+            </article>
+        </main>
+
+
+        <!-- ========================================== -->
+        <!-- BOTTOM SHEET 1: DETAIL VIEW (The Explorer) -->
+        <!-- ========================================== -->
+        <div id="detailSheet" class="sheet-overlay absolute inset-0 z-40 flex flex-col justify-end bg-slate-900/40 backdrop-blur-sm sm:rounded-[32px]">
+            <!-- Dismiss Area -->
+            <div class="flex-1 w-full cursor-pointer" onclick="closeDetailSheet()"></div>
+            
+            <div class="sheet-content bg-md-surface w-full h-[92vh] rounded-t-[36px] flex flex-col relative overflow-hidden shadow-2xl">
+                <!-- Header Actions -->
+                <div class="absolute top-4 right-4 z-50 flex gap-2">
+                    <button class="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white" onclick="closeDetailSheet()">
+                        <span class="material-symbols-rounded">close</span>
+                    </button>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="flex-1 overflow-y-auto no-scrollbar pb-32">
+                    
+                    <!-- Media: YouTube Embed -->
+                    <div class="w-full pt-16 px-4">
+                        <div class="relative w-full pb-[56.25%] overflow-hidden rounded-[24px] bg-slate-900 shadow-lg">
+                            <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/MeIIhE6A1Q0?si=L43L_wH90kQ3C14W&rel=0&modestbranding=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <div class="px-5 pt-6">
+                        <!-- Identity & Quick Actions -->
+                        <div class="flex justify-between items-start mb-2">
+                            <h2 class="text-3xl font-bold text-slate-900 leading-tight">Goblet Squat</h2>
+                            <div class="flex gap-2 text-slate-400">
+                                <button class="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors">
+                                    <span class="material-symbols-rounded">ios_share</span>
+                                </button>
+                                <button class="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center transition-colors text-md-primary">
+                                    <span class="material-symbols-rounded">bookmark</span>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-[16px] text-slate-600 leading-relaxed font-medium">
+                            A fundamental lower-body strength movement. Holding the weight anteriorly encourages an upright torso, greater depth, and massive core engagement.
+                        </p>
+                        
+                        <div class="h-px bg-slate-200/60 my-6"></div>
+
+                        <!-- Categorization Tags (Progressive Disclosure) -->
+                        <div class="space-y-6">
+                            
+                            <!-- Setup -->
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-400 uppercase tracking-wider mb-3">Setup & Execution</h3>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="bg-white border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-[14px] font-semibold flex items-center gap-1.5 shadow-sm">
+                                        <span class="material-symbols-rounded text-[18px]">fitness_center</span> Kettlebell
+                                    </span>
+                                    <span class="bg-white border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-[14px] font-semibold shadow-sm">Intermediate</span>
+                                    <span class="bg-white border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-[14px] font-semibold shadow-sm">Bilateral</span>
+                                </div>
+                            </div>
+
+                            <!-- Anatomy -->
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-400 uppercase tracking-wider mb-3">Target Anatomy</h3>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="bg-md-primaryContainer text-md-onPrimaryContainer px-4 py-1.5 rounded-xl text-[14px] font-bold">Quadriceps</span>
+                                    <span class="bg-md-primaryContainer text-md-onPrimaryContainer px-4 py-1.5 rounded-xl text-[14px] font-bold">Glutes</span>
+                                    <span class="bg-white border border-slate-200 text-slate-600 px-4 py-1.5 rounded-xl text-[14px] font-semibold shadow-sm">Core (Stabilizer)</span>
+                                </div>
+                            </div>
+
+                            <!-- Precautions Box -->
+                            <div class="bg-[#FFF0F0] rounded-[24px] p-5 mt-4 border border-[#FFDAD6]">
+                                <h3 class="text-[15px] font-bold text-[#93000A] flex items-center gap-2 mb-2">
+                                    <span class="material-symbols-rounded">warning</span> Precautions
+                                </h3>
+                                <p class="text-[14.5px] text-[#410002] leading-relaxed font-medium">Ensure your knees track over your toes and do not cave inward. Keep your chest tall to prevent your lower back from rounding at the bottom of the squat.</p>
+                            </div>
+
+                            <!-- How to do it -->
+                            <div>
+                                <h3 class="text-[14px] font-bold text-slate-400 uppercase tracking-wider mb-4 mt-6">Step-by-Step</h3>
+                                <div class="space-y-4">
+                                    <div class="flex gap-4 items-start bg-white p-4 rounded-[20px] shadow-sm border border-slate-100">
+                                        <div class="w-8 h-8 shrink-0 rounded-full bg-md-surfaceContainer text-md-primary font-bold flex items-center justify-center text-sm">1</div>
+                                        <p class="text-[15px] text-slate-700 font-medium pt-1">Hold the kettlebell by the horns close to your chest.</p>
+                                    </div>
+                                    <div class="flex gap-4 items-start bg-white p-4 rounded-[20px] shadow-sm border border-slate-100">
+                                        <div class="w-8 h-8 shrink-0 rounded-full bg-md-surfaceContainer text-md-primary font-bold flex items-center justify-center text-sm">2</div>
+                                        <p class="text-[15px] text-slate-700 font-medium pt-1">Stand with feet shoulder-width apart, toes pointed slightly outward.</p>
+                                    </div>
+                                    <div class="flex gap-4 items-start bg-white p-4 rounded-[20px] shadow-sm border border-slate-100">
+                                        <div class="w-8 h-8 shrink-0 rounded-full bg-md-surfaceContainer text-md-primary font-bold flex items-center justify-center text-sm">3</div>
+                                        <p class="text-[15px] text-slate-700 font-medium pt-1">Brace your core and lower your hips down and back, keeping your chest up.</p>
+                                    </div>
+                                    <div class="flex gap-4 items-start bg-white p-4 rounded-[20px] shadow-sm border border-slate-100">
+                                        <div class="w-8 h-8 shrink-0 rounded-full bg-md-surfaceContainer text-md-primary font-bold flex items-center justify-center text-sm">4</div>
+                                        <p class="text-[15px] text-slate-700 font-medium pt-1">Drive through your mid-foot to return to the starting position.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sticky Bottom Action -->
+                <div class="absolute bottom-0 left-0 right-0 bg-md-surface/90 backdrop-blur-xl border-t border-slate-200/50 p-4 pb-8 flex items-center justify-center shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                    <button onclick="openAddSheet()" class="w-full h-14 bg-md-primary text-white rounded-[24px] text-[16px] font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors active:scale-[0.98]">
+                        <span class="material-symbols-rounded">add_circle</span> Add to...
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- BOTTOM SHEET 2: "ADD TO" MENU (The Quick Adder) -->
+        <!-- ========================================== -->
+        <div id="addSheet" class="sheet-overlay absolute inset-0 z-50 flex flex-col justify-end bg-slate-900/40 backdrop-blur-sm sm:rounded-[32px]">
+            <!-- Dismiss Area -->
+            <div class="flex-1 w-full cursor-pointer" onclick="closeAddSheet()"></div>
+            
+            <div class="sheet-content bg-white w-full rounded-t-[36px] flex flex-col relative p-6 pb-10 shadow-2xl">
+                <!-- Drag Handle -->
+                <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+                
+                <h3 class="text-xl font-bold text-slate-900 mb-6">Add "Goblet Squat" to...</h3>
+                
+                <div class="space-y-3">
+                    <!-- Option 1: Temporary Queue -->
+                    <button class="w-full p-4 rounded-[24px] bg-md-surfaceContainer border border-transparent hover:border-md-primary transition-all flex items-center justify-between group" onclick="confirmAdd()">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-md-primary shadow-sm">
+                                <span class="material-symbols-rounded">queue_play_next</span>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[16px] font-bold text-slate-900">Today's Queue</p>
+                                <p class="text-[13px] text-slate-500 font-medium">Add to your active session</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-rounded text-slate-300 group-hover:text-md-primary">chevron_right</span>
+                    </button>
+
+                    <!-- Option 2: Existing Routine -->
+                    <button class="w-full p-4 rounded-[24px] bg-white border border-slate-200 hover:border-md-primary transition-all flex items-center justify-between group" onclick="confirmAdd()">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 border border-slate-100">
+                                <span class="material-symbols-rounded text-[20px]">view_list</span>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[16px] font-bold text-slate-900">Leg Day Strength</p>
+                                <p class="text-[13px] text-slate-500 font-medium">Routine • 8 Exercises</p>
+                            </div>
+                        </div>
+                        <span class="material-symbols-rounded text-slate-300 group-hover:text-md-primary">chevron_right</span>
+                    </button>
+
+                    <!-- Option 3: Create New -->
+                    <button class="w-full p-4 rounded-[24px] border-2 border-dashed border-slate-200 hover:border-slate-300 transition-all flex items-center gap-4 mt-2" onclick="confirmAdd()">
+                        <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-500">
+                            <span class="material-symbols-rounded">add</span>
+                        </div>
+                        <p class="text-[16px] font-bold text-slate-700">Create new routine</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const detailSheet = document.getElementById('detailSheet');
+        const addSheet = document.getElementById('addSheet');
+        
+        function openDetailSheet() {
+            detailSheet.classList.add('active');
+        }
+
+        function closeDetailSheet() {
+            detailSheet.classList.remove('active');
+            // Optional: Pause YouTube video when closing sheet
+            const iframe = detailSheet.querySelector('iframe');
+            if (iframe) {
+                let src = iframe.src;
+                iframe.src = src; 
+            }
+        }
+
+        function openAddSheet() {
+            addSheet.classList.add('active');
+        }
+
+        function closeAddSheet() {
+            addSheet.classList.remove('active');
+        }
+
+        function confirmAdd() {
+            closeAddSheet();
+            closeDetailSheet();
+            // In a real app, trigger a toast notification here: "Added to Leg Day Strength"
+            setTimeout(() => {
+                alert("Activity added successfully!");
+            }, 300);
+        }
+    </script>
+</body>
+</html>
