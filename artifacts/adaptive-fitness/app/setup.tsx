@@ -59,7 +59,7 @@ export default function Setup() {
         {step === 2 ? (
           <>
             <Text style={[s.q, { color: c.foreground }]}>Anything to go easy on?</Text>
-            <Text style={[s.help, { color: c.mutedForeground }]}>Movements that load these areas are left out entirely. If nothing safe remains for a day, Tempo schedules rest.</Text>
+            <Text style={[s.help, { color: c.mutedForeground }]}>These areas are flagged when you review or adapt your own workout. Your scheduled activities are not silently replaced.</Text>
             <View style={s.list}>
               {(Object.keys(REGION_LABEL) as Region[]).map((r) => <Chip key={r} label={REGION_LABEL[r]} active={p.exclusions.includes(r)} onPress={() => setP({ ...p, exclusions: toggle(p.exclusions, r) })} />)}
             </View>
@@ -75,13 +75,13 @@ export default function Setup() {
             <View style={s.days}>
               {([10, 20, 30] as Minutes[]).map((m) => <Chip key={m} label={`${m} min`} active={p.defaultMinutes === m} onPress={() => setP({ ...p, defaultMinutes: m })} />)}
             </View>
-            <Text style={[s.help, { color: c.mutedForeground }]}>Pick fewer days than you think. You can always add a session on the day.</Text>
+            <Text style={[s.help, { color: c.mutedForeground }]}>These are preferences only. They don’t add workouts to your calendar; you choose what to schedule.</Text>
           </>
         ) : null}
       </ScrollView>
       <View style={[s.footer, { paddingBottom: bottom, backgroundColor: c.background, borderTopColor: c.border }]}>
         <Button label={step === 0 ? 'Skip all' : 'Back'} variant="ghost" onPress={() => (step === 0 ? router.back() : setStep(step - 1))} style={{ flex: 1 }} />
-        <Button testID="setup-next" label={step === 3 ? 'Build my plan' : 'Next'} icon={step === 3 ? 'check' : 'arrow-right'} onPress={() => (step === 3 ? save() : setStep(step + 1))} style={{ flex: 1.4 }} />
+        <Button testID="setup-next" label={step === 3 ? 'Save preferences' : 'Next'} icon={step === 3 ? 'check' : 'arrow-right'} onPress={() => (step === 3 ? save() : setStep(step + 1))} style={{ flex: 1.4 }} />
       </View>
     </View>
   );

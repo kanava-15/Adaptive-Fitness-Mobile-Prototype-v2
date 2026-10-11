@@ -40,6 +40,10 @@ JSON. Complete immutable rows for old releases are retained for rollback.
 
 Run only in a trusted maintainer runtime. No public write endpoint exists.
 
+For a fresh development database, first apply the existing schema with
+`pnpm --filter @workspace/db run push`, then load the reviewed release below.
+An empty database is not a working catalog service even if `/api/healthz` passes.
+
 ```
 pnpm --filter @workspace/scripts catalog:bundle
 pnpm --filter @workspace/scripts catalog --environment development --file ../generated-artifacts/catalog/reviewed-release.json
@@ -55,6 +59,15 @@ The bundle command validates authored content and minimum counts, generates
 through `pnpm --filter @workspace/scripts` resolve from `scripts/`.
 Publishing here means atomically importing/activating shared content—not deploying
 code or changing schema.
+
+The public application also requires a provisioned production database.
+Use Replit's Publishing flow to create it and apply the development schema;
+do not add schema changes to server startup or deployment build commands.
+For a new production database, copying the reviewed development catalog through
+the Publishing database settings is a maintainer-approved option. Do not overwrite
+an existing production database merely to refresh shared catalog content.
+If production is unavailable or uninitialized, updates report an explicit error
+and the client retains its bundled or last-known-good catalog.
 
 The default is dry run: validates the file without opening a database connection.
 Publishing requires all minimum distinct coverage counts (200 strength exercises,

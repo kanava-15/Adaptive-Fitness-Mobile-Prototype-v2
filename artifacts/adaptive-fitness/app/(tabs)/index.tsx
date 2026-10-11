@@ -2,35 +2,27 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Button, Card, Chip, Eyebrow, success, useBottomPad, useTopInset } from '@/components/ui';
+import { Button, Card, Eyebrow, useBottomPad, useTopInset } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
-import { estimateSec, minutesLabel } from '@/lib/domain';
+import { estimateSec, minutesLabel, occurrencesBetween } from '@/lib/domain';
 import { useColors } from '@/hooks/useColors';
-import { ADJUST_LABEL, AdjustKind, DAY_SHORT, addDays, dateKey, estimatedSetCount, prettyDate, targetLabel, weekday } from '@/lib/engine';
-
-const KINDS: { kind: AdjustKind; icon: keyof typeof Feather.glyphMap }[] = [
-  { kind: '10', icon: 'zap' },
-  { kind: '20', icon: 'clock' },
-  { kind: '30', icon: 'watch' },
-  { kind: 'low', icon: 'battery' },
-  { kind: 'noequip', icon: 'home' },
-];
+import { DAY_SHORT, addDays, prettyDate, weekday } from '@/lib/engine';
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 11) return 'Morning. Here’s what fits.';
-  if (h < 17) return 'Afternoon. Still room for this.';
-  return 'Evening. Short counts too.';
+  if (h < 11) return 'Good morning.';
+  if (h < 17) return 'Good afternoon.';
+  return 'Good evening.';
 }
 
 export default function Today() {
   const c = useColors();
   const top = useTopInset();
   const bottom = useBottomPad();
-  const { ready, state, today, startSession, todayOccurrences, loadError, dismissLoadError } = useTempo();
+  const { ready, state, todayKey, todayOccurrences, loadError, dismissLoadError } = useTempo();
 
-  if (!ready || !today) {
+  if (!ready) {
     return (
       <View style={[s.root, { backgroundColor: c.background, paddingTop: top + 16 }]}>
         <View style={[s.skel, { height: 18, width: 140, backgroundColor: c.muted }]} />
@@ -40,20 +32,11 @@ export default function Today() {
     );
   }
 
-  const session = today.session;
   const active = state.active;
-  const todayKey = dateKey();
   const doneToday = state.completions.filter((x) => x.date === todayKey);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(todayKey, i - ((weekday(todayKey) + 6) % 7)));
   const doneDates = new Set(state.completions.map((x) => x.date));
-
-  const begin = () => {
-    if (!active) {
-      startSession();
-      success();
-    }
-    router.push('/session');
-  };
+  const plannedDates = new Set(occurrencesBetween(state.schedule, weekDays[0], weekDays[6]).map(o => o.date));
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={[s.root, { paddingTop: top + 16, paddingBottom: bottom }]} showsVerticalScrollIndicator={false}>
@@ -72,7 +55,7 @@ export default function Today() {
         <Pressable testID="resume-banner" onPress={() => router.push('/session')} style={[s.banner, { backgroundColor: c.primary }]}>
           <Feather name="play-circle" size={20} color={c.primaryForeground} />
           <Text style={[s.bannerText, { color: c.primaryForeground }]}>
-            {active.title} is paused mid-way. Pick up where you left off.
+            {active.title} · Resume your session.
           </Text>
           <Feather name="chevron-right" size={18} color={c.primaryForeground} />
         </Pressable>
@@ -100,54 +83,34 @@ export default function Today() {
               </Pressable>
             );
           })}
-          <Text style={[s.hint, { color: c.mutedForeground }]}>Tempo’s own suggestion steps aside on days you’ve scheduled something.</Text>
+          <Text style={[s.hint, { color: c.mutedForeground }]}>Tap a workout to start it, edit it or remove it.</Text>
         </View>
       ) : (
       <View style={[s.hero, { backgroundColor: c.accent }]}>
         <View style={[s.ring, { borderColor: c.primary }]} />
         <View style={[s.ring2, { borderColor: c.done }]} />
-        {session ? (
-          <>
-            <Text style={[s.heroEyebrow, { color: c.accentMuted }]}>{doneToday.length ? 'DONE TODAY · GO AGAIN IF YOU LIKE' : 'TODAY’S SESSION'}</Text>
-            <Text style={[s.heroTitle, { color: c.accentForeground }]}>{session.title}</Text>
-            <View style={s.heroStats}>
-              <Text style={[s.heroBig, { color: c.accentForeground }]}>{session.minutes}</Text>
-              <Text style={[s.heroUnit, { color: c.accentMuted }]}>min{'\n'}{session.exercises.length} activities · {estimatedSetCount(session)} sets</Text>
-            </View>
-            <View style={s.tagRow}>
-              {session.lowEnergy ? <Tag label="Low energy" /> : null}
-              {session.noEquipment ? <Tag label="Bodyweight" /> : null}
-            </View>
-            <View style={{ gap: 8, marginTop: 4 }}>
-              {session.exercises.map((e, i) => (
-                <View key={e.exerciseId} style={s.moveRow}>
-                  <Text style={[s.moveIdx, { color: c.accentMuted }]}>{String(i + 1).padStart(2, '0')}</Text>
-                  <Text style={[s.moveName, { color: c.accentForeground }]} numberOfLines={1}>{e.name}</Text>
-                  <Text style={[s.moveTarget, { color: c.accentMuted }]}>{e.sets}×{targetLabel(e)}</Text>
-                </View>
-              ))}
-            </View>
-            {session.note ? <Text style={[s.note, { color: c.accentMuted }]}>{session.note}</Text> : null}
-            <Button testID="start-session" label={active ? 'Resume session' : doneToday.length ? 'Start another round' : 'Start session'} icon="play" onPress={begin} style={{ marginTop: 18 }} />
-          </>
-        ) : (
-          <>
-            <Text style={[s.heroEyebrow, { color: c.accentMuted }]}>TODAY</Text>
-            <Text style={[s.heroTitle, { color: c.accentForeground }]}>Rest day</Text>
-            <Text style={[s.note, { color: c.accentMuted, marginTop: 8 }]}>{today.reason} Nothing is owed. If you have a spare ten minutes and want to move, add a short one below.</Text>
-          </>
-        )}
+        <Text style={[s.heroEyebrow, { color: c.accentMuted }]}>YOUR DAY</Text>
+        <Text style={[s.heroTitle, { color: c.accentForeground }]}>Nothing scheduled today</Text>
+        <Text style={[s.note, { color: c.accentMuted }]}>Choose a routine or an activity when you want to work out. Tempo won’t add sessions for you.</Text>
+        <Button testID="today-schedule" label="Schedule a workout" icon="plus" onPress={() => router.push({ pathname: '/schedule-add', params: { date: todayKey } })} style={{ marginTop: 18 }} />
+        <Button testID="today-routines" label="Browse routines & activities" variant="ghost" onPress={() => router.push('/library')} style={{ marginTop: 8 }} />
       </View>
       )}
 
-      <Text style={[s.section, { color: c.foreground }]}>Day changed? Adjust in one tap.</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 20 }} style={{ marginHorizontal: -20, paddingLeft: 20 }}>
-        {KINDS.map((k) => {
-          const on = session ? (k.kind === 'low' ? session.lowEnergy : k.kind === 'noequip' ? session.noEquipment : String(session.minutes) === k.kind) : false;
-          return <Chip testID={`adjust-${k.kind}`} key={k.kind} label={ADJUST_LABEL[k.kind]} icon={k.icon} active={on} onPress={() => router.push({ pathname: '/adjust', params: { kind: k.kind } })} />;
-        })}
-      </ScrollView>
-      <Text style={[s.hint, { color: c.mutedForeground }]}>You’ll see a before-and-after preview before anything changes.</Text>
+      {todayOccurrences.length ? (
+        <Button testID="today-add-workout" label="Add another workout" variant="soft" icon="plus" onPress={() => router.push({ pathname: '/schedule-add', params: { date: todayKey } })} style={{ marginTop: 16 }} />
+      ) : null}
+      {doneToday.length ? (
+        <Card style={{ marginTop: 24 }}>
+          <Eyebrow>Completed today</Eyebrow>
+          {doneToday.map(x => (
+            <Pressable key={x.id} onPress={() => router.navigate('/progress')} style={[s.moveRow, { marginTop: 12 }]}>
+              <Feather name="check-circle" size={18} color={c.done} />
+              <Text style={[s.moveName, { color: c.foreground }]}>{x.title}</Text>
+            </Pressable>
+          ))}
+        </Card>
+      ) : null}
 
       <Card style={{ marginTop: 24 }}>
         <Eyebrow>This week</Eyebrow>
@@ -155,7 +118,7 @@ export default function Today() {
           {weekDays.map((d) => {
             const isToday = d === todayKey;
             const done = doneDates.has(d);
-            const planned = state.plan?.days.find((p) => p.date === d)?.type === 'session';
+            const planned = plannedDates.has(d);
             return (
               <View key={d} style={s.weekCell}>
                 <Text style={[s.weekLabel, { color: isToday ? c.primary : c.mutedForeground }]}>{DAY_SHORT[weekday(d)].slice(0, 1)}</Text>
@@ -166,18 +129,9 @@ export default function Today() {
             );
           })}
         </View>
-        <Text style={[s.hint, { color: c.mutedForeground, marginTop: 12 }]}>Filled dots are sessions you finished. Missed days just pass — they don’t stack up.</Text>
+        <Text style={[s.hint, { color: c.mutedForeground, marginTop: 12 }]}>Outlined dots are workouts you scheduled. Filled dots are sessions you finished.</Text>
       </Card>
     </ScrollView>
-  );
-}
-
-function Tag({ label }: { label: string }) {
-  const c = useColors();
-  return (
-    <View style={[s.tag, { backgroundColor: c.done }]}>
-      <Text style={[s.tagText, { color: c.doneForeground }]}>{label}</Text>
-    </View>
   );
 }
 

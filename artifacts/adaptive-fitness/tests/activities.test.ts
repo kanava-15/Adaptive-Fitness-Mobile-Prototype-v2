@@ -120,6 +120,71 @@ test('all measurements and units round trip routines, exceptions, running sessio
   const err = D.checkImport(JSON.stringify(wrong));
   assert.ok(!err.ok && /active.items.6.distanceUnit/.test(err.error));
 });
+test('stored restart data preserves mixed targets, actuals and running clocks across midnight', () => {
+  // This tests serialized domain data, NOT the native AsyncStorage bridge or AppState.
+  const a = activity({ id: 'cx_restart', authorship: 'user', reviewStatus: 'unreviewed',
+    adaptation: { eligible: false, loadingKnown: false, loadedJoints: [], rationale: 'User authored.' } });
+  const d = D.activityDef(a);
+  const items = [target(a, 'breaths'), ...(['m', 'km', 'mi', 'yd'] as const).map(u => target(a, 'distance', u))];
+  items[1] = { ...items[1], load: undefined };
+  const r = routine(items);
+  const snapshot = D.snapshotFromRoutine(r, [d]);
+  const started = Date.parse('2026-10-10T23:59:00Z');
+  const returned = started + 180000;
+  let active = D.startActive({ date, occurrenceKey: null, snapshot, items: [...snapshot.items] }, started);
+  for (let i = 0; i < items.length; i++) {
+    active = { ...active, index: i };
+    const item = { ...active.items[i], side: i % 2 ? 'right' as const : 'left' as const };
+    const set = D.buildSet(item, i === 0 ? 5 : 2.75, { load: 0, unit: 'lb' });
+    assert.deepEqual(D.actualErrors(set, item), []);
+    active = D.logSetOn(active, set);
+  }
+  active = { ...active, exClock: { accMs: 2500, since: started + 30000 } };
+  const state = { ...D.emptyState(), customExercises: [d], routines: [r],
+    schedule: [D.scheduleEntry(snapshot, date, null)], active };
+  const stored = JSON.stringify(state);
+  const loaded = D.loadStored(stored, null);
+  assert.equal(loaded.error, null);
+  assert.ok(loaded.state?.active);
+  const restored = loaded.state!;
+  assert.deepEqual(restored.active, JSON.parse(stored).active);
+  assert.equal(D.clockMs(restored.active!.clock, returned), 180000);
+  assert.equal(D.clockMs(restored.active!.exClock, returned), 152500);
+  assert.equal(restored.active!.logs[0].sets[0].breaths, 5);
+  assert.equal(restored.active!.logs[1].sets[0].side, 'right');
+  assert.equal(restored.routines[0].items[1].load, undefined);
+  assert.equal(restored.routines[0].items[0].load, 0);
+  for (let i = 1; i < items.length; i++) {
+    assert.equal(restored.active!.logs[i].sets[0].distanceUnit, items[i].distanceUnit);
+    assert.deepEqual(D.nextLoad(restored.active!.items[i], restored.active!.logs[i].sets), { load: 0, unit: 'lb' });
+  }
+  const nextDay = D.rolloverState(restored, '2026-10-11', 'rollover', 'Test midnight', new Date(returned).toISOString());
+  assert.deepEqual(nextDay.active, restored.active);
+  assert.deepEqual(nextDay.schedule, restored.schedule);
+  const completion = D.completeActive(nextDay.active!, { difficulty: null }, returned);
+  assert.equal(completion.activeSeconds, 180);
+  assert.deepEqual(completion.snapshot, restored.active!.snapshot);
+  assert.deepEqual(completion.executedItems, JSON.parse(stored).active.items);
+  assert.deepEqual(completion.exercises.map(e => e.sets), restored.active!.logs.map(e => e.sets));
+  const imported = D.checkImport(JSON.stringify(D.exportPayload(nextDay)));
+  assert.ok(imported.ok, imported.ok ? '' : imported.error);
+  if (imported.ok) assert.deepEqual(imported.data.active, restored.active);
+});
+
+test('paused session and exercise clocks stay paused after a stored-data restart', () => {
+  const a = activity();
+  const snapshot = D.snapshotFromRoutine(routine([target(a, 'time')]), []);
+  const active = { ...D.startActive({ date, occurrenceKey: null, snapshot, items: [...snapshot.items] }, 1000),
+    clock: { accMs: 12500, since: null }, exClock: { accMs: 4500, since: null } };
+  const loaded = D.loadStored(JSON.stringify({ ...D.emptyState(), active }), null);
+  assert.equal(loaded.error, null);
+  assert.ok(loaded.state?.active);
+  const restored = loaded.state!.active!;
+  assert.equal(D.clockMs(restored.clock, 3600000), 12500);
+  assert.equal(D.clockMs(restored.exClock, 3600000), 4500);
+  assert.equal(D.completeActive(restored, { difficulty: null }, 3600000).activeSeconds, 13);
+});
+
 test('breaths/distance have unknown duration and never produce a false time-fit claim', () => {
   for (const metric of ['breaths', 'distance'] as const) {
     const d = D.activityDef(activity());

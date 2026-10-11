@@ -30,6 +30,22 @@ const transport = (envelope: CatalogEnvelope): CatalogTransport => ({ manifest: 
   assert.equal(v, envelope.manifest.contentVersion); return envelope.release;
 } });
 
+test('HTML server failures preserve the catalog and personal storage without displaying markup', async () => {
+  const storage = new Memory();
+  const original = new Map(storage.values);
+  const repository = new CatalogRepository(storage, {
+    manifest: async () => { throw new Error('HTTP 500: <!DOCTYPE html><html><body><pre>Internal Server Error</pre></body></html>'); },
+    release: async () => { throw new Error('Unexpected download'); },
+  }, bundle);
+  await repository.initialize();
+  await repository.refresh();
+  assert.deepEqual(repository.getState().release, bundle.release);
+  assert.deepEqual(storage.values, original);
+  assert.match(repository.getState().error!, /HTTP 500/);
+  assert.ok(!repository.getState().error!.includes('<'));
+  assert.equal(repository.getState().checking, false);
+});
+
 test('source-reviewed authored inventory, bundle and portable checksum agree', () => {
   const release = authoredRelease();
   assert.deepEqual(release, bundle.release);

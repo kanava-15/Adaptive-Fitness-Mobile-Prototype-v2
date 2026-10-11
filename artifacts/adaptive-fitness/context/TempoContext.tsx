@@ -33,10 +33,9 @@ import {
   logSetOn,
   moveOccurrence,
   occurrencesBetween,
-  rolloverState,
+  withoutAutomaticSuggestions,
   scheduleEntry,
   snapshotErrors,
-  snapshotFromGenerated,
   snapshotFromRoutine,
   startActive,
   dosageFree,
@@ -48,7 +47,7 @@ import {
   activityDef,
   userAuthoredDefinition,
 } from '@/lib/domain';
-import { AdjustKind, PlanDay, Profile, Region, adjustDay, dateKey, newId } from '@/lib/engine';
+import { Profile, Region, dateKey, newId } from '@/lib/engine';
 
 export { clockMs };
 export type { ImportCheck };
@@ -67,11 +66,8 @@ interface Ctx {
   dismissLoadError: () => void;
   state: StateV2;
   todayKey: string;
-  today: PlanDay | null;
   todayOccurrences: Occurrence[];
   saveProfile: (p: Profile) => void;
-  applyAdjust: (kind: AdjustKind) => void;
-  previewAdjust: (kind: AdjustKind) => { before: PlanDay; after: PlanDay; explanation: string } | null;
   // library
   saveExercise: (e: ExerciseDef) => void;
   setExerciseArchived: (id: string, archived: boolean) => void;
@@ -90,7 +86,6 @@ interface Ctx {
   editOcc: (occ: Occurrence, snapshot: Snapshot, scope: Scope, weekdays?: number[]) => void;
   previewAdapt: (snapshot: Snapshot, opts: AdaptOptions, date: string) => AdaptResult;
   // execution
-  startSession: () => void;
   startSnapshot: (args: { date: string; occurrenceKey: string | null; snapshot: Snapshot; items: SnapItem[]; plannedMinutes?: number; adaptation?: string[] }) => string[];
   addExerciseToActive: (exerciseId: string, target?: RoutineItem) => void;
   toggleClock: () => void;
@@ -143,9 +138,7 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
         setLoadError('Storage could not be read. Automatic saving is disabled to protect your data. Reopen the app to retry, or import a backup in You.');
       }
       const t = dateKey();
-      if (!s) s = rolloverState(emptyState(), t, 'starter', 'Starter plan: three short sessions a week, conservative bodyweight volume.');
-      else if (!s.plan) s = rolloverState(s, t, 'starter', 'Starter plan created.');
-      else if (s.plan.generatedOn !== t) s = rolloverState(s, t, 'rollover', 'New day. Suggestions rebuilt from what you actually did. Your scheduled workouts were kept.');
+      s = withoutAutomaticSuggestions(s ?? emptyState());
       setTodayKey(t);
       setState(s);
       setReady(true);
@@ -164,8 +157,6 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     const check = () => {
       const t = dateKey();
       setTodayKey((prev) => (prev === t ? prev : t));
-      const s = stateRef.current;
-      if (s.plan && s.plan.generatedOn !== t) setState((p) => rolloverState(p, t, 'rollover', 'New day. Suggestions rebuilt from what you actually did. Your scheduled workouts were kept.'));
     };
     const sub = AppState.addEventListener('change', (st) => st === 'active' && check());
     const iv = setInterval(check, 60000);
@@ -175,30 +166,10 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const today = state.plan?.days.find((d) => d.date === todayKey) ?? state.plan?.days[0] ?? null;
   const todayOccurrences = useMemo(() => occurrencesBetween(state.schedule, todayKey, todayKey), [state.schedule, todayKey]);
 
   const saveProfile = useCallback((p: Profile) => {
-    setState((s) => rolloverState({ ...s, profile: { ...p, setupDone: true } }, dateKey(), s.profile.setupDone ? 'profile' : 'setup', s.profile.setupDone ? 'Profile updated. Suggestions rebuilt; your scheduled workouts were kept.' : 'Setup complete. Suggestions tailored to your answers.'));
-  }, []);
-
-  const previewAdjust = useCallback((kind: AdjustKind) => {
-    const s = stateRef.current;
-    const cur = s.plan?.days[0];
-    if (!cur) return null;
-    const { after, explanation } = adjustDay(s.profile, cur, kind, s.completions);
-    return { before: cur, after, explanation };
-  }, []);
-
-  const applyAdjust = useCallback((kind: AdjustKind) => {
-    setState((s) => {
-      if (!s.plan) return s;
-      const cur = s.plan.days[0];
-      const { after, explanation } = adjustDay(s.profile, cur, kind, s.completions);
-      const version = s.plan.version + 1;
-      const ev = Object.freeze({ id: newId('ev'), at: new Date().toISOString(), kind: 'adjusted' as const, date: cur.date, planVersion: version, reason: explanation, before: cur, after });
-      return { ...s, plan: { ...s.plan, version, days: [after, ...s.plan.days.slice(1)] }, events: [...s.events, ev] };
-    });
+    setState((s) => withoutAutomaticSuggestions({ ...s, profile: { ...p, setupDone: true } }));
   }, []);
 
   // ---- library
@@ -267,15 +238,6 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
   // ---- execution
   const updateActive = (fn: (a: ActiveV2) => ActiveV2) => setState((s) => (s.active ? { ...s, active: fn(s.active) } : s));
 
-  const startSession = useCallback(() => {
-    setState((s) => {
-      if (s.active) return s;
-      const day = s.plan?.days[0];
-      if (!day?.session) return s;
-      const snapshot = snapshotFromGenerated(day.session);
-      return { ...s, active: startActive({ date: day.date, occurrenceKey: null, snapshot, items: [...snapshot.items], plannedMinutes: day.session.minutes }) };
-    });
-  }, []);
   const startSnapshot = useCallback((args: { date: string; occurrenceKey: string | null; snapshot: Snapshot; items: SnapItem[]; plannedMinutes?: number; adaptation?: string[] }) => {
     if (stateRef.current.active) return ['A session is already running.'];
     const errs = snapshotErrors(args.items);
@@ -326,7 +288,6 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
       let next: StateV2 = { ...p, active: null, completions: [...p.completions, c] };
       if (opts.excludeRegion && !p.profile.exclusions.includes(opts.excludeRegion)) {
         next = { ...next, profile: { ...p.profile, exclusions: [...p.profile.exclusions, opts.excludeRegion] } };
-        next = rolloverState(next, dateKey(), 'profile', `Excluded movements that load the ${opts.excludeRegion} after you reported discomfort. Scheduled workouts keep their moves; excluded ones are flagged before you start.`);
       }
       return next;
     });
@@ -340,23 +301,22 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
   const replaceAll = useCallback((data: StateV2) => {
     storageBlocked.current = false;
     setLoadError(null);
-    const t = dateKey();
-    let s = data;
-    if (!s.plan || s.plan.generatedOn !== t) s = rolloverState(s, t, 'rollover', 'Imported data. Suggestions rebuilt for today; imported schedule kept as-is.');
-    setState(s);
+    setTodayKey(dateKey());
+    setState(withoutAutomaticSuggestions(data));
   }, []);
   const resetAll = useCallback(() => {
     storageBlocked.current = false;
     setLoadError(null);
-    setState(rolloverState(emptyState(), dateKey(), 'starter', 'Fresh start. Starter plan created.'));
+    setTodayKey(dateKey());
+    setState(emptyState());
   }, []);
   const dismissLoadError = useCallback(() => { if (!storageBlocked.current) setLoadError(null); }, []);
 
   const value: Ctx = {
-    ready, loadError, dismissLoadError, state, todayKey, today, todayOccurrences, saveProfile, applyAdjust, previewAdjust,
+    ready, loadError, dismissLoadError, state, todayKey, todayOccurrences, saveProfile,
     saveExercise, setExerciseArchived, saveRoutine, duplicateRoutine, setRoutineArchived, futureUses, pushRoutineToFuture,
     addSchedule, occurrence, occurrencesIn, moveOcc, deleteOcc, editOcc, previewAdapt,
-    startSession, startSnapshot, addExerciseToActive, toggleClock, toggleExClock, resetExClock, logSet, undoSet, markDone, skipExercise, goTo, finish, discardActive,
+    startSnapshot, addExerciseToActive, toggleClock, toggleExClock, resetExClock, logSet, undoSet, markDone, skipExercise, goTo, finish, discardActive,
     exportJson, checkImport, replaceAll, resetAll,
   };
   return <TempoCtx.Provider value={value}>{children}</TempoCtx.Provider>;

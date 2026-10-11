@@ -1,0 +1,153 @@
+(/home/runner/workspace/node_modules/ .pnpm/metro@0.84.5/node_modules/metro
+
+/src/DeltaBundler.js:42:5)\n at async
+
+IncrementalBundler.buildGraphForEntries (/home/runner/workspace/node_modules/ .pnpm/metro@0.84.5/node_modules/metro /src/IncrementalBundler.js:94:19)\n at async IncrementalBundler.buildGraph (/home
+
+/runner/workspace/node_modules/.pnpm /metro@0.84.5/node_modules/metro/src /IncrementalBundler.js:178:19)\n at async/
+
+home/runner/workspace/node_modules/.pnpm /metro@0.84.5/node_modules/metro/src
+
+/IncrementalBundler.js:216:34\n at async
+
+IncrementalBundler.initializeGraph (/home
+
+/runner/workspace/node_modules/.pnpm
+
+/metro@0.84.5/node_modules/metro/src
+
+/IncrementalBundler.js:233:24)\n at async build
+
+(/home/runner/workspace/node_modules/.pnpm /metro@0.84.5/node_modules/metro/src/Server .js:878:35)\n at async Server.requestProcessor [as_processBundleRequest] (/home/runner
+
+/workspace/node_modules/.pnpm/metro@0 .84.5/node_modules/metro/src/Server.js: 760:18)\n at async Server._processRequest (/home/runner/workspace/node_modules/ .pnpm/metro@0.84.5/node_modules/metro /src/Server.js:518:7)","errors":[{"description": "Unable to resolve module @workspace /activity-catalog from /home/runner/ workspace/artifacts/adaptive-fitness/app/
+
+exercise-edit.tsx: @workspace/activity-catalog could not be found within the project or in these directories:\n node_modules\n ../../ node_modules\n node_modules\n ../../ node_modules\n\u001b[0m \u001b[90m 12 |
+
+\u001b[39m \u001b[36mimport\u001b[39m { \u001b[33mAREAS\u001b[39m\u001b[33m, \u001b[39m \u001b[33mAREA_LABEL\u001
+
+b[39m\u001b[33m,\u001b[39m \u001b[3 3mDISCIPLINES\u001b[39m\u001b[33m,
+
+\u001b[39m \u001b[33mDISCIPLINE_LAB
+
+EL\u001b[39m\u001b[33m, \u001b[39m \u001b[33mExercise Def\u001b[39m\u001b[33m, \u001b[39m
+
+\u001b[33mGEARS\u001b[39m\u001b[33m, \u001b[39m \u001b[33mGEAR_LABE
+
+L\u001b[39m\u001b[33m, \u001b[39m
+
+\u001b[33mREGIONS\u001b[39m\u001b[33m, \u001b[39m findExercise\u001b[33m, \u001b[39m validateExercise }
+
+\u001b[36mfrom\u001b[39m \u001b[32m'@/lib
+
+/domain'\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 13 |\u001b[39m
+
+\u001b[36mimport\u001b[39m
+
+{ \u001b[33mREGION_LABEL\u001b [39m\u001b[33m,\u001b[39m newld} \u001b[36mfrom\u001b[39m \u001b[32m'@ /lib/engine'\u001b[39m\u001b[33m;
+
+\u001b[39m\n\u001b[31m\u001b[1m>\u0 01b[22m\u001b[39m\u001b[90m 14 |
+
+\u001b[39m \u001b[36mimport\u001b[39m
+
+{ activitySchema\u001b[33m, \u001b[39m
+
+membershipSchema\u001b[33m,\u001b[39m type \u001b[33mActivity\u001b[39m }
+
+\u001b[36mfrom\u001b[39m \u001b[32m'@workspace/activity
+
+-catalog'\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m |\u001b[39m
+
+\u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n
+
+\u001b[90m 15 |\u001b[39m \u001b[36mimport\u001b[39m {z} \u001b[36mfrom\u001b[39m
+
+\u001b[32m'zod'\u001b[39m\u001b[33m;
+
+\u001b[39m\n\u001b[90m 16 |\u001b[39m \u001b[36mimport\u001b[39m
+
+{ \u001b[33mActivityDetails\u001b[39m }
+
+\u001b[36mfrom\u001b[39m
+
+\u001b[32m'@/components
+
+/ActivityDetails'\u001b[39m\u001b[33m;
+
+\u001b[39m\n\u001b[90m 17 |\u001b[39m \u001b[36mimport\u001b[39m
+
+{ \u001b[33mKnowledgeEditor\u001b[39m }
+
+\u001b[36mfrom\u001b[39m
+
+\u001b[32m'@/components
+
+/KnowledgeEditor'\u001b[39m\u001b[33m;
+
+\u001b[39m\u001b[0m"}]}
+
+processBundleResult
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe:69
+
+access$processBundleResult
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe:1
+
+onChunk Complete
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe: 65
+
+emitChunk
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe:55
+
+readAllParts
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe: 240
+
+processMultipartResponse
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe:85
+
+access$processMultipartResponse
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe:1
+
+onResponse
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe:113
+
+run
+
+r8-map-id-a0e864c2a8df9346960d12ec2a235b45e4e77e4dff
+
+5034e617abec7a88957abe:52
+
+runWorker
+
+ThreadPoolExecutor.java:1100
+
+run
+
+ThreadPoolExecutor.java:624
+
+run
+
+Thread.java:1571

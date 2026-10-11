@@ -6,6 +6,7 @@ import {
   catalogSources, catalogRelationships, catalogMemberships,
 } from '@workspace/db';
 import { idSchema, activityTypeSchema, disciplineSchema, equipmentSchema, jointSchema, activitySchema, validateRelease, orderRelease, normalizedIdentity } from '@workspace/activity-catalog';
+import { catalogErrorHandler } from '../lib/catalog-errors';
 
 const router: IRouter = Router();
 const querySchema = z.object({
@@ -89,4 +90,5 @@ router.get('/catalog/activities', async (req, res): Promise<void> => {
 router.all(['/catalog/manifest', '/catalog/activities', '/catalog/releases/:version'], (_req, res) => {
   res.set('Allow', 'GET, HEAD').status(405).json({ error: 'Shared catalog is read-only.' });
 });
+router.use(catalogErrorHandler);
 export default router;

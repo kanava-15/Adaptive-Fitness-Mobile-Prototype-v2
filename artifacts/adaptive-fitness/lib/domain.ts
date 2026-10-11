@@ -18,7 +18,6 @@ import {
   Region,
   SessionPlan,
   addDays,
-  buildPlan,
   newId,
   readiness,
   weekday,
@@ -1010,14 +1009,14 @@ export function completeActive(a: ActiveV2, opts: { difficulty: number | null; s
   });
 }
 
-// ---------------------------------------------------------------- rollover (generated plan only)
-export function rolloverState(s: StateV2, today: string, kind: 'starter' | 'rollover' | 'setup' | 'profile', reason: string, nowIso = new Date().toISOString()): StateV2 {
-  const version = (s.plan?.version ?? 0) + 1;
-  const plan = buildPlan(s.profile, today, s.completions, version);
-  const before = s.plan?.days.find((d) => d.date === today) ?? null;
-  const ev: PlanEvent = deepFreeze({ id: newId('ev'), at: nowIso, kind, date: today, planVersion: version, reason, before, after: plan.days[0] });
-  // User-owned schedule, routines, library and history are carried over untouched.
-  return { ...s, plan, events: [...s.events, ev] };
+// Remove obsolete automatic plans, never user-owned workouts or past records.
+export function withoutAutomaticSuggestions(s: StateV2): StateV2 {
+  return s.plan === null ? s : { ...s, plan: null };
+}
+
+/** Compatibility for old rollover callers; no day or profile change generates workouts. */
+export function rolloverState(s: StateV2, _today: string, _kind: 'starter' | 'rollover' | 'setup' | 'profile', _reason: string, _nowIso = new Date().toISOString()): StateV2 {
+  return withoutAutomaticSuggestions(s);
 }
 
 // ---------------------------------------------------------------- migration
@@ -1279,6 +1278,7 @@ export function checkImport(raw: string): ImportCheck {
   }
   const bad = integrityError(data);
   if (bad) return { ok: false, error: `${bad} Nothing was changed.` };
+  data = withoutAutomaticSuggestions(data);
   const summary = [
     `${data.completions.length} completed session${data.completions.length === 1 ? '' : 's'}`,
     `${data.routines.length} routine${data.routines.length === 1 ? '' : 's'}`,
@@ -1301,7 +1301,7 @@ export function loadStored(v2raw: string | null, v1raw: string | null): { state:
         const state = r.data.schemaVersion === 2 ? migrateV2(r.data as unknown as AnyRec) : freezeSaved(r.data as StateV2);
         const bad = integrityError(state);
         if (bad) return { state: null, migrated: false, error: `${bad} A backup copy was kept.` };
-        return { state, migrated: r.data.schemaVersion === 2, error: null };
+        return { state: withoutAutomaticSuggestions(state), migrated: r.data.schemaVersion === 2, error: null };
       }
       const i = r.error.issues[0];
       return { state: null, migrated: false, error: `Saved data failed a check (${i.path.join('.')}: ${i.message}). A backup copy was kept.` };
@@ -1317,7 +1317,7 @@ export function loadStored(v2raw: string | null, v1raw: string | null): { state:
         const issue = checked.error.issues[0];
         return { state: null, migrated: false, error: `Older saved data failed a check (${issue.path.join('.')}: ${issue.message}). It was left untouched.` };
       }
-      return { state: migrateV2(migrateV1(checked.data as unknown as AnyRec) as unknown as AnyRec), migrated: true, error: null };
+      return { state: withoutAutomaticSuggestions(migrateV2(migrateV1(checked.data as unknown as AnyRec) as unknown as AnyRec)), migrated: true, error: null };
     } catch {
       return { state: null, migrated: false, error: 'Older saved data could not be read. It was left untouched in storage.' };
     }

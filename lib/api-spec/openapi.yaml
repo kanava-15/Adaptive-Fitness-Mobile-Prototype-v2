@@ -24,7 +24,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/CatalogManifest"
         "503":
-          description: No reviewed release is available
+          description: No reviewed release is available or the catalog service is not ready
+        "500":
+          description: Catalog update failed; the client's existing catalog is unchanged
   /catalog/releases/{version}:
     get:
       operationId: getCatalogRelease
@@ -48,6 +50,10 @@ paths:
           description: Invalid version
         "404":
           description: Released version not found
+        "503":
+          description: Catalog service is not ready
+        "500":
+          description: Catalog update failed; the client's existing catalog is unchanged
   /catalog/activities:
     get:
       operationId: searchCatalogActivities
@@ -137,6 +143,10 @@ paths:
           description: Unsupported or invalid query parameter
         "404":
           description: Released version not found
+        "503":
+          description: Catalog service is not ready
+        "500":
+          description: Catalog update failed; the client's existing catalog is unchanged
   /healthz:
     get:
       operationId: healthCheck

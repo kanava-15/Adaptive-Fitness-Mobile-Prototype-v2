@@ -8,6 +8,12 @@ The user identifies busy professionals as the audience. The approved initial dir
 
 **How to apply:** Keep the first release focused on disrupted fitness sessions. Do not add AI chat, RPG features, accounts, or cloud dependencies without a subsequent scope decision. Preserve the local-first and explainable-adaptation principles from the supplied blueprint.
 
+The user chose “Only my workouts”: Today and Plan must show only workouts the user chooses or schedules, not automatically generated suggested sessions.
+
+**Why:** The user found unsolicited sessions annoying because they were not routines and could not be edited or removed.
+
+**How to apply:** Do not reintroduce automatic sessions through setup, daily rollover or imports. Keep adaptation available for the user's own workouts, and preserve active sessions and historical records from older versions.
+
 Users should be able to author routines, choose library or custom exercises, and schedule specific dates or recurring weekdays.
 
 **Why:** The user explicitly requested workout choice and editing, with gym, yoga and joint-mobility tracking rather than only generated circuits.

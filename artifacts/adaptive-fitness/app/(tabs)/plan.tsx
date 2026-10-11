@@ -3,40 +3,36 @@ import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { DayMark, MonthGrid, Segmented, WeekStrip, monthStart, weekStart } from '@/components/planner';
-import { Button, Eyebrow, IconButton, ScreenTitle, tap, useBottomPad, useTopInset } from '@/components/ui';
+import { Button, IconButton, ScreenTitle, tap, useBottomPad, useTopInset } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { estimateSec, minutesLabel, occurrencesBetween } from '@/lib/domain';
-import { addDays, prettyDate, targetLabel } from '@/lib/engine';
+import { addDays, prettyDate } from '@/lib/engine';
 
 export default function PlanScreen() {
   const c = useColors();
   const top = useTopInset();
   const bottom = useBottomPad();
-  const { state, ready, todayKey, startSession } = useTempo();
+  const { state, ready, todayKey } = useTempo();
   const [view, setView] = useState<'week' | 'month'>('week');
   const [selected, setSelected] = useState(todayKey);
   const [anchor, setAnchor] = useState(todayKey);
   const [month, setMonth] = useState(todayKey);
-  const [openGen, setOpenGen] = useState(false);
 
   const from = view === 'week' ? weekStart(anchor) : weekStart(monthStart(month));
   const to = view === 'week' ? addDays(from, 6) : addDays(weekStart(monthStart(month)), 41);
   const occ = useMemo(() => occurrencesBetween(state.schedule, from, to), [state.schedule, from, to]);
   const marks = useMemo(() => {
     const m: Record<string, DayMark> = {};
-    const get = (d: string) => (m[d] ??= { user: 0, done: 0, generated: false });
+    const get = (d: string) => (m[d] ??= { user: 0, done: 0 });
     occ.forEach((o) => get(o.date).user++);
     state.completions.forEach((x) => { if (x.date >= from && x.date <= to) get(x.date).done++; });
-    state.plan?.days.forEach((d) => { if (d.session) get(d.date).generated = true; });
     return m;
-  }, [occ, state.completions, state.plan, from, to]);
+  }, [occ, state.completions, from, to]);
 
   const dayOcc = occ.filter((o) => o.date === selected);
   const dayDone = state.completions.filter((x) => x.date === selected);
-  const gen = state.plan?.days.find((d) => d.date === selected);
-  const showGen = !!gen?.session && dayOcc.length === 0;
 
   return (
     <ScrollView style={{ backgroundColor: c.background }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: top + 16, paddingBottom: bottom }}>
@@ -53,7 +49,6 @@ export default function PlanScreen() {
         <View style={s.legend}>
           <Legend color={c.accent} label="Scheduled" />
           <Legend color={c.done} label="Done" />
-          <Legend ring={c.accentMuted} label="Suggested" />
         </View>
       </View>
       {selected !== todayKey ? (
@@ -83,31 +78,6 @@ export default function PlanScreen() {
           );
         })}
 
-        {showGen && gen?.session ? (
-          <View style={[s.gen, { borderColor: c.border }]}>
-            <Pressable onPress={() => { tap(); setOpenGen(!openGen); }} style={s.genHead}>
-              <View style={{ flex: 1 }}>
-                <Eyebrow>Suggested by Tempo</Eyebrow>
-                <Text style={[s.genTitle, { color: c.foreground }]}>{gen.session.title}</Text>
-                <Text style={[s.occMeta, { color: c.mutedForeground }]}>{gen.session.minutes} min · {gen.session.exercises.length} activities{gen.date !== todayKey ? ' · forecast' : ''}</Text>
-              </View>
-              <Feather name={openGen ? 'chevron-up' : 'chevron-down'} size={20} color={c.mutedForeground} />
-            </Pressable>
-            {openGen ? (
-              <View style={{ marginTop: 10, gap: 6 }}>
-                {gen.session.exercises.map((e) => (
-                  <View key={e.exerciseId} style={s.exRow}>
-                    <Text style={[s.exName, { color: c.foreground }]}>{e.name}</Text>
-                    <Text style={[s.exT, { color: c.mutedForeground }]}>{e.sets}×{targetLabel(e)}</Text>
-                  </View>
-                ))}
-                <Text style={[s.hint, { color: c.mutedForeground }]}>{gen.session.note || gen.reason}</Text>
-                {gen.date === todayKey ? <Button compact label="Start suggestion" icon="play" onPress={() => { startSession(); router.push('/session'); }} style={{ marginTop: 6 }} /> : <Text style={[s.hint, { color: c.mutedForeground }]}>Rebuilt on the day from your latest history. Your scheduled sessions always take priority.</Text>}
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
         {dayDone.map((x) => (
           <View key={x.id} style={[s.doneRow, { borderColor: c.border }]}>
             <Feather name="check" size={16} color={c.done} />
@@ -116,19 +86,16 @@ export default function PlanScreen() {
           </View>
         ))}
 
-        {!dayOcc.length && !showGen && !dayDone.length ? (
+        {!dayOcc.length && !dayDone.length ? (
           <View style={[s.empty, { borderColor: c.border }]}>
-            <Text style={[s.genTitle, { color: c.foreground }]}>{gen && !gen.session ? 'Rest day' : 'Nothing planned'}</Text>
-            <Text style={[s.hint, { color: c.mutedForeground, textAlign: 'center' }]}>{gen && !gen.session ? 'Recovery is part of the plan. You can still add something light.' : 'Schedule a routine or a single activity for this day.'}</Text>
+            <Text style={[s.genTitle, { color: c.foreground }]}>Nothing planned</Text>
+            <Text style={[s.hint, { color: c.mutedForeground, textAlign: 'center' }]}>Schedule a routine or a single activity for this day.</Text>
           </View>
         ) : null}
       </View>
       <Text style={[s.hint, { color: c.mutedForeground, marginTop: 24 }]}>
-        Your scheduled workouts are never overwritten. Tempo’s suggestions only fill days you leave open, and they’re rebuilt each morning from what you actually did.
+        Only workouts you schedule appear here. Tap one to edit, move or remove it.
       </Text>
-      <Pressable onPress={() => router.push('/setup')} style={{ marginTop: 10, alignSelf: 'flex-start' }} hitSlop={8}>
-        <Text style={[s.link, { color: c.primary }]}>Edit availability for suggestions</Text>
-      </Pressable>
     </ScrollView>
   );
 }

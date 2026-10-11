@@ -42,7 +42,16 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const message = (error: unknown) => error instanceof Error ? error.message : 'Catalog update failed.';
+const message = (error: unknown) => {
+  if (!(error instanceof Error)) return 'Catalog update failed.';
+  // A proxy or an older server may return an HTML error page. Keep it out of
+  // the Library while retaining the HTTP status for troubleshooting.
+  if (/<(?:!doctype|html|head|body|pre)\b/i.test(error.message)) {
+    const status = error.message.match(/\bHTTP\s+\d{3}\b/i)?.[0];
+    return `Catalog update service is unavailable${status ? ` (${status})` : ''}. Please try again later.`;
+  }
+  return error.message;
+};
 
 /** Complete immutable payload first, ONE atomic pointer second. No cache deletion on failure. */
 export class CatalogRepository {

@@ -40,7 +40,7 @@ export default function Settings() {
       replaceAll(r.data);
       setImportText('');
       success();
-      notify('Imported', 'Your data was restored and today’s plan rebuilt.');
+      notify('Imported', 'Your saved workouts and history were restored. No sessions were added.');
     }, true);
   };
 

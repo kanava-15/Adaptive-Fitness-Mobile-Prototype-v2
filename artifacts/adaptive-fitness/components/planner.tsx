@@ -113,7 +113,6 @@ export function ToggleRow({ label, hint, value, onChange, testID }: { label: str
 export interface DayMark {
   user: number;
   done: number;
-  generated: boolean;
 }
 
 export function monthStart(k: string) {
@@ -145,7 +144,6 @@ function DayCell({ d, selected, today, mark, dim, onPress, big }: { d: string; s
       <View style={s.markRow}>
         {mark?.done ? <View style={[s.mark, { backgroundColor: selected ? c.primaryForeground : c.done }]} /> : null}
         {mark && mark.user > mark.done ? <View style={[s.mark, { backgroundColor: selected ? c.primaryForeground : c.accent }]} /> : null}
-        {mark && !mark.user && !mark.done && mark.generated ? <View style={[s.markRing, { borderColor: selected ? c.primaryForeground : c.accentMuted }]} /> : null}
       </View>
     </Pressable>
   );
