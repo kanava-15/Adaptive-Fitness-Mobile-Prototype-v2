@@ -3,8 +3,8 @@ import type { Activity, Source } from '../schema';
 export const reviewedOn = '2026-10-10';
 export const permission = 'Public reference/link only. No permission to reproduce source prose, charts, photos, videos or proprietary curricula is claimed. Instructions in this release are original maintainer wording.';
 export const slug = (s: string) => s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-export function source(id: string, url: string, title: string, provenance: string): Source {
-  return { id, url, title, provenance, retrievedOn: reviewedOn, reviewedOn,
+export function source(id: string, url: string, title: string, provenance: string, reviewedDate = reviewedOn): Source {
+  return { id, url, title, provenance, retrievedOn: reviewedDate, reviewedOn: reviewedDate,
     permittedUse: permission, reviewStatus: 'source-checked' };
 }
 export function base(name: string, discipline: Activity['discipline'], sourceIds: string[]): Activity {

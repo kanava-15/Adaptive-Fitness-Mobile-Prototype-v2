@@ -59,6 +59,25 @@ test('sources, review, distance units and CARs guidance are required at their bo
   assert.throws(() => validateRelease(release([{ ...activity, family: 'cars' }])), /CARs need/);
   assert.throws(() => validateRelease(release([{ ...activity, adaptation: { ...activity.adaptation, eligible: true } }])), /insufficient suitability/);
 });
+test('practice elements are yoga-only and educational media references require an attached source', () => {
+  const source = {
+    id: 'fixture-media-source', url: 'https://example.test/reference',
+    title: 'Fixture media source', provenance: 'Test reference only.',
+    retrievedOn: null, reviewedOn: null, permittedUse: 'Test fixture only.',
+    reviewStatus: 'unreviewed' as const,
+  };
+  const practice = { ...activity, type: 'practice-element' as const, discipline: 'yoga' as const };
+  assert.doesNotThrow(() => validateRelease(release([practice])));
+  assert.throws(() => validateRelease(release([{ ...practice, discipline: 'strength' as const }])), /type\/family conflicts/);
+  const withReference = { ...practice, sourceIds: [source.id], mediaReferences: [{ title: 'Demonstration', url: 'https://example.test/video', sourceId: source.id }] };
+  const checked = validateRelease({ ...release([withReference]), sources: [source] });
+  assert.match(retrievalText(checked.activities[0]), /Demonstration/);
+  assert.throws(() => validateRelease({
+    ...release([{ ...practice, sourceIds: [source.id], mediaReferences: [{ title: 'Insecure', url: 'http://example.test/video', sourceId: source.id }] }]),
+    sources: [source],
+  }), /HTTPS/);
+  assert.throws(() => validateRelease(release([{ ...practice, mediaReferences: [{ title: 'Uncited', url: 'https://example.test/video', sourceId: 'missing-source' }] }])), /missing source/);
+});
 test('advanced yoga can be browsed but cannot become automatically eligible', () => {
   const advanced = { ...activity, difficulty: 'advanced' as const, discipline: 'yoga' as const, type: 'asana' as const, family: 'ashtanga-vinyasa' as const, instructionNeeded: true };
   assert.equal(validateRelease(release([advanced])).activities[0].difficulty, 'advanced');

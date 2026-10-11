@@ -9,7 +9,7 @@ export function retrievalText(a: Activity): string {
   return [a.name, a.englishName, a.sanskritName, ...a.aliases, a.type, a.discipline,
     a.family, a.description, ...(a.primaryMuscles ?? []), ...(a.secondaryMuscles ?? []),
     ...(a.joints ?? []), ...(a.equipment ?? []), ...a.setup, ...a.execution, ...a.cues,
-    ...a.precautions].filter(Boolean).join('\n').normalize('NFC');
+    ...a.precautions, ...(a.mediaReferences ?? []).map(reference => reference.title)].filter(Boolean).join('\n').normalize('NFC');
 }
 
 export function validateRelease(input: unknown): CatalogRelease {
@@ -32,6 +32,7 @@ export function validateRelease(input: unknown): CatalogRelease {
     if ((a.type === 'asana' && a.discipline !== 'yoga') ||
         (a.type === 'mobility-drill' && a.discipline !== 'mobility') ||
         (a.type === 'conditioning-activity' && a.discipline !== 'conditioning') ||
+        (a.type === 'practice-element' && a.discipline !== 'yoga') ||
         (a.family === 'ashtanga-vinyasa' && a.discipline !== 'yoga') ||
         (a.family === 'cars' && a.discipline !== 'mobility')) errors.push(`${a.id}: activity type/family conflicts with discipline`);
     for (const name of [a.name, a.englishName, a.sanskritName, ...a.aliases].filter((n): n is string => !!n)) {
@@ -40,7 +41,8 @@ export function validateRelease(input: unknown): CatalogRelease {
       if (owner && owner !== a.id) errors.push(`Duplicate identity "${name}": ${owner}, ${a.id}`);
       identities.set(key, a.id);
     }
-    const refs = [...a.sourceIds, ...a.seriesContext.map(s => s.sourceId), ...a.benefits.flatMap(b => b.sourceIds)];
+    const refs = [...a.sourceIds, ...a.seriesContext.map(s => s.sourceId), ...a.benefits.flatMap(b => b.sourceIds),
+      ...(a.mediaReferences ?? []).map(reference => reference.sourceId)];
     for (const ref of refs) if (!sources.has(ref)) errors.push(`${a.id}: missing source ${ref}`);
     if (a.supportedMetrics.includes('distance') !== (a.distanceUnits.length > 0)) errors.push(`${a.id}: distance tracking requires explicit units, and units require distance tracking`);
     if (a.family === 'cars' && (!a.mobility || !a.joints?.length || !a.actions?.length)) errors.push(`${a.id}: CARs need joint/action and mobility guidance`);

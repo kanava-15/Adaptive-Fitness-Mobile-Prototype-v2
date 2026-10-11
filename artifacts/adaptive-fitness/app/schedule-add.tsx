@@ -8,7 +8,7 @@ import { Button, Chip, EmptyState, Eyebrow, IconButton, success } from '@/compon
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
-import { estimateSec, findExercise, minutesLabel, snapshotFromItems, snapshotFromRoutine, snapshotErrors, makeItem, snapItem, RoutineItem } from '@/lib/domain';
+import { estimateSec, exerciseSourceLabel, findExercise, minutesLabel, snapshotFromItems, snapshotFromRoutine, snapshotErrors, makeItem, snapItem, RoutineItem } from '@/lib/domain';
 import { TargetEditor } from '@/components/TargetEditor';
 import { DAY_SHORT, addDays, prettyDate, weekday } from '@/lib/engine';
 
@@ -61,6 +61,7 @@ export default function ScheduleAdd() {
         {exercise ? (
           <View style={{ gap: 12 }}>
             <Text style={[s.pillText, { color: c.foreground }]}>Activity: {exercise.name}</Text>
+            <Text style={[s.hint, { color: c.mutedForeground }]}>{exerciseSourceLabel(exercise)} · enter your own target; source review is not clinical certification.</Text>
             {exercise.activity?.type === 'sequence' ? <Button label="Expand sequence — enter member targets" variant="soft" onPress={() => router.replace({ pathname: '/builder', params: { activityId: exercise.id } })} /> : target ? <TargetEditor item={target} definition={exercise} onChange={patch => setTarget(t => t ? { ...t, ...patch } : t)} /> : null}
           </View>
         ) : routines.length === 0 ? (

@@ -143,7 +143,7 @@ export default function ExerciseEdit() {
           <Fact k="Areas" v={existing.areas.map((a) => AREA_LABEL[a]).join(', ')} />
           <Fact k="Loads" v={existing.stresses.length ? existing.stresses.map((r) => REGION_LABEL[r]).join(', ') : 'Nothing flagged'} />
         </View>
-        <ActivityDetails activity={knowledgeOf(existing)} release={catalog.state.release} />
+        <ActivityDetails activity={knowledgeOf(existing)} release={personalCatalog(state.customExercises)} />
         <Text style={[s.label, { color: c.foreground }]}>How to</Text>
         {existing.cues.map((cue, i) => (
           <View key={i} style={s.cue}>

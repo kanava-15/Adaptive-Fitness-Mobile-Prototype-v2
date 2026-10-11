@@ -6,6 +6,12 @@ export const yogaSources = [
     'Philippa Asher — Asana Practise Sheets, Part 1', 'Inspected text of pages 3–9: vinyasa elements, standing, Primary, backbends and finishing. Names and context only; no chart, counts, imagery, spiritual or health claims reproduced.'),
   source('asher-later', 'https://ashtangaphilippa.com/wp-content/uploads/2026/03/Asana-Practise-Sheets-Part-2.pdf',
     'Philippa Asher — Asana Practise Sheets, Part 2', 'Inspected text of pages 11–18 including lineage note, Intermediate and Advanced A/B identities. Context as learned by Philippa Asher from Pattabhi Jois and Sharath Jois at KPJAYI, not a universal or automatic progression.'),
+  source('ashtanga-primary-guide', 'https://ashtanga.yoga/primary-series',
+    'Ashtanga Yoga — Primary Series', 'Inspected the displayed Surya Namaskara A/B posture order and Ashtanga bandha terminology. Used for source-qualified identity and order only; no round count, health claim or complete instructional sequence is adopted.', '2026-10-11'),
+  source('ashtanga-vinyasa-guide', 'https://www.ashtangayoga.info/asana-vinyasa/pdf/Ashtanga-Yoga-Fundamental.pdf',
+    'AshtangaYoga.info — Fundamental Asana and Vinyasa guide', 'Inspected the displayed Ashtanga Sun Salutation A/B vinyasa-count tables as a second reference. Confirms lineage-specific naming and order only; no counts are prescribed by Tempo.', '2026-10-11'),
+  source('ncsu-yoga-bandhas', 'https://yoga.dasa.ncsu.edu/fundamentals/bandhas',
+    'NC State University — Bandhas', 'Inspected the broad terminology for Mula and Uddiyana Bandha and the page’s caution around forceful/breath-retention variations. Only terminology and conservative safeguards are used; this is not clinical or expert certification.', '2026-10-11'),
 ];
 // Sanskrit romanizations preserved as aliases when this catalog standardizes spelling.
 // English labels below describe the shape; they are not asserted literal translations.
@@ -171,4 +177,65 @@ export function yogaContent(): Activity[] {
       qualification: 'Describes the practice context only. Traditional purification or therapeutic claims are not adopted; no promised psychological, clinical or injury-prevention outcome.' }];
     return a;
   });
+}
+
+export function yogaSequenceContent(): Activity[] {
+  const sources = ['ashtanga-primary-guide', 'ashtanga-vinyasa-guide'];
+  const lineage = 'Ashtanga-vinyasa sequence as listed in the cited practice guides. Names, order and transitions can vary among teachers; this source reference is not a universal prescription.';
+  const salute = base('Urdhva Hastasana', 'yoga', ['ashtanga-primary-guide']);
+  salute.englishName = 'Upward salute';
+  salute.sanskritName = 'Urdhva Hastasana';
+  salute.family = 'ashtanga-vinyasa';
+  salute.supportedMetrics = ['breaths', 'duration'];
+  salute.difficulty = 'unknown';
+  salute.description = 'Upward hands pose named in the cited Ashtanga sun-salutation guide. Descriptive identity only; choose a comfortable shoulder range.';
+  salute.setup = ['Begin in even standing with room to reach overhead.'];
+  salute.execution = ['Raise the arms only through a comfortable range without leaning or forcing the shoulders; lower with control.'];
+  salute.cues = ['Keep breathing comfortable and stop if the reach causes pain or loss of balance.'];
+  salute.seriesContext = [{ label: 'Surya Namaskara A/B', lineage, sourceId: 'ashtanga-primary-guide' }];
+  salute.benefits = [];
+
+  const sequence = (name: 'Surya Namaskara A' | 'Surya Namaskara B', label: string): Activity => {
+    const a = base(name, 'yoga', sources);
+    a.type = 'sequence';
+    a.family = 'ashtanga-vinyasa';
+    a.supportedMetrics = ['breaths'];
+    a.description = `${label} is an ordered Ashtanga-vinyasa reference. The order is source-qualified; Tempo does not prescribe rounds, pace, breath counts, or suitability.`;
+    a.setup = ['Review the ordered members and choose a version already appropriate to your experience.'];
+    a.execution = ['This is one ordered reference pass. Enter a personal target for each member after expanding it; sequence membership is not a dose.'];
+    a.cues = ['Keep breathing comfortable. Omit any member that is unsuitable rather than forcing a transition.'];
+    a.precautions.push('Sequence membership does not establish personal suitability or authorize a posture progression.');
+    a.instructionNeeded = true;
+    a.seriesContext = [{ label, lineage, sourceId: 'ashtanga-primary-guide' }];
+    return a;
+  };
+
+  const mula = base('Mula Bandha', 'yoga', ['ashtanga-primary-guide', 'ncsu-yoga-bandhas']);
+  mula.type = 'practice-element';
+  mula.family = 'ashtanga-vinyasa';
+  mula.supportedMetrics = ['breaths'];
+  mula.description = 'Mula Bandha is a lineage-qualified yoga practice term. This record identifies the term; descriptions and teaching methods vary and are not standardized here.';
+  mula.setup = ['Discuss the version intended by your teacher before adding it to a practice.'];
+  mula.execution = ['Use only a light, already-taught cue while breathing normally. This entry does not prescribe a contraction, breath hold, or pelvic-floor exercise.'];
+  mula.cues = ['Do not strain or sustain a contraction; release fully and stop for discomfort.'];
+  mula.precautions.push('This is not pelvic-floor treatment or an exercise prescription. If pregnant, recovering from surgery, or experiencing pelvic-floor symptoms, ask a qualified clinician and teacher before practicing.');
+  mula.modifications = ['Omit the practice element when the method or suitability is uncertain.'];
+  mula.instructionNeeded = true;
+  mula.seriesContext = [{ label: 'Bandha terminology', lineage: 'Mula Bandha is referenced in Ashtanga practice; methods and interpretations vary. Use only instruction appropriate to your teacher and tradition.', sourceId: 'ashtanga-primary-guide' }];
+  mula.benefits = [];
+
+  const uddiyana = base('Uddiyana Bandha', 'yoga', ['ashtanga-primary-guide', 'ncsu-yoga-bandhas']);
+  uddiyana.type = 'practice-element';
+  uddiyana.family = 'ashtanga-vinyasa';
+  uddiyana.supportedMetrics = ['breaths'];
+  uddiyana.description = 'Uddiyana Bandha is a lineage-qualified yoga practice term. Forceful and breath-retention variations are not taught or prescribed by this record.';
+  uddiyana.setup = ['Learn the intended version directly from a qualified teacher before adding it to a practice.'];
+  uddiyana.execution = ['Do not use an abdominal vacuum or breath-hold variation based on this entry. Keep breathing comfortable; omit the practice if its method is uncertain.'];
+  uddiyana.cues = ['Avoid force and stop immediately for discomfort, dizziness, or difficulty breathing.'];
+  uddiyana.precautions.push('Do not use a breath-retention variation during pregnancy or when a clinician has advised against it. The source also cautions against forceful variations after eating. Ask a qualified clinician about individual restrictions.');
+  uddiyana.modifications = ['Omit the practice element unless a teacher has established a comfortable version for you.'];
+  uddiyana.instructionNeeded = true;
+  uddiyana.seriesContext = [{ label: 'Bandha terminology', lineage: 'Uddiyana Bandha is referenced in Ashtanga practice; methods and interpretations vary. Forceful or breath-retention variations require direct instruction and are not prescribed here.', sourceId: 'ashtanga-primary-guide' }];
+  uddiyana.benefits = [];
+  return [salute, sequence('Surya Namaskara A', 'Sun Salutation A'), sequence('Surya Namaskara B', 'Sun Salutation B'), mula, uddiyana];
 }

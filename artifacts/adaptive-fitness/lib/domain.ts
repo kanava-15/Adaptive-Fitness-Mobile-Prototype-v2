@@ -4,7 +4,7 @@
 // exercised directly by the Node regression tests in tests/domain.test.ts.
 
 import { z } from 'zod';
-import { activitySchema, equipmentSchema, membershipSchema, type Activity, type CatalogRelease, type SequenceMembership, expandSequence } from '@workspace/activity-catalog';
+import { activitySchema, equipmentSchema, membershipSchema, normalizedIdentity, type Activity, type CatalogRelease, type SequenceMembership, expandSequence } from '@workspace/activity-catalog';
 import starter from '@workspace/activity-catalog/starter';
 import {
   Category,
@@ -364,7 +364,7 @@ export function knowledgeOf(d: ExerciseDef): Activity {
 }
 export function personalCatalog(custom: ExerciseDef[]): CatalogRelease {
   const ids = new Set(custom.map(d => d.id));
-  return { ...catalog, activities: [...catalog.activities.filter(a => !ids.has(a.id)), ...custom.map(knowledgeOf), ...BUILTIN.filter(d => !catalog.activities.some(a => a.id === d.id) && !ids.has(d.id)).map(knowledgeOf)],
+  return { ...catalog, activities: [...catalog.activities.filter(a => !ids.has(a.id)), ...custom.map(knowledgeOf), ...legacyExercises().filter(d => !ids.has(d.id)).map(knowledgeOf)],
     sequences: [...catalog.sequences.filter(m => !ids.has(m.sequenceId)), ...custom.flatMap(d => d.sequenceMembers ?? [])] };
 }
 export function sequenceDefinitions(id: string, custom: ExerciseDef[] = []): { definition: ExerciseDef; side: Side }[] {
@@ -374,13 +374,26 @@ export function sequenceDefinitions(id: string, custom: ExerciseDef[] = []): { d
   return expanded.map(m => ({ definition: findExercise(custom, m.activityId)!, side: m.side }));
 }
 
+const activityNames = (a: Activity) => [a.name, a.englishName, a.sanskritName, ...a.aliases]
+  .filter((name): name is string => !!name).map(normalizedIdentity).filter(Boolean);
+function legacyExercises(): ExerciseDef[] {
+  const sharedNames = catalog.activities.map(activityNames);
+  return BUILTIN.filter(d => !catalog.activities.some(a => a.id === d.id) &&
+    !sharedNames.some(names => names.includes(normalizedIdentity(d.name))));
+}
+export function exerciseSourceLabel(e: ExerciseDef): string {
+  if (e.custom) return 'On this device · user-authored · unreviewed';
+  if (e.activity) return `Shared catalog · ${e.activity.reviewStatus}`;
+  return 'Legacy built-in · unreviewed';
+}
 export function allExercises(custom: ExerciseDef[]): ExerciseDef[] {
-  return [...catalog.activities.map(activityDef), ...BUILTIN.filter(d => !catalog.activities.some(a => a.id === d.id)), ...custom];
+  return [...catalog.activities.map(activityDef), ...legacyExercises(), ...custom];
 }
 export function findExercise(custom: ExerciseDef[], id: string): ExerciseDef | undefined {
   return custom.find((e) => e.id === id) ?? (catalog.activities.find(a => a.id === id) ? activityDef(catalog.activities.find(a => a.id === id)!) : BUILTIN.find((e) => e.id === id));
 }
 
+export type ExerciseLibrarySource = 'all' | 'shared' | 'legacy' | 'local';
 export interface LibraryFilter {
   query?: string;
   discipline?: Discipline | null;
@@ -388,7 +401,7 @@ export interface LibraryFilter {
   area?: Area | null;
   tracking?: Tracking | null;
   includeArchived?: boolean;
-  source?: 'all' | 'builtin' | 'custom';
+  source?: ExerciseLibrarySource | 'builtin' | 'custom';
   type?: Activity['type'] | null;
   muscle?: string | null;
   joint?: string | null;
@@ -398,7 +411,10 @@ export function searchLibrary(custom: ExerciseDef[], f: LibraryFilter): Exercise
   const q = (f.query ?? '').trim().toLowerCase();
   return allExercises(custom)
     .filter((e) => (f.includeArchived ? true : !e.archived))
-    .filter((e) => (f.source === 'builtin' ? !e.custom : f.source === 'custom' ? e.custom : true))
+    .filter((e) => f.source === 'shared' ? !!e.activity && !e.custom :
+      f.source === 'legacy' ? !e.activity && !e.custom :
+      f.source === 'local' || f.source === 'custom' ? e.custom :
+      f.source === 'builtin' ? !e.custom : true)
     .filter((e) => !f.discipline || e.discipline === f.discipline)
     .filter((e) => !f.gear || e.gear.includes(f.gear))
     .filter((e) => !f.area || e.areas.includes(f.area))

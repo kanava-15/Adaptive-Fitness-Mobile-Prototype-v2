@@ -21,7 +21,7 @@ export function KnowledgeEditor({ value: a, onChange }: { value: Activity; onCha
   const lines = (v: string) => v.split('\n').map(s => s.trim()).filter(Boolean);
   return <View style={{ gap: 14, marginTop: 20 }}>
     <Text style={{ color: c.foreground, fontFamily: fonts.display, fontSize: 20 }}>Structured activity knowledge</Text>
-    <Text style={{ color: c.mutedForeground }}>User-authored · unreviewed. No dosage or automatic adaptation permission.</Text>
+    <Text style={{ color: c.mutedForeground }}>User-authored · unreviewed · stored only on this device, not uploaded. No dosage or automatic adaptation permission.</Text>
     {field('English name', a.englishName ?? '', v => patch({ englishName: v || null }))}
     {field('Sanskrit name', a.sanskritName ?? '', v => patch({ sanskritName: v || null }))}
     {field('Aliases (one per line)', a.aliases.join('\n'), v => patch({ aliases: lines(v) }), true)}

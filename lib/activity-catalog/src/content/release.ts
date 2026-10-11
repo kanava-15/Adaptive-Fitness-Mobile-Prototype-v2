@@ -3,13 +3,13 @@ import { requireCoverage, validateRelease } from '../validation';
 import type { CatalogRelease } from '../schema';
 import { base, source } from './common';
 import { strengthContent } from './strength';
-import { yogaContent, yogaSources } from './yoga';
+import { yogaContent, yogaSequenceContent, yogaSources } from './yoga';
 import { mobilityContent, mobilitySources } from './mobility';
 import { conditioningContent, conditioningSources } from './conditioning';
 
 export function authoredRelease(): CatalogRelease {
   const strength = strengthContent();
-  const activities = [...strength.activities, ...yogaContent(), ...mobilityContent(), ...conditioningContent()];
+  const activities = [...strength.activities, ...yogaContent(), ...yogaSequenceContent(), ...mobilityContent(), ...conditioningContent()];
   const sources = [...strength.sources, ...yogaSources, ...mobilitySources, ...conditioningSources];
   const sequenceSource = source('maintainer-mobility-order', 'https://gmb.io/joint-mobility/',
     'Maintainer-selected gentle mobility order', 'Original short ordering of separately referenced drills, not a copied GMB or Kinstretch program or a therapeutic prescription.');
@@ -27,8 +27,8 @@ export function authoredRelease(): CatalogRelease {
     return activity.id;
   };
   const release = orderRelease(validateRelease({
-    schemaVersion: 1, contentVersion: 'tempo-catalog-2026-10-10-2', status: 'released',
-    publishedAt: '2026-10-10T00:00:00.000Z', reviewStatus: 'source-checked', sources, activities,
+    schemaVersion: 1, contentVersion: 'tempo-catalog-2026-10-11-1', status: 'released',
+    publishedAt: '2026-10-11T00:00:00.000Z', reviewStatus: 'source-checked', sources, activities,
     relationships: [
       { from: id('Incline push-up'), to: id('Push-up'), type: 'regression-of' },
       { from: id('Kneeling push-up'), to: id('Push-up'), type: 'regression-of' },
@@ -38,9 +38,31 @@ export function authoredRelease(): CatalogRelease {
       { from: id('Bakasana B'), to: id('Bakasana A'), type: 'variation-of' },
       { from: id('Astavakrasana B'), to: id('Astavakrasana A'), type: 'variation-of' },
     ],
-    sequences: ['Neck CARs', 'Quadruped hip CARs', 'Ankle CARs'].map((name, order) => ({
-      sequenceId: sequence.id, activityId: id(name), order, side: 'both',
-    })),
+    sequences: [
+      ...['Neck CARs', 'Quadruped hip CARs', 'Ankle CARs'].map((name, order) => ({
+        sequenceId: sequence.id, activityId: id(name), order, side: 'both' as const,
+      })),
+      ...[
+        ['Samasthitih', 'unspecified'], ['Urdhva Hastasana', 'unspecified'],
+        ['Uttanasana A', 'unspecified'], ['Uttanasana B', 'unspecified'],
+        ['Chaturanga Dandasana', 'unspecified'], ['Urdhva Mukha Svanasana', 'unspecified'],
+        ['Adho Mukha Svanasana', 'unspecified'], ['Uttanasana B', 'unspecified'],
+        ['Uttanasana A', 'unspecified'], ['Urdhva Hastasana', 'unspecified'],
+        ['Samasthitih', 'unspecified'],
+      ].map(([name, side], order) => ({ sequenceId: id('Surya Namaskara A'), activityId: id(name), order, side: side as 'unspecified' })),
+      ...[
+        ['Samasthitih', 'unspecified'], ['Utkatasana', 'unspecified'],
+        ['Uttanasana A', 'unspecified'], ['Uttanasana B', 'unspecified'],
+        ['Chaturanga Dandasana', 'unspecified'], ['Urdhva Mukha Svanasana', 'unspecified'],
+        ['Adho Mukha Svanasana', 'unspecified'], ['Virabhadrasana A', 'right'],
+        ['Chaturanga Dandasana', 'unspecified'], ['Urdhva Mukha Svanasana', 'unspecified'],
+        ['Adho Mukha Svanasana', 'unspecified'], ['Virabhadrasana A', 'left'],
+        ['Chaturanga Dandasana', 'unspecified'], ['Urdhva Mukha Svanasana', 'unspecified'],
+        ['Adho Mukha Svanasana', 'unspecified'], ['Uttanasana B', 'unspecified'],
+        ['Uttanasana A', 'unspecified'], ['Utkatasana', 'unspecified'],
+        ['Samasthitih', 'unspecified'],
+      ].map(([name, side], order) => ({ sequenceId: id('Surya Namaskara B'), activityId: id(name), order, side: side as 'left' | 'right' | 'unspecified' })),
+    ],
   }));
   requireCoverage(release);
   return release;

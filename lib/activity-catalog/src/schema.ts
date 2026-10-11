@@ -6,7 +6,7 @@ export const idSchema = z.string().regex(/^[a-z0-9][a-z0-9_-]{0,95}$/);
 const text = z.string().trim().min(1).max(4000);
 const texts = z.array(text).max(100);
 export const disciplineSchema = z.enum(['strength', 'yoga', 'mobility', 'conditioning']);
-export const activityTypeSchema = z.enum(['exercise', 'asana', 'mobility-drill', 'conditioning-activity', 'sequence']);
+export const activityTypeSchema = z.enum(['exercise', 'asana', 'mobility-drill', 'conditioning-activity', 'practice-element', 'sequence']);
 export const metricSchema = z.enum(['reps', 'duration', 'breaths', 'distance']);
 export const distanceUnitSchema = z.enum(['m', 'km', 'mi', 'yd']);
 export const equipmentSchema = z.enum([
@@ -31,6 +31,11 @@ export const sourceSchema = z.object({
   reviewStatus: reviewSchema,
 }).strict();
 const qualifiedFact = z.object({ text, sourceIds: z.array(idSchema).min(1), qualification: text }).strict();
+export const mediaReferenceSchema = z.object({
+  title: text,
+  url: z.string().url().refine(url => /^https:\/\//i.test(url), 'Educational references must use HTTPS.'),
+  sourceId: idSchema,
+}).strict();
 
 /** Unknown is not an empty array: null means not established, [] means not applicable. */
 export const activitySchema = z.object({
@@ -64,6 +69,7 @@ export const activitySchema = z.object({
   modifications: texts,
   instructionNeeded: z.boolean(),
   seriesContext: z.array(z.object({ label: text, lineage: text, sourceId: idSchema }).strict()),
+  mediaReferences: z.array(mediaReferenceSchema).max(30).optional(),
   mobility: z.object({
     position: text, stabilization: text, compensationCues: texts,
     comfortableRange: text, intensityCaution: text, regressions: texts,

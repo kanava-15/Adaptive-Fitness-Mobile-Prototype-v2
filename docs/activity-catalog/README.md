@@ -24,10 +24,10 @@ The read-only Express API exposes:
   offset 0–10000, text at most 120 characters. Unknown keys/values are rejected.
   Archived definitions are hidden by default, retained in full snapshots.
 
-The reviewed starter `tempo-catalog-2026-10-10-2` is bundled for offline use and
+The reviewed starter `tempo-catalog-2026-10-11-1` is bundled for offline use and
 loaded into **development only**. Manifest returns an explicit 503 wherever no
 release has been loaded (including production unless separately approved).
-The app's Library → Catalog reads the shared repository independently of
+The app's Library → Explore reads the shared repository independently of
 legacy moves and shows original details, precautions, modifications, qualified
 benefits, aliases, lineage context, relationships/sequences and linked review records.
 
@@ -101,10 +101,12 @@ load an approved release separately into the intended runtime.
 
 ## Remaining phases
 
-**Delivered — reviewed catalog and offline repository:** 240 strength, 116
-Ashtanga-related, 36 mobility (8 CARs), 16 conditioning, plus an original ordered
-sequence. See [source-inventory.md](source-inventory.md). Reviews are source
-checks, not medical/expert certifications.
+**Delivered — reviewed catalog and offline repository:** 240 strength, 119
+Ashtanga-related, 36 mobility (8 CARs), 16 conditioning, plus ordered Ashtanga
+Sun Salutation A/B references and a mobility sequence. Mula and Uddiyana Bandha
+are source-qualified practice elements without prescribed technique or dose.
+See [source-inventory.md](source-inventory.md). Reviews are source checks, not
+medical/expert certifications.
 
 The shared repository exposes a validated bundled snapshot synchronously before
 any storage/network call. Native builds configure the API origin through existing

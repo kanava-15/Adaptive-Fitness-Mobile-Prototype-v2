@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Chip, IconButton, tap } from '@/components/ui';
+import { Button, Chip, IconButton, tap } from '@/components/ui';
 import { fonts } from '@/constants/colors';
 import { useColors } from '@/hooks/useColors';
 import {
@@ -13,10 +13,14 @@ import {
   DISCIPLINE_LABEL,
   Discipline,
   ExerciseDef,
+  ExerciseLibrarySource,
   GEARS,
   GEAR_LABEL,
   Gear,
   LibraryFilter,
+  exerciseSourceLabel,
+  findExercise,
+  personalCatalog,
   Tracking,
   searchLibrary,
 } from '@/lib/domain';
@@ -25,6 +29,7 @@ import { numericValue } from '@/lib/numeric-input';
 import { activityTypeSchema, muscleSchema, jointSchema } from '@workspace/activity-catalog';
 import { knowledgeOf } from '@/lib/domain';
 import { useCatalog } from '@/context/CatalogContext';
+import { ActivityDetails } from './ActivityDetails';
 
 // ---------------------------------------------------------------- segmented control
 export function Segmented<T extends string>({ options, value, onChange, testID }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void; testID?: string }) {
@@ -261,14 +266,14 @@ function ChipRow<T extends string>({ label, values, labels, value, onChange }: {
   );
 }
 
-export function LibraryFilters({ f }: { f: LibraryFilterState }) {
+export function LibraryFilters({ f, searchTestID = 'library-search' }: { f: LibraryFilterState; searchTestID?: string }) {
   const c = useColors();
   const [open, setOpen] = useState(false);
   return (
     <View>
       <View style={[s.search, { backgroundColor: c.card, borderColor: c.border }]}>
         <Feather name="search" size={18} color={c.mutedForeground} />
-        <TextInput testID="library-search" value={f.query} onChangeText={f.setQuery} placeholder="Search activities, Sanskrit, aliases…" placeholderTextColor={c.mutedForeground} style={[s.searchInput, { color: c.foreground }]} autoCorrect={false} />
+        <TextInput testID={searchTestID} value={f.query} onChangeText={f.setQuery} placeholder="Search activities, Sanskrit, aliases…" placeholderTextColor={c.mutedForeground} style={[s.searchInput, { color: c.foreground }]} autoCorrect={false} />
         {f.query ? (
           <Pressable onPress={() => f.setQuery('')} hitSlop={8} accessibilityLabel="Clear search">
             <Feather name="x-circle" size={18} color={c.mutedForeground} />
@@ -310,7 +315,7 @@ export function ExerciseRow({ e, onPress, right, testID }: { e: ExerciseDef; onP
       <View style={{ flex: 1 }}>
         <Text style={[s.exName, { color: c.foreground }]} numberOfLines={1}>{e.name}</Text>
         <Text style={[s.exMeta, { color: c.mutedForeground }]} numberOfLines={1}>
-          {e.custom ? 'User-authored · unreviewed · ' : ''}{knowledgeOf(e).type} · {knowledgeOf(e).supportedMetrics.join('/')} · {e.gear.map((g) => GEAR_LABEL[g]).join(' + ') || 'Equipment unknown'}{e.archived ? ' · archived' : ''}
+          {exerciseSourceLabel(e)} · {knowledgeOf(e).type} · {knowledgeOf(e).supportedMetrics.join('/')} · {e.gear.map((g) => GEAR_LABEL[g]).join(' + ') || 'Equipment unknown'}{e.archived ? ' · archived' : ''}
         </Text>
       </View>
       {right ?? <Feather name="chevron-right" size={18} color={c.mutedForeground} />}
@@ -323,7 +328,11 @@ export function ExercisePicker({ visible, onClose, onPick, custom, title = 'Add 
   const insets = useSafeAreaInsets();
   const f = useLibraryFilter();
   const catalog = useCatalog();
-  const list = searchLibrary(custom, f.filter);
+  const [source, setSource] = useState<ExerciseLibrarySource>('all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const list = searchLibrary(custom, { ...f.filter, source });
+  const selected = selectedId ? findExercise(custom, selectedId) : undefined;
+  const detailRelease = useMemo(() => personalCatalog(custom), [custom, catalog.state.release]);
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: c.background, paddingTop: Platform.OS === 'web' ? 67 : Platform.OS === 'ios' ? 16 : insets.top + 12, paddingHorizontal: 20 }}>
@@ -331,17 +340,32 @@ export function ExercisePicker({ visible, onClose, onPick, custom, title = 'Add 
           <Text style={[s.pickTitle, { color: c.foreground }]}>{title}</Text>
           <IconButton testID="picker-close" icon="x" label="Close" onPress={onClose} />
         </View>
-        <LibraryFilters f={f} />
-        <FlatList
-          style={{ marginTop: 12 }}
-          data={list}
-          keyExtractor={(e) => e.id}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={list.length > 0}
-          contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 40 }}
-          ListEmptyComponent={<Text style={[s.exMeta, { color: c.mutedForeground, textAlign: 'center', marginTop: 30 }]}>No activities match. Clear a filter or create a custom activity from the Library tab.</Text>}
-          renderItem={({ item }) => <ExerciseRow testID={`pick-${item.id}`} e={item} onPress={() => onPick(item)} right={<Feather name="plus-circle" size={20} color={c.primary} />} />}
-        />
+        {selected ? <>
+          <Button compact variant="soft" label="Back to results" onPress={() => setSelectedId(null)} />
+          <ScrollView style={{ flex: 1, marginTop: 8 }} contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 40 }}>
+            <Text style={[s.exName, { color: c.foreground }]}>{selected.name}</Text>
+            <Text style={[s.exMeta, { color: c.mutedForeground }]}>{exerciseSourceLabel(selected)}</Text>
+            <ActivityDetails activity={knowledgeOf(selected)} release={detailRelease} onOpenRelated={setSelectedId} />
+            <Button testID="picker-add-selected" label={selected.activity?.type === 'sequence' ? 'Expand sequence into routine' : 'Add to routine'} onPress={() => { onPick(selected); setSelectedId(null); }} />
+          </ScrollView>
+        </> : <>
+          <LibraryFilters f={f} />
+          <Segmented<ExerciseLibrarySource> testID="picker-source" options={[
+            { value: 'all', label: 'All' }, { value: 'shared', label: 'Shared' },
+            { value: 'legacy', label: 'Legacy' }, { value: 'local', label: 'On device' },
+          ]} value={source} onChange={setSource} />
+          <Text style={[s.exMeta, { color: c.mutedForeground, marginTop: 6 }]}>Review source and activity details before adding.</Text>
+          <FlatList
+            style={{ marginTop: 12 }}
+            data={list}
+            keyExtractor={(e) => e.id}
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={list.length > 0}
+            contentContainerStyle={{ gap: 8, paddingBottom: insets.bottom + 40 }}
+            ListEmptyComponent={<Text style={[s.exMeta, { color: c.mutedForeground, textAlign: 'center', marginTop: 30 }]}>No activities match. Clear a filter, switch source, or create a custom activity from My activities.</Text>}
+            renderItem={({ item }) => <ExerciseRow testID={`pick-${item.id}`} e={item} onPress={() => setSelectedId(item.id)} />}
+          />
+        </>}
       </View>
     </Modal>
   );

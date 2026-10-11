@@ -49,7 +49,7 @@ test('HTML server failures preserve the catalog and personal storage without dis
 test('source-reviewed authored inventory, bundle and portable checksum agree', () => {
   const release = authoredRelease();
   assert.deepEqual(release, bundle.release);
-  assert.deepEqual(coverage(release), { strength: 240, ashtanga: 116, mobility: 36, conditioning: 16 });
+  assert.deepEqual(coverage(release), { strength: 240, ashtanga: 119, mobility: 36, conditioning: 16 });
   assert.equal(release.activities.filter(a => a.family === 'cars').length, 8);
   assert.ok(release.activities.some(a => a.seriesContext.some(s => s.label.includes('Advanced'))));
   assert.ok(release.activities.every(a => !a.adaptation.eligible));
@@ -106,7 +106,7 @@ test('implement, support, load and safety metadata match independently inspected
 test('first offline launch works immediately, failures visible and personal data untouched', async () => {
   const storage = new Memory();
   const r = new CatalogRepository(storage, offline, bundle);
-  assert.equal(r.browse().length, 409);
+  assert.equal(r.browse().length, bundle.release.activities.filter(a => !a.archived).length);
   await r.refresh();
   assert.equal(r.getState().origin, 'bundled');
   assert.match(r.getState().error!, /Offline/);
@@ -116,7 +116,7 @@ test('first offline launch works immediately, failures visible and personal data
 });
 test('complete version-pinned manifests reject checksum/schema/count/date/provenance mismatches', () => {
   for (const patch of [{ checksum: '0'.repeat(64) }, { schemaVersion: 2 }, { count: 3 },
-    { publishedAt: '2026-10-11T00:00:00.000Z' }, { contentVersion: 'wrong' }]) {
+    { publishedAt: '2026-10-12T00:00:00.000Z' }, { contentVersion: 'wrong' }]) {
     assert.throws(() => validateSnapshot({ ...bundle.manifest, ...patch }, bundle.release));
   }
   const r = structuredClone(bundle.release);

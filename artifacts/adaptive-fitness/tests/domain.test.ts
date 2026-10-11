@@ -6,6 +6,7 @@ import {
   ExerciseDef,
   Routine,
   StateV2,
+  exerciseSourceLabel,
   addToActive,
   adapt,
   applyRoutineToFuture,
@@ -27,6 +28,7 @@ import {
   rolloverState,
   scheduleEntry,
   searchLibrary,
+  sequenceDefinitions,
   snapItem,
   snapshotFromItems,
   snapshotFromRoutine,
@@ -244,4 +246,33 @@ test('library search and filters', () => {
   const archived: ExerciseDef = { ...ex('march'), id: 'c-arch', custom: true, verified: false, archived: true };
   assert.equal(searchLibrary([archived], { source: 'custom' }).length, 0);
   assert.equal(searchLibrary([archived], { source: 'custom', includeArchived: true }).length, 1);
+});
+
+test('Explore and routine picker share catalog search while local and legacy entries retain clear provenance', () => {
+  const shared = searchLibrary([], { source: 'shared' });
+  assert.ok(shared.length > 0 && shared.every(e => !!e.activity && !e.custom));
+  const downDog = searchLibrary([], { query: 'Downward-facing dog' });
+  assert.equal(downDog.length, 1, 'a shared name/alias should replace its duplicate legacy row');
+  assert.equal(exerciseSourceLabel(downDog[0]), 'Shared catalog · source-checked');
+  const legacy = searchLibrary([], { source: 'legacy' });
+  assert.ok(legacy.length > 0 && legacy.every(e => !e.activity && !e.custom));
+  const personal = { ...ex('march'), id: 'personal_move_1', name: 'My private movement', custom: true, verified: false };
+  assert.deepEqual(searchLibrary([personal], { source: 'local' }).map(e => e.id), [personal.id]);
+  assert.equal(searchLibrary([], { source: 'local' }).length, 0);
+  assert.equal(exerciseSourceLabel(personal), 'On this device · user-authored · unreviewed');
+  assert.equal(searchLibrary([], { query: 'My private movement' }).length, 0, 'personal activity names must not enter shared results');
+});
+
+test('source-checked Ashtanga sun salutations keep ordered repeated members and explicit sides', () => {
+  const a = sequenceDefinitions('yoga-surya-namaskara-a');
+  assert.deepEqual(a.map(member => member.definition.name), [
+    'Samasthitih', 'Urdhva Hastasana', 'Uttanasana A', 'Uttanasana B', 'Chaturanga Dandasana',
+    'Urdhva Mukha Svanasana', 'Adho Mukha Svanasana', 'Uttanasana B', 'Uttanasana A',
+    'Urdhva Hastasana', 'Samasthitih',
+  ]);
+  const b = sequenceDefinitions('yoga-surya-namaskara-b');
+  assert.equal(b.length, 19);
+  assert.equal(b[7].side, 'right');
+  assert.equal(b[11].side, 'left');
+  assert.equal(b[0].side, 'unspecified');
 });

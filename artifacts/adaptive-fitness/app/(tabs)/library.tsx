@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { ExerciseRow, LibraryFilters, Segmented, useLibraryFilter } from '@/components/planner';
@@ -10,9 +10,8 @@ import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
 import { estimateSec, findExercise, minutesLabel, searchLibrary, snapItem } from '@/lib/domain';
 import { CatalogBrowser } from '@/components/CatalogBrowser';
-import { useCatalog } from '@/context/CatalogContext';
 
-type Tab = 'moves' | 'routines' | 'catalog';
+type Tab = 'explore' | 'personal' | 'routines';
 
 export default function LibraryScreen() {
   const c = useColors();
@@ -20,35 +19,35 @@ export default function LibraryScreen() {
   const bottom = useBottomPad();
   const { state, duplicateRoutine, setRoutineArchived } = useTempo();
   const params = useLocalSearchParams<{ tab?: string }>();
-  const [tab, setTab] = useState<Tab>(params.tab === 'catalog' ? 'catalog' : 'routines');
-  const [source, setSource] = useState<'all' | 'builtin' | 'custom'>('all');
+  const requestedTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+  const [tab, setTab] = useState<Tab>(requestedTab === 'catalog' || requestedTab === 'explore' ? 'explore' : requestedTab === 'moves' || requestedTab === 'personal' ? 'personal' : requestedTab === 'routines' ? 'routines' : 'explore');
   const [showArchived, setShowArchived] = useState(false);
   const f = useLibraryFilter();
   const custom = state.customExercises;
-  useCatalog();
-  const list = searchLibrary(custom, { ...f.filter, source, includeArchived: showArchived });
+  const list = searchLibrary(custom, { ...f.filter, source: 'local', includeArchived: showArchived });
   const routines = state.routines.filter((r) => (showArchived ? true : !r.archived)).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
-  const archivedCount = tab === 'moves' ? custom.filter((e) => e.archived).length : state.routines.filter((r) => r.archived).length;
+  const archivedCount = tab === 'personal' ? custom.filter((e) => e.archived).length : state.routines.filter((r) => r.archived).length;
 
   return (
     <KeyboardAwareScrollViewCompat style={{ backgroundColor: c.background }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: top + 16, paddingBottom: bottom }} keyboardShouldPersistTaps="handled" bottomOffset={20}>
       <ScreenTitle
         eyebrow="Library"
-        title={tab === 'catalog' ? 'Activity catalog' : tab === 'moves' ? 'Activities' : 'Your routines'}
-        right={tab === 'catalog' ? undefined : <IconButton testID="library-new" icon="plus" label={tab === 'moves' ? 'New custom activity' : 'New routine'} onPress={() => router.push(tab === 'moves' ? '/exercise-edit' : '/builder')} />}
+        title={tab === 'explore' ? 'Explore' : tab === 'personal' ? 'My activities' : 'Routines'}
+        right={tab === 'explore' ? undefined : <IconButton testID="library-new" icon="plus" label={tab === 'personal' ? 'New custom activity' : 'New routine'} onPress={() => router.push(tab === 'personal' ? '/exercise-edit' : '/builder')} />}
       />
-      <Segmented testID="library-tab" options={[{ value: 'routines', label: `Routines (${state.routines.filter((r) => !r.archived).length})` }, { value: 'moves', label: 'Activities' }, { value: 'catalog', label: 'Catalog' }]} value={tab} onChange={(v) => setTab(v)} />
+      <Segmented testID="library-tab" options={[
+        { value: 'explore', label: 'Explore' },
+        { value: 'personal', label: 'My activities' },
+        { value: 'routines', label: 'Routines' },
+      ]} value={tab} onChange={(v) => setTab(v)} />
 
-      {tab === 'catalog' ? <CatalogBrowser /> : tab === 'moves' ? (
+      {tab === 'explore' ? <CatalogBrowser /> : tab === 'personal' ? (
         <View style={{ marginTop: 16 }}>
           <LibraryFilters f={f} />
-          <View style={{ marginTop: 12 }}>
-            <Segmented options={[{ value: 'all', label: 'All' }, { value: 'builtin', label: 'Built-in' }, { value: 'custom', label: `Custom (${custom.filter((e) => !e.archived).length})` }]} value={source} onChange={setSource} />
-          </View>
-          <Text style={[s.hint, { color: c.mutedForeground }]}>Offline activity knowledge, with no prescribed dosage. Choose personal targets in your routine or date. Source checks are not clinical certification.</Text>
+          <Text style={[s.hint, { color: c.mutedForeground }]}>These activities are stored only on this device. They are not part of the shared catalog and are never uploaded.</Text>
           <View style={{ gap: 8, marginTop: 12 }}>
             {list.length === 0 ? (
-              <EmptyState icon="search" title="No activities match" body={source === 'custom' ? 'You haven’t made a custom activity yet. Add your physio’s exercise or a gym machine you use.' : 'Try clearing a filter or searching a body area.'}>
+              <EmptyState icon="search" title="No personal activities match" body={custom.length ? 'Try clearing a filter or search.' : 'Create an activity for a gym machine, a coach’s instruction, or a movement you want to track. It stays on this device.'}>
                 <Button compact variant="soft" icon="plus" label="Create custom activity" onPress={() => router.push('/exercise-edit')} />
               </EmptyState>
             ) : (
@@ -58,6 +57,7 @@ export default function LibraryScreen() {
         </View>
       ) : (
         <View style={{ marginTop: 16, gap: 10 }}>
+          <Text style={[s.hint, { color: c.mutedForeground }]}>Routines are your editable plans. Choose from shared, legacy, or on-device activities, then set your own targets.</Text>
           {routines.length === 0 ? (
             <EmptyState icon="layers" title="Build your first routine" body="Pick activities you actually like, enter personal targets and rest, then put it on your calendar. Tempo preserves your choices.">
               <Button testID="routine-first" compact icon="plus" label="New routine" onPress={() => router.push('/builder')} />
@@ -102,7 +102,7 @@ export default function LibraryScreen() {
           )}
         </View>
       )}
-      {tab !== 'catalog' && (archivedCount || showArchived) ? (
+      {tab !== 'explore' && (archivedCount || showArchived) ? (
         <Pressable onPress={() => { tap(); setShowArchived(!showArchived); }} style={{ marginTop: 18, alignSelf: 'center' }} hitSlop={8}>
           <Text style={[s.link, { color: c.mutedForeground }]}>{showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}</Text>
         </Pressable>
