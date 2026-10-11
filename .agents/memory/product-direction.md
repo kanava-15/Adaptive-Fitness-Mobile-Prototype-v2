@@ -31,3 +31,9 @@ The user explicitly wants CARs considered for Kinstretch/joint activity coverage
 **Why:** The user wants breadth rather than a small introductory catalog.
 
 **How to apply:** Do not restrict yoga to Primary Series or treat CARs as generic stretches. Source and distinguish real variants; do not inflate counts with aliases or imply official Kinstretch affiliation.
+
+The Material-style catalog revamp is for the separate search/Explore activities page that opens, not the main Library page.
+
+**Why:** The user explicitly corrected an interpretation that included the main Library in this revamp.
+
+**How to apply:** Keep the main Library landing page and app-wide navigation outside this revamp's scope; implement the catalog changes incrementally on the separate Explore destination.
