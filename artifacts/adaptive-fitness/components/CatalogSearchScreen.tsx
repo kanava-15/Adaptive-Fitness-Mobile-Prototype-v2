@@ -1,13 +1,15 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Keyboard, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Activity } from '@workspace/activity-catalog';
 import { activityTypeSchema, equipmentSchema, jointSchema } from '@workspace/activity-catalog';
 import { ActivityDetails } from '@/components/ActivityDetails';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Button, Card, IconButton, useTopInset } from '@/components/ui';
+import { CatalogResultCard } from '@/components/CatalogResultCard';
+import { normalizeExploreFilters } from '@/lib/catalog-explore';
 import { CatalogFilterSheet } from '@/components/CatalogFilterSheet';
 import { useCatalog } from '@/context/CatalogContext';
 import { useTempo } from '@/context/TempoContext';
@@ -29,6 +31,7 @@ const activeCount = (f: CatalogSearchFilters) =>
 export default function CatalogSearchScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
+  const topInset = useTopInset();
   const params = useLocalSearchParams<{
     discipline?: string | string[];
     equipment?: string | string[];
@@ -50,11 +53,10 @@ export default function CatalogSearchScreen() {
     if (jointParam && jointSchema.options.includes(jointParam as NonNullable<Activity['joints']>[number])) {
       next.joint = jointParam;
     }
-    return next;
+    return normalizeExploreFilters(next);
   };
   const [filters, setFilters] = useState<CatalogSearchFilters>(initialFilters);
   const [query, setQuery] = useState('');
-  const [browseAll, setBrowseAll] = useState(!!disciplineParam || !!equipmentParam || !!jointParam);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showCatalogStatus, setShowCatalogStatus] = useState(false);
   const [selected, setSelected] = useState<Activity | null>(null);
@@ -62,12 +64,12 @@ export default function CatalogSearchScreen() {
   const tempo = useTempo();
   const allActivities = catalogState.release.activities;
   const results = useMemo(() => searchCatalog(allActivities, filters, query), [allActivities, filters, query]);
-  const showResults = browseAll || !!query.trim() || activeCount(filters) > 0;
   const saved = (activity: Activity) => tempo.state.savedActivities.some(item => item.id === activity.id);
   const toggleSaved = (activity: Activity) => tempo.setActivitySaved(activity.id, !saved(activity));
   const clearAllFilters = () => setFilters(emptyCatalogSearchFilters());
   const setFacet = <K extends keyof CatalogSearchFilters>(facet: K, value: CatalogSearchFilters[K]) =>
-    setFilters(current => ({ ...current, [facet]: value }));
+    setFilters(current => normalizeExploreFilters({ ...current, [facet]: value }));
+  const quick = (d: Activity['discipline'] | null) => setFilters(current => normalizeExploreFilters({ ...current, discipline: d ? [d] : [] }));
   useEffect(() => {
     if (!activityIdParam) return;
     const activity = allActivities.find(item => item.id === activityIdParam);
@@ -88,16 +90,16 @@ export default function CatalogSearchScreen() {
 
   return (
     <KeyboardAvoidingView style={[styles.screen, { backgroundColor: c.background }]} behavior="padding" keyboardVerticalOffset={0}>
-      <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: c.border }]}>
+      <View style={[styles.header, { paddingTop: topInset + 8, borderBottomColor: c.border }]}>
         <View style={styles.searchRow}>
           <IconButton testID="catalog-search-back" icon="arrow-left" label="Back to Library" onPress={() => router.back()} />
-          <View style={[styles.inputShell, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={[styles.inputShell, { backgroundColor: c.muted, borderColor: c.border }]}>
             <Feather name="search" size={18} color={c.mutedForeground} />
             <TextInput
               testID="catalog-search-input"
               value={query}
               onChangeText={setQuery}
-              placeholder="Search names, Sanskrit, aliases…"
+              placeholder="Search activities"
               placeholderTextColor={c.mutedForeground}
               style={[styles.input, { color: c.foreground }]}
               autoCorrect={false}
@@ -106,20 +108,39 @@ export default function CatalogSearchScreen() {
               onSubmitEditing={Keyboard.dismiss}
               accessibilityLabel="Search shared catalog"
             />
-            {query ? <Pressable testID="catalog-search-clear" accessibilityLabel="Clear search" onPress={() => setQuery('')} hitSlop={8}>
+            {query ? <Pressable testID="catalog-search-clear" accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery('')} style={styles.clearBtn}>
               <Feather name="x-circle" size={18} color={c.mutedForeground} />
             </Pressable> : null}
           </View>
+        </View>
+        <View style={styles.searchRow}>
           <Pressable
             testID="catalog-search-filter-button"
             accessibilityRole="button"
             accessibilityLabel={`Filters${activeCount(filters) ? `, ${activeCount(filters)} active` : ''}`}
             onPress={() => { Keyboard.dismiss(); setSheetOpen(true); }}
-            style={({ pressed }) => [styles.filterButton, { backgroundColor: activeCount(filters) ? c.accent : c.muted, opacity: pressed ? 0.82 : 1 }]}
+            style={({ pressed }) => [styles.filterButton, { backgroundColor: activeCount(filters) ? c.accent : c.secondary, opacity: pressed ? 0.82 : 1 }]}
           >
-            <Feather name="sliders" size={18} color={activeCount(filters) ? c.accentForeground : c.foreground} />
-            {activeCount(filters) > 0 ? <Text style={[styles.filterCount, { color: c.accentForeground }]}>{activeCount(filters)}</Text> : null}
+            <Feather name="sliders" size={16} color={activeCount(filters) ? c.accentForeground : c.secondaryForeground} />
+            <Text style={[styles.filterLabel, { color: activeCount(filters) ? c.accentForeground : c.secondaryForeground }]}>Filters{activeCount(filters) ? ` · ${activeCount(filters)}` : ''}</Text>
           </Pressable>
+        <ScrollView horizontal style={{ flex: 1 }} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.activeChips}>
+          {([null, 'strength', 'yoga', 'mobility', 'conditioning', 'sports'] as (Activity['discipline'] | null)[]).map(value => {
+            const on = value === null ? filters.discipline.length === 0 : filters.discipline.length === 1 && filters.discipline[0] === value;
+            return (
+              <Pressable
+                key={value ?? 'all'}
+                testID={`quick-discipline-${value ?? 'all'}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                onPress={() => quick(value)}
+                style={[styles.quick, { backgroundColor: on ? c.accent : c.card, borderColor: on ? c.accent : c.border }]}
+              >
+                <Text style={[styles.quickText, { color: on ? c.accentForeground : c.foreground }]}>{value === null ? 'All' : value === 'conditioning' ? 'Conditioning' : value === 'mobility' ? 'Mobility' : DISCIPLINE_LABEL[value]}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
         </View>
         {filterChips.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.activeChips}>
@@ -156,7 +177,7 @@ export default function CatalogSearchScreen() {
           <Text style={[styles.statusText, { color: c.mutedForeground }]} numberOfLines={2}>
             {catalogState.origin === 'bundled' ? 'Offline catalog available' : catalogState.origin === 'cache' ? 'Saved offline catalog' : 'Catalog ready'}
             {catalogState.checking ? ' · Checking for updates…' : ''}
-            {catalogState.error ? ` · ${updateErrorSummary(catalogState.error)}` : ''}
+            {catalogState.error ? ' · Update unavailable' : ''}
           </Text>
           <Feather name={showCatalogStatus ? 'chevron-up' : 'chevron-down'} size={14} color={c.mutedForeground} />
         </Pressable>
@@ -165,7 +186,7 @@ export default function CatalogSearchScreen() {
           compact
           variant="ghost"
           icon="refresh-cw"
-          label={catalogState.checking ? 'Checking…' : 'Refresh'}
+          label={catalogState.checking ? 'Checking…' : catalogState.error ? 'Retry' : 'Refresh'}
           disabled={catalogState.checking}
           onPress={() => void repository.refresh()}
         />
@@ -177,50 +198,40 @@ export default function CatalogSearchScreen() {
             {' · '}{catalogState.origin === 'bundled' ? 'Bundled offline copy' : catalogState.origin === 'cache' ? 'Saved offline copy' : 'Downloaded copy'}
             {' · '}{catalogState.checkedAt ? `Checked ${new Date(catalogState.checkedAt).toLocaleString()}` : 'Not checked for updates'}
           </Text>
-          {catalogState.error ? <Text testID="catalog-search-error" accessibilityRole="alert" style={[styles.statusText, { color: c.destructive }]}>{catalogState.error}</Text> : null}
+          {catalogState.error ? <Text testID="catalog-search-error" accessibilityRole="alert" style={[styles.statusText, { color: c.destructive }]}>{updateErrorSummary(catalogState.error)}</Text> : null}
         </Card>
       ) : null}
 
-      {showResults ? (
-        <>
-          <View style={styles.resultSummary}>
-            <Text testID="catalog-search-results" style={[styles.summaryText, { color: c.mutedForeground }]}>
-              {results.length} {results.length === 1 ? 'activity' : 'activities'}
-            </Text>
-            {activeCount(filters) > 0 ? <Pressable onPress={clearAllFilters} hitSlop={8}>
-              <Text style={[styles.clearLink, { color: c.primary }]}>Clear filters</Text>
-            </Pressable> : null}
-          </View>
-          <FlatList
-            testID="catalog-search-list"
-            style={{ flex: 1 }}
-            data={results}
-            keyExtractor={item => item.id}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 2, paddingBottom: insets.bottom + 28, gap: 9, flexGrow: results.length ? 0 : 1 }}
-            ListEmptyComponent={
-              <Card style={styles.emptyCard}>
-                <Feather name="search" size={23} color={c.mutedForeground} />
-                <Text style={[styles.emptyTitle, { color: c.foreground }]}>No matching activities</Text>
-                <Text style={[styles.emptyText, { color: c.mutedForeground }]}>Try a shorter name, clear the search, or remove a filter.</Text>
-                {query ? <Button compact variant="soft" icon="x" label="Clear search" onPress={() => setQuery('')} /> : null}
-                {activeCount(filters) ? <Button compact variant="ghost" label="Clear filters" onPress={clearAllFilters} /> : null}
-              </Card>
-            }
-            renderItem={({ item }) => <CatalogResultRow activity={item} saved={saved(item)} onOpen={() => { Keyboard.dismiss(); setSelected(item); }} onToggleSaved={() => toggleSaved(item)} />}
-          />
-        </>
-      ) : (
-        <View style={styles.promptWrap}>
-          <View style={[styles.promptIcon, { backgroundColor: c.secondary }]}>
-            <Feather name="search" size={25} color={c.secondaryForeground} />
-          </View>
-          <Text style={[styles.promptTitle, { color: c.foreground }]}>Find an activity</Text>
-          <Text style={[styles.promptBody, { color: c.mutedForeground }]}>Search by name, English or Sanskrit name, or alias. Browse the shared catalog when you’re ready.</Text>
-          <Button testID="catalog-browse-all" icon="grid" label="Browse all activities" onPress={() => setBrowseAll(true)} />
-        </View>
-      )}
+      <View style={styles.resultSummary}>
+        <Text testID="catalog-search-results" accessibilityLiveRegion="polite" style={[styles.summaryText, { color: c.mutedForeground }]}>
+          {results.length} {results.length === 1 ? 'activity' : 'activities'}
+        </Text>
+        {activeCount(filters) > 0 ? <Pressable testID="catalog-clear-filters" accessibilityRole="button" onPress={clearAllFilters} style={{ minHeight: 44, justifyContent: 'center' }}>
+          <Text style={[styles.clearLink, { color: c.primary }]}>Clear filters</Text>
+        </Pressable> : null}
+      </View>
+      <FlatList
+        testID="catalog-search-list"
+        style={{ flex: 1 }}
+        data={results}
+        keyExtractor={item => item.id}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        initialNumToRender={10}
+        windowSize={7}
+        scrollEnabled={results.length > 0}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 2, paddingBottom: Math.max(insets.bottom, Platform.OS === 'web' ? 34 : 0) + 28, gap: 10, flexGrow: results.length ? 0 : 1 }}
+        ListEmptyComponent={
+          <Card style={styles.emptyCard}>
+            <Feather name="search" size={23} color={c.mutedForeground} />
+            <Text style={[styles.emptyTitle, { color: c.foreground }]}>No matching activities</Text>
+            <Text style={[styles.emptyText, { color: c.mutedForeground }]}>Try a shorter name, clear the search, or remove a filter.</Text>
+            {query ? <Button testID="catalog-empty-clear-search" compact variant="soft" icon="x" label="Clear search" onPress={() => setQuery('')} /> : null}
+            {activeCount(filters) ? <Button testID="catalog-empty-clear-filters" compact variant="ghost" label="Clear filters" onPress={clearAllFilters} /> : null}
+          </Card>
+        }
+        renderItem={({ item }) => <CatalogResultCard activity={item} saved={saved(item)} onOpen={() => { Keyboard.dismiss(); setSelected(item); }} onToggleSaved={() => toggleSaved(item)} />}
+      />
 
       {sheetOpen ? (
         <CatalogFilterSheet
@@ -228,7 +239,7 @@ export default function CatalogSearchScreen() {
           activities={allActivities}
           filters={filters}
           query={query}
-          onApply={next => { setFilters(next); setBrowseAll(true); setSheetOpen(false); }}
+          onApply={next => { setFilters(normalizeExploreFilters(next)); setSheetOpen(false); }}
           onCancel={() => setSheetOpen(false)}
         />
       ) : null}
@@ -237,46 +248,6 @@ export default function CatalogSearchScreen() {
         if (related) setSelected(related);
       }} onToggleSaved={toggleSaved} saved={selected ? saved(selected) : false} />
     </KeyboardAvoidingView>
-  );
-}
-
-function CatalogResultRow({ activity, saved, onOpen, onToggleSaved }: { activity: Activity; saved: boolean; onOpen: () => void; onToggleSaved: () => void }) {
-  const c = useColors();
-  const subtitle = [activity.englishName !== activity.name ? activity.englishName : null, activity.sanskritName && activity.sanskritName !== activity.name ? activity.sanskritName : null]
-    .filter(Boolean).join(' · ');
-  return (
-    <Card style={styles.resultCard}>
-      <Pressable testID={`catalog-result-${activity.id}`} accessibilityRole="button" onPress={onOpen} style={styles.resultMain}>
-        <View style={[styles.typeIcon, { backgroundColor: activity.type === 'sequence' ? c.secondary : c.muted }]}>
-          <Feather name={activity.type === 'sequence' ? 'layers' : 'activity'} size={19} color={activity.type === 'sequence' ? c.secondaryForeground : c.foreground} />
-        </View>
-        <View style={{ flex: 1, gap: 3 }}>
-          <Text style={[styles.resultName, { color: c.foreground }]}>{activity.name}</Text>
-          {subtitle ? <Text style={[styles.resultSubtitle, { color: c.mutedForeground }]} numberOfLines={2}>{subtitle}</Text> : null}
-          <Text style={[styles.resultMeta, { color: c.mutedForeground }]} numberOfLines={2}>
-            Shared catalog · {activity.type === 'sequence' ? 'Sequence' : 'Single activity'} · {typeLabel(activity.type)} · {activity.discipline} · {activity.reviewStatus}
-            {activity.family === 'cars' ? ' · CARs' : ''}
-            {activity.instructionNeeded ? ' · Instruction recommended' : ''}
-          </Text>
-          <Text style={[styles.resultTag, { color: c.mutedForeground }]} numberOfLines={1}>
-            {activity.equipment === null ? 'Equipment unknown' : `Equipment: ${activity.equipment.map(item => item === 'none' ? 'none' : GEAR_LABEL[item]).join(', ') || 'not applicable'}`}
-            {' · '}{activity.difficulty === 'unknown' ? 'Difficulty unknown' : activity.difficulty}
-            {' · '}{activity.supportedMetrics.join(', ')}
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={c.mutedForeground} />
-      </Pressable>
-      <Pressable
-        testID={`catalog-quick-save-${activity.id}`}
-        accessibilityRole="button"
-        accessibilityLabel={saved ? `Saved ${activity.name}; remove bookmark` : `Save ${activity.name}`}
-        onPress={onToggleSaved}
-        style={[styles.quickSave, { borderTopColor: c.border }]}
-      >
-        <Feather name={saved ? 'bookmark' : 'bookmark'} size={15} color={saved ? c.primary : c.mutedForeground} />
-        <Text style={[styles.quickSaveText, { color: saved ? c.primary : c.mutedForeground }]}>{saved ? 'Saved' : 'Save'}</Text>
-      </Pressable>
-    </Card>
   );
 }
 
@@ -368,12 +339,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: { paddingHorizontal: 14, paddingBottom: 8, borderBottomWidth: 1 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  inputShell: { flex: 1, minWidth: 0, height: 48, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 15, paddingHorizontal: 12 },
+  inputShell: { flex: 1, minWidth: 0, minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderRadius: 24, paddingHorizontal: 14 },
   input: { flex: 1, minWidth: 0, fontFamily: fonts.body, fontSize: 15, paddingVertical: 0 },
-  filterButton: { height: 44, minWidth: 44, borderRadius: 14, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
-  filterCount: { fontFamily: fonts.bodySemi, fontSize: 12 },
+  filterButton: { minHeight: 44, borderRadius: 22, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
+  filterLabel: { fontFamily: fonts.bodySemi, fontSize: 13 },
+  clearBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -10 },
+  quick: { minHeight: 44, borderRadius: 14, borderWidth: 1, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
+  quickText: { fontFamily: fonts.bodySemi, fontSize: 13 },
   activeChips: { gap: 7, paddingTop: 9, paddingBottom: 1, paddingHorizontal: 1 },
-  activeChip: { minHeight: 34, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  activeChip: { minHeight: 44, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6 },
   activeChipText: { fontFamily: fonts.bodyMedium, fontSize: 12 },
   catalogStatus: { minHeight: 42, borderBottomWidth: 1, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 5 },
   catalogStatusSummary: { flex: 1, minWidth: 0, minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 7 },
@@ -382,22 +356,10 @@ const styles = StyleSheet.create({
   resultSummary: { minHeight: 42, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summaryText: { fontFamily: fonts.bodyMedium, fontSize: 13 },
   clearLink: { fontFamily: fonts.bodySemi, fontSize: 13, textDecorationLine: 'underline' },
-  resultCard: { padding: 0, overflow: 'hidden' },
-  resultMain: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 13, paddingTop: 13, paddingBottom: 11 },
-  typeIcon: { width: 39, height: 39, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  resultName: { fontFamily: fonts.bodySemi, fontSize: 14.5 },
-  resultSubtitle: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 17 },
   resultMeta: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
-  resultTag: { fontFamily: fonts.bodyMedium, fontSize: 11 },
-  quickSave: { minHeight: 37, borderTopWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, paddingHorizontal: 14 },
-  quickSaveText: { fontFamily: fonts.bodySemi, fontSize: 12 },
   emptyCard: { alignItems: 'center', gap: 9, padding: 20, marginTop: 14 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 19 },
   emptyText: { fontFamily: fonts.body, textAlign: 'center', fontSize: 13, lineHeight: 19, marginBottom: 3 },
-  promptWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, gap: 13, paddingBottom: 40 },
-  promptIcon: { width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  promptTitle: { fontFamily: fonts.display, fontSize: 23 },
-  promptBody: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21, textAlign: 'center', marginBottom: 7 },
   detailScreen: { flex: 1 },
   detailHeader: { minHeight: 54, borderBottomWidth: 1, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
   detailHeaderTitle: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 15, textAlign: 'center' },
