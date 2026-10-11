@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput } from 'react-native';
 import { NumField, Segmented, ToggleRow } from './planner';
 import { Chip } from './ui';
@@ -12,7 +12,8 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
   const c = useColors();
   const a = knowledgeOf(definition);
   const isSport = a.type === 'sport';
-  const tracking: Tracking = item.breaths != null ? 'breaths' : item.distance != null ? 'distance' : item.seconds != null ? 'time' : item.reps != null ? 'reps' : definition.tracking;
+  const [chosenMetric, setChosenMetric] = useState<Tracking>(definition.tracking);
+  const tracking: Tracking = item.breaths != null ? 'breaths' : item.distance != null ? 'distance' : item.seconds != null ? 'time' : item.reps != null ? 'reps' : chosenMetric;
   const change = (p: Partial<RoutineItem>) => onChange(definition.activity ? { ...p, confirmed: false } : p);
   const sides = ['unilateral', 'alternating'].includes(a.laterality);
   return (
@@ -21,13 +22,13 @@ export function TargetEditor({ item, definition, onChange, index = 0 }: {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {a.supportedMetrics.map(m => {
           const t = m === 'duration' ? 'time' : m;
-          return <Chip key={m} label={m} active={tracking === t} onPress={() => change({
+          return <Chip key={m} label={m} active={tracking === t} onPress={() => { setChosenMetric(t); change({
             reps: undefined,
             seconds: undefined,
             breaths: undefined,
             distance: undefined,
             distanceUnit: t === 'distance' ? (isSport ? undefined : a.distanceUnits[0]) : undefined,
-          })} />;
+          }); }} />;
         })}
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

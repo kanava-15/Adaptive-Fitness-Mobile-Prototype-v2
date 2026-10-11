@@ -32,15 +32,28 @@ import {
   validateItem,
   reconcileItem,
   routineMismatches,
+  selectionErrors,
 } from '@/lib/domain';
 import { newId, prettyDate } from '@/lib/engine';
 import { TargetEditor } from '@/components/TargetEditor';
 import { targetLabel, trackingOf, definitionOfSnap, dosageFree } from '@/lib/domain';
 
 export default function Builder() {
+  const { ready } = useTempo();
+  const c = useColors();
+  const params = useLocalSearchParams<{ id?: string; occ?: string; activityId?: string; explore?: string }>();
+  // A deep link/reload can mount the route before device records hydrate.
+  // Never initialize a draft from that temporarily empty state.
+  if (!ready) return <View style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', padding: 20 }}>
+    <Text style={{ color: c.foreground }}>Loading your routine…</Text>
+  </View>;
+  return <BuilderDraft key={[params.id, params.occ, params.activityId, params.explore].join(':')} />;
+}
+
+function BuilderDraft() {
   const c = useColors();
   const insets = useSafeAreaInsets();
-  const { id, occ: occKey, activityId } = useLocalSearchParams<{ id?: string; occ?: string; activityId?: string }>();
+  const { id, occ: occKey, activityId, explore } = useLocalSearchParams<{ id?: string; occ?: string; activityId?: string; explore?: string }>();
   const { state, saveRoutine, futureUses, pushRoutineToFuture, occurrence, editOcc } = useTempo();
   const navigation = useNavigation();
   const custom = state.customExercises;
@@ -59,13 +72,16 @@ export default function Builder() {
     if (!activityId) return { items: base, error: '' };
     const saved = state.savedActivities.find(item => item.id === activityId);
     const d = findExercise(custom, activityId) ?? (saved ? { ...activityDef(saved.fallback), sequenceMembers: saved.sequenceMembers } : undefined);
-    if (!d) return { items: base, error: 'Activity unavailable. Choose another activity from the library.' };
+    if (!d || d.archived || (explore && !findExercise([], activityId))) return { items: base, error: 'Activity unavailable. Choose another activity from the library.' };
     const batch = itemsFromSelection([d], custom, state.presets);
     if (batch.error) return { items: base, error: batch.error };
     return { items: [...base, ...batch.items], error: '' };
   });
   const [items, setItems] = useState<RoutineItem[]>(initial.items);
-  const [open, setOpen] = useState<string | null>(null);
+  const [open, setOpen] = useState<string | null>(activityId ? initial.items[routine?.items.length ?? 0]?.key ?? null : null);
+  const [originalRoutine] = useState(routine ? JSON.stringify(routine) : null);
+  const [originalItemCount] = useState(routine?.items.length ?? 0);
+  const saving = useRef(false);
   const [picker, setPicker] = useState<{ mode: 'replace'; key: string } | null>(null);
   const [selectionVisible, setSelectionVisible] = useState(false);
   const [errors, setErrors] = useState<string[]>(initial.error ? [initial.error] : []);
@@ -165,6 +181,11 @@ export default function Builder() {
 
   const validate = () => {
     const errs: string[] = [];
+    if (activityId) {
+      if (id && (!routine || routine.archived || JSON.stringify(routine) !== originalRoutine)) errs.push('The original routine changed or is unavailable. Close this draft and select it again.');
+      const added = initial.items.slice(originalItemCount);
+      errs.push(...selectionErrors(activityId, added, custom));
+    }
     if (!name.trim()) errs.push(occ ? 'Give the session a title.' : 'Name the routine.');
     if (!items.length) errs.push('Add at least one activity.');
     items.forEach((it) => {
@@ -195,14 +216,25 @@ export default function Builder() {
       true,
     );
   }), [hasUnsavedChanges, navigation]);
+  const leaveDraft = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace(activityId ? '/catalog-search' : '/(tabs)/library');
+  };
+  const closeDraft = () => {
+    const leave = () => { allowExitRef.current = true; leaveDraft(); };
+    if (!hasUnsavedChanges) { leave(); return; }
+    confirm('Leave without saving?', 'Your routine changes are still a draft. Leave now and discard them?', 'Leave', leave, true);
+  };
 
   const save = () => {
+    if (saving.current) return;
     if (!validate()) return;
+    saving.current = true;
     if (occ) {
       editOcc(occ, snapshotFromItems(name.trim(), resolved), occ.recurring ? scope : 'one', scope === 'future' ? weekdays : undefined);
       success();
       allowExitRef.current = true;
-      router.back();
+      leaveDraft();
       return;
     }
     const base: Routine = routine ?? { id: newId('rt'), name: '', notes: '', items: [], version: 0, archived: false, createdAt: '', updatedAt: '' };
@@ -210,7 +242,7 @@ export default function Builder() {
     if (routine && updateFuture && uses) pushRoutineToFuture(saved);
     success();
     allowExitRef.current = true;
-    router.back();
+    leaveDraft();
   };
 
   if ((id && !routine) || (occKey && !occ)) {
@@ -219,7 +251,7 @@ export default function Builder() {
         <Feather name="help-circle" size={32} color={c.mutedForeground} />
         <Text style={[s.title, { color: c.foreground }]}>{occKey ? 'Session not found' : 'Routine not found'}</Text>
         <Text style={[s.hint, { color: c.mutedForeground, textAlign: 'center' }]}>It may have been deleted or moved.</Text>
-        <Button label="Back" onPress={() => router.back()} />
+        <Button label="Back" onPress={() => { allowExitRef.current = true; leaveDraft(); }} />
       </View>
     );
   }
@@ -232,7 +264,7 @@ export default function Builder() {
             <Eyebrow>{occ ? `Scheduled · ${prettyDate(occ.date)}` : routine ? `Routine · v${routine.version}` : 'New routine'}</Eyebrow>
             <Text style={[s.title, { color: c.foreground }]}>{occ ? 'Edit session' : routine ? 'Edit routine' : 'Build a routine'}</Text>
           </View>
-          <IconButton testID="builder-close" icon="x" label="Close" onPress={() => router.back()} />
+          <IconButton testID="builder-close" icon="x" label="Close" onPress={closeDraft} />
         </View>
 
         <TextInput testID="builder-name" value={name} onChangeText={setName} placeholder={occ ? 'Session title' : 'e.g. Tuesday gym, Morning flow'} placeholderTextColor={c.mutedForeground} style={[s.nameInput, { color: c.foreground, borderColor: c.border }]} />
@@ -283,8 +315,8 @@ export default function Builder() {
                     </View>
                     {r.rehab ? <Text style={[s.hint, { color: c.secondaryForeground, marginTop: 10 }]}>Marked as prescribed rehab: Tempo will not change it.</Text> : null}
                     <View style={[s.itemActions, { borderTopColor: c.border }]}>
-                      <IconButton icon="arrow-up" label="Move up" onPress={() => moveItem(it.key, -1)} />
-                      <IconButton icon="arrow-down" label="Move down" onPress={() => moveItem(it.key, 1)} />
+                      <IconButton testID={`move-up-${n}`} icon="arrow-up" label="Move up" onPress={() => moveItem(it.key, -1)} />
+                      <IconButton testID={`move-down-${n}`} icon="arrow-down" label="Move down" onPress={() => moveItem(it.key, 1)} />
                       <View style={{ flex: 1 }} />
                       <Button compact variant="ghost" icon="repeat" label="Replace" onPress={() => setPicker({ mode: 'replace', key: it.key })} />
                       <IconButton testID={`remove-${n}`} icon="trash-2" label="Remove" onPress={() => confirm('Remove this activity?', r.name, 'Remove', () => setItems((xs) => xs.filter((x) => x.key !== it.key)), true)} />
@@ -335,7 +367,7 @@ export default function Builder() {
       <View style={[s.footer, { paddingBottom: bottom, backgroundColor: c.background, borderTopColor: c.border }]}>
         <Button testID="builder-add" label="Add Activity" icon="plus" variant="soft" onPress={() => setSelectionVisible(true)} />
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <Button label="Cancel" variant="ghost" onPress={() => router.back()} style={{ flex: 1 }} />
+          <Button testID="builder-cancel" label="Cancel" variant="ghost" onPress={closeDraft} style={{ flex: 1 }} />
           <Button testID="builder-save" label={occ ? 'Save session' : 'Save routine'} icon="check" onPress={save} style={{ flex: 1.4 }} />
         </View>
       </View>

@@ -7,11 +7,12 @@ import { useColors } from '@/hooks/useColors';
 import { catalogCardIdentity, catalogCardMetadata } from '@/lib/catalog-explore';
 import { DISCIPLINE_LABEL } from '@/lib/domain';
 
-type Props = { activity: Activity; saved: boolean; onOpen: (target: View | null) => void; onToggleSaved: () => void };
+type Props = { activity: Activity; saved: boolean; onOpen: (target: View | null) => void; onToggleSaved: () => void; onAdd: (target: View | null) => void };
 
-function CatalogResultCardBase({ activity, saved, onOpen, onToggleSaved }: Props) {
+function CatalogResultCardBase({ activity, saved, onOpen, onToggleSaved, onAdd }: Props) {
   const c = useColors();
   const openRef = React.useRef<View>(null);
+  const addRef = React.useRef<View>(null);
   const identity = catalogCardIdentity(activity);
   const labels = catalogCardMetadata(activity).slice(0, 3);
   const icon = identity === 'Sequence' ? 'layers' : identity === 'Sport' ? 'flag' : 'activity';
@@ -42,6 +43,7 @@ function CatalogResultCardBase({ activity, saved, onOpen, onToggleSaved }: Props
           ) : null}
         </View>
       </Pressable>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
       <Pressable
         testID={`catalog-quick-save-${activity.id}`}
         accessibilityRole="button"
@@ -53,6 +55,11 @@ function CatalogResultCardBase({ activity, saved, onOpen, onToggleSaved }: Props
         <Feather name="bookmark" size={20} color={saved ? c.accent : c.mutedForeground} />
         <Text style={[styles.saveText, { color: saved ? c.accent : c.mutedForeground }]}>{saved ? 'Saved' : 'Save'}</Text>
       </Pressable>
+      {!activity.archived ? <Pressable ref={addRef} testID={`catalog-quick-add-${activity.id}`} accessibilityRole="button" accessibilityLabel={`Add ${activity.name} to…`} onPress={() => onAdd(addRef.current)} style={[styles.save, { backgroundColor: c.accent }]}>
+        <Feather name="plus" size={18} color={c.accentForeground} />
+        <Text style={[styles.saveText, { color: c.accentForeground }]}>Add to…</Text>
+      </Pressable> : null}
+      </View>
     </View>
   );
 }

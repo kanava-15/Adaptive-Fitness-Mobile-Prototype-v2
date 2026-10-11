@@ -388,6 +388,16 @@ export function personalCatalog(custom: ExerciseDef[]): CatalogRelease {
 }
 export function sequenceDefinitions(id: string, custom: ExerciseDef[] = []): { definition: ExerciseDef; side: Side }[] {
   const release = personalCatalog(custom);
+  const checked = new Set<string>();
+  const checkAvailable = (current: string) => {
+    if (checked.has(current)) return;
+    checked.add(current);
+    const activity = release.activities.find(a => a.id === current);
+    if (!activity) throw new Error(`Missing activity ${current}`);
+    if (activity.archived) throw new Error(`Archived sequence member ${current}`);
+    if (activity.type === 'sequence') release.sequences.filter(m => m.sequenceId === current).forEach(m => checkAvailable(m.activityId));
+  };
+  checkAvailable(id);
   const expanded = expandSequence(release, id);
   if (expanded.length > 500) throw new Error('Sequence expands to more than 500 activities. Reduce its nested membership.');
   return expanded.map(m => ({ definition: findExercise(custom, m.activityId)!, side: m.side }));
@@ -399,13 +409,18 @@ export function itemsFromSelection(
   custom: ExerciseDef[] = [],
   presets: StateV2['presets'] = {},
 ): { items: RoutineItem[]; error: string | null } {
-  const definitions = [...new Map([...custom, ...selected].map(definition => [definition.id, definition])).values()];
+  // A selected shared sequence without pinned membership must retain the live
+  // release's membership, rather than shadow it as an empty local sequence.
+  const overrides = selected.filter(d => d.custom || d.sequenceMembers !== undefined || !catalog.activities.some(a => a.id === d.id));
+  const definitions = [...new Map([...custom, ...overrides].map(definition => [definition.id, definition])).values()];
   const staged: RoutineItem[] = [];
   try {
     for (const definition of selected) {
+      if (definition.archived || definition.activity?.archived) throw new Error(`${definition.name} is archived`);
       if (definition.activity?.type === 'sequence') {
         const members = sequenceDefinitions(definition.id, definitions);
         staged.push(...members.map(member => {
+          if (!member.definition || member.definition.archived) throw new Error('A sequence member is unavailable or archived');
           const item = makeItem(member.definition, 'kg', presets[member.definition.id]);
           return {
             ...item,
@@ -413,7 +428,7 @@ export function itemsFromSelection(
             seconds: undefined,
             breaths: undefined,
             distance: undefined,
-            distanceUnit: member.definition.tracking === 'distance'
+            distanceUnit: member.definition.tracking === 'distance' && member.definition.discipline !== 'sports'
               ? member.definition.activity?.distanceUnits[0] ?? item.distanceUnit
               : undefined,
             definition: dosageFree(member.definition),
@@ -424,6 +439,10 @@ export function itemsFromSelection(
       } else {
         staged.push({
           ...makeItem(definition, 'kg', presets[definition.id]),
+          ...(definition.activity && !definition.custom ? {
+            reps: undefined, seconds: undefined, breaths: undefined, distance: undefined,
+            distanceUnit: definition.discipline === 'sports' ? undefined : definition.activity.distanceUnits[0],
+          } : {}),
           definition: dosageFree(definition),
           ...(definition.activity ? { confirmed: false } : {}),
         });
@@ -1185,6 +1204,45 @@ export function addToActive(a: ActiveV2, d: ExerciseDef, target?: RoutineItem): 
   const items = [...a.items, it];
   const est = estimateSec(items);
   return { ...a, items, estimateSec: Number.isFinite(est) ? est : null, logs: [...a.logs, ...logsFor([it], true)] };
+}
+
+/** Recheck a newly chosen batch, not any pre-existing pinned work. */
+export function selectionErrors(selectionId: string, items: RoutineItem[], custom: ExerciseDef[], original = items): string[] {
+  const current = findExercise(custom, selectionId);
+  if (!current || current.archived) return ['Selected activity is no longer available. Nothing was added.'];
+  const batch = itemsFromSelection([current], custom);
+  if (batch.error) return [batch.error];
+  if (batch.items.length !== items.length || batch.items.some((it, n) =>
+    it.exerciseId !== items[n].exerciseId ||
+    JSON.stringify(it.definition) !== JSON.stringify(items[n].definition) ||
+    (current.activity?.type === 'sequence' && it.side !== original[n]?.side))) {
+    return ['Selected activity or sequence changed. Close and select it again; nothing was added.'];
+  }
+  return [];
+}
+
+/** One atomic append, bound to the original session. Item keys are the retry token. */
+export function appendSelectionToActive(
+  state: StateV2, sessionId: string, selectionId: string, items: RoutineItem[], original = items,
+): { state: StateV2; errors: string[] } {
+  const active = state.active;
+  if (!active || active.id !== sessionId) return { state, errors: ['The original session is no longer running. Nothing was added.'] };
+  const errors = selectionErrors(selectionId, items, state.customExercises, original);
+  if (!items.length) errors.push('Choose at least one activity.');
+  if (new Set(items.map(it => it.key)).size !== items.length) errors.push('Duplicate item keys in this batch.');
+  const snapshots = items.flatMap(it => it.definition ? [snapItem(it, it.definition)] : []);
+  if (snapshots.length !== items.length) errors.push('An activity definition is unavailable.');
+  errors.push(...snapshotErrors(snapshots));
+  if (errors.length) return { state, errors };
+  const existing = items.filter(it => active.items.some(x => x.key === it.key)).length;
+  if (existing === items.length) return { state, errors: [] }; // same confirmation already applied
+  if (existing) return { state, errors: ['This batch conflicts with existing items. Select it again.'] };
+  const nextItems = [...active.items, ...snapshots];
+  const est = estimateSec(nextItems);
+  return { state: { ...state, active: {
+    ...active, items: nextItems, logs: [...active.logs, ...logsFor(snapshots, true)],
+    estimateSec: Number.isFinite(est) ? est : null,
+  } }, errors: [] };
 }
 
 export function logSetOn(a: ActiveV2, set: ActualSet): ActiveV2 {

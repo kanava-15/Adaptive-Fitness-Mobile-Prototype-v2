@@ -13,3 +13,9 @@ Canonical identifier validation permits underscores from existing device-authore
 **Why:** Renaming an old custom ID would break its routine, schedule and history references; accepting the original identifier preserves identity without rewriting saved records.
 
 **How to apply:** Keep catalog and personal knowledge on the same schema, including identity compatibility. New validation must not invalidate established local IDs.
+
+Explore Add-to is an explicit destination choice, not a temporary daily queue. When no session is running, offer routine drafts only; never create a workout or schedule as an Add side effect.
+
+**Why:** The approved prototype scope replaces the ambiguous “Today’s Queue” option with “Add to active session” and protects personal ownership of schedules.
+
+**How to apply:** Keep bookmarks separate from Add. Any future shortcut must retain explicit destination, dose confirmation and draft-save approval.

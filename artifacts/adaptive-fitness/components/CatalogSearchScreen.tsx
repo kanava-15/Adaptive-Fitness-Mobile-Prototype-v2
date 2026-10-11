@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Activity } from '@workspace/activity-catalog';
 import { equipmentSchema, jointSchema } from '@workspace/activity-catalog';
 import { ExploreActivitySheet } from '@/components/ExploreActivitySheet';
+import { AddDestinationSheet } from '@/components/AddDestinationSheet';
 import { Button, Card, IconButton, useTopInset } from '@/components/ui';
 import { CatalogResultCard } from '@/components/CatalogResultCard';
 import { normalizeExploreFilters } from '@/lib/catalog-explore';
@@ -60,6 +61,8 @@ export default function CatalogSearchScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showCatalogStatus, setShowCatalogStatus] = useState(false);
   const [selected, setSelected] = useState<Activity | null>(null);
+  const [addId, setAddId] = useState<string | null>(null);
+  const addFrom = React.useRef<View | null>(null);
   const openedFrom = React.useRef<View | null>(null);
   const closeDetails = () => { setSelected(null); requestAnimationFrame(() => focusDetailTarget(openedFrom.current)); };
   const { repository, state: catalogState } = useCatalog();
@@ -232,7 +235,7 @@ export default function CatalogSearchScreen() {
             {activeCount(filters) ? <Button testID="catalog-empty-clear-filters" compact variant="ghost" label="Clear filters" onPress={clearAllFilters} /> : null}
           </Card>
         }
-        renderItem={({ item }) => <CatalogResultCard activity={item} saved={saved(item)} onOpen={target => { openedFrom.current = target; Keyboard.dismiss(); setSelected(item); }} onToggleSaved={() => toggleSaved(item)} />}
+        renderItem={({ item }) => <CatalogResultCard activity={item} saved={saved(item)} onOpen={target => { openedFrom.current = target; Keyboard.dismiss(); setSelected(item); }} onToggleSaved={() => toggleSaved(item)} onAdd={target => { addFrom.current = target; Keyboard.dismiss(); setAddId(item.id); }} />}
       />
 
       {sheetOpen ? (
@@ -246,6 +249,7 @@ export default function CatalogSearchScreen() {
         />
       ) : null}
       {selected ? <ExploreActivitySheet key={selected.id} activityId={selected.id} onClose={closeDetails} onToggleSaved={toggleSaved} saved={saved} /> : null}
+      {addId ? <AddDestinationSheet activityId={addId} onClose={() => { setAddId(null); requestAnimationFrame(() => focusDetailTarget(addFrom.current)); }} /> : null}
     </KeyboardAvoidingView>
   );
 }

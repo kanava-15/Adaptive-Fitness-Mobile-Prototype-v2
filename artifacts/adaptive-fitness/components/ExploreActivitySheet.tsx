@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +12,7 @@ import { useColors } from '@/hooks/useColors';
 import { formatHistorySet, historyStatus, selectActivityHistory, sequenceDisplay } from '@/lib/catalog-detail';
 import { DISCIPLINE_LABEL } from '@/lib/domain';
 import { focusDetailTarget } from '@/lib/detail-focus';
+import { AddDestinationSheet } from './AddDestinationSheet';
 
 const label = (s: string) => s.replaceAll('-', ' ');
 const FooterAction = React.forwardRef<View, { label: string; accessibilityLabel?: string; saved?: boolean; primary?: boolean; testID: string; onPress: () => void }>(
@@ -38,7 +38,6 @@ export function ExploreActivitySheet({ activityId, onClose, saved, onToggleSaved
   const [disclosures, setDisclosures] = useState<Record<string, boolean>>({});
   const scrollRef = React.useRef<ScrollView>(null);
   const headingRef = React.useRef<View>(null);
-  const chooserHeadingRef = React.useRef<View>(null);
   const addRef = React.useRef<View>(null);
   const offsets = React.useRef<Record<number, number>>({});
   const { width, fontScale } = useWindowDimensions();
@@ -56,7 +55,15 @@ export function ExploreActivitySheet({ activityId, onClose, saved, onToggleSaved
     requestAnimationFrame(() => focusDetailTarget(addRef.current));
   };
   const activity = release.activities.find(a => a.id === currentId);
-  if (!activity) return null;
+  if (!activity) return <Modal visible transparent animationType="slide" onRequestClose={() => chooser ? dismissChooser() : onClose()}>
+    <View style={s.overlay}>
+      <View style={[s.choice, { backgroundColor: c.background, paddingBottom: insets.bottom + 20 }]}>
+        <Text accessibilityRole="alert" style={[s.body, { color: c.destructive }]}>This activity is no longer available.</Text>
+        <Button label="Close details" onPress={onClose} />
+      </View>
+      {chooser ? <AddDestinationSheet activityId={currentId} onClose={dismissChooser} onNavigate={onClose} /> : null}
+    </View>
+  </Modal>;
   const isSaved = saved(activity);
   const back = () => { setAllHistory(false); if (stack.length > 1) setStack(st => st.slice(0, -1)); else onClose(); };
   const open = (id: string) => { if (!release.activities.some(a => a.id === id && !a.archived)) return; setAllHistory(false); offsets.current[stack.length] = 0; setStack(st => [...st, id]); };
@@ -71,7 +78,6 @@ export function ExploreActivitySheet({ activityId, onClose, saved, onToggleSaved
   const list = (items: string[] | null) => items?.length ? items.map((t, i) => (
     <Text key={i} selectable style={[s.body, { color: c.foreground }]}>{items.length > 1 ? `${i + 1}. ` : ''}{t}</Text>
   )) : null;
-  const go = (params: Record<string, string>) => { setChooser(false); onClose(); router.push({ pathname: '/builder', params: { ...params, activityId: activity.id } }); };
   const meta = [DISCIPLINE_LABEL[activity.discipline], activity.type === 'sequence' ? 'Sequence' : label(activity.type), showDifficulty ? activity.difficulty : null].filter(Boolean).join(' · ');
   const measures = activity.supportedMetrics.join(', ');
 
@@ -155,28 +161,10 @@ export function ExploreActivitySheet({ activityId, onClose, saved, onToggleSaved
           </ScrollView>
           <View style={[s.footer, { flexDirection: width < 360 || fontScale > 1.3 ? 'column' : 'row', backgroundColor: c.background, borderTopColor: c.border, paddingBottom: Math.max(insets.bottom, 12) }]}>
             <View style={{ flex: width < 360 || fontScale > 1.3 ? undefined : 1 }}><FooterAction testID={`catalog-save-${activity.id}`} saved={isSaved} label={isSaved ? 'Saved' : 'Save'} accessibilityLabel={isSaved ? `Saved ${activity.name}; remove bookmark` : `Save ${activity.name}`} onPress={() => onToggleSaved(activity)} /></View>
-            {!activity.archived ? <View style={{ flex: width < 360 || fontScale > 1.3 ? undefined : 2 }}><FooterAction ref={addRef} testID="catalog-add-routine" primary label="Add to a routine" onPress={() => setChooser(true)} /></View> : null}
+            {!activity.archived ? <View style={{ flex: width < 360 || fontScale > 1.3 ? undefined : 2 }}><FooterAction ref={addRef} testID="catalog-add-routine" primary label="Add to…" onPress={() => setChooser(true)} /></View> : null}
           </View>
         </View>
-        <Modal visible={chooser} transparent animationType="slide" onShow={() => focusDetailTarget(chooserHeadingRef.current)} onRequestClose={dismissChooser}>
-          <View style={s.overlay}>
-            <Pressable accessibilityLabel="Dismiss routine choices" onPress={dismissChooser} style={StyleSheet.absoluteFill} />
-            <View accessibilityViewIsModal style={[s.choice, { marginTop: insets.top + 12, backgroundColor: c.background, borderColor: c.border, paddingBottom: insets.bottom + 14 }]}>
-              <View style={s.top}>
-                <View ref={chooserHeadingRef} accessible accessibilityRole="header" accessibilityLabel="Choose a routine draft" tabIndex={-1} style={{ flex: 1 }}><Text style={[s.h, { color: c.foreground }]}>Choose a routine draft</Text></View>
-                <IconButton icon="x" label="Close routine choices" onPress={dismissChooser} />
-              </View>
-              <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 8 }}>
-                <Text style={[s.meta, { color: c.mutedForeground }]}>This adds the activity to an editable draft. Nothing is saved until you confirm in the builder.</Text>
-                <Button testID="catalog-add-new-routine" label="Start a new routine draft" icon="plus" onPress={() => go({})} />
-                {tempo.state.routines.filter(r => !r.archived).map(r => (
-                  <Button key={r.id} testID={`catalog-add-existing-${r.id}`} variant="soft" label={`Add to “${r.name}” draft`} icon="layers" onPress={() => go({ id: r.id })} />
-                ))}
-                {!tempo.state.routines.some(r => !r.archived) ? <Text style={[s.meta, { color: c.mutedForeground }]}>No saved routines yet. Start a new draft above.</Text> : null}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
+        {chooser ? <AddDestinationSheet activityId={currentId} onClose={dismissChooser} onNavigate={onClose} /> : null}
       </View>
     </Modal>
   );

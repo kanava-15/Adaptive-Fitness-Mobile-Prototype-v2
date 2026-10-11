@@ -17,7 +17,7 @@ import {
   SnapItem,
   Snapshot,
   StateV2,
-  addToActive,
+  appendSelectionToActive,
   adapt,
   applyRoutineToFuture,
   checkImport as checkImportPure,
@@ -43,7 +43,6 @@ import {
   knowledgeOf,
   useCatalogRelease,
   RoutineItem,
-  snapItem,
   actualErrors,
   activityDef,
   userAuthoredDefinition,
@@ -90,7 +89,7 @@ interface Ctx {
   previewAdapt: (snapshot: Snapshot, opts: AdaptOptions, date: string) => AdaptResult;
   // execution
   startSnapshot: (args: { date: string; occurrenceKey: string | null; snapshot: Snapshot; items: SnapItem[]; plannedMinutes?: number; adaptation?: string[] }) => string[];
-  addExerciseToActive: (exerciseId: string, target?: RoutineItem) => void;
+  addSelectionToActive: (sessionId: string, selectionId: string, items: RoutineItem[], original?: RoutineItem[]) => string[];
   toggleClock: () => void;
   toggleExClock: () => void;
   resetExClock: () => void;
@@ -113,14 +112,19 @@ const TempoCtx = createContext<Ctx | null>(null);
 export function TempoProvider({ children }: { children: React.ReactNode }) {
   const catalog = useCatalog();
   useCatalogRelease(catalog.state.release);
-  const [state, setState] = useState<StateV2>(emptyState);
+  const [state, setReactState] = useState<StateV2>(emptyState);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [todayKey, setTodayKey] = useState(dateKey());
   const storageBlocked = useRef(false);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const stateRef = useRef(state);
-  stateRef.current = state;
+  // Imperative confirmations must see all earlier writes, even before the next render.
+  const setState = useCallback((update: React.SetStateAction<StateV2>) => {
+    const next = typeof update === 'function' ? update(stateRef.current) : update;
+    stateRef.current = next;
+    setReactState(next);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -251,11 +255,13 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     setState((s) => (s.active ? s : { ...s, active: startActive(args) }));
     return [];
   }, []);
-  const addExerciseToActive = useCallback((exerciseId: string, target?: RoutineItem) => {
-    const d = target?.definition ?? findExercise(stateRef.current.customExercises, exerciseId);
-    if (!d || !target) return;
-    if (snapshotErrors([snapItem(target, d)]).length) return;
-    updateActive((a) => addToActive(a, d, target));
+  const addSelectionToActive = useCallback((sessionId: string, selectionId: string, items: RoutineItem[], original?: RoutineItem[]) => {
+    const result = appendSelectionToActive(stateRef.current, sessionId, selectionId, items, original);
+    if (!result.errors.length && result.state !== stateRef.current) {
+      // Reserve keys synchronously, before React renders, so rapid retries are idempotent.
+      setState(result.state);
+    }
+    return result.errors;
   }, []);
 
   const toggleClock = useCallback(() => updateActive((a) => (a.clock.since ? { ...a, clock: pause(a.clock), exClock: pause(a.exClock) } : { ...a, clock: resume(a.clock) })), []);
@@ -322,7 +328,7 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
     ready, loadError, dismissLoadError, state, todayKey, todayOccurrences, saveProfile,
     saveExercise, setActivitySaved, setExerciseArchived, saveRoutine, duplicateRoutine, setRoutineArchived, futureUses, pushRoutineToFuture,
     addSchedule, occurrence, occurrencesIn, moveOcc, deleteOcc, editOcc, previewAdapt,
-    startSnapshot, addExerciseToActive, toggleClock, toggleExClock, resetExClock, logSet, undoSet, markDone, skipExercise, goTo, finish, discardActive,
+    startSnapshot, addSelectionToActive, toggleClock, toggleExClock, resetExClock, logSet, undoSet, markDone, skipExercise, goTo, finish, discardActive,
     exportJson, checkImport, replaceAll, resetAll,
   };
   return <TempoCtx.Provider value={value}>{children}</TempoCtx.Provider>;
