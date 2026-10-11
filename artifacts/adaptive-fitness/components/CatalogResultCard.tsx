@@ -7,20 +7,22 @@ import { useColors } from '@/hooks/useColors';
 import { catalogCardIdentity, catalogCardMetadata } from '@/lib/catalog-explore';
 import { DISCIPLINE_LABEL } from '@/lib/domain';
 
-type Props = { activity: Activity; saved: boolean; onOpen: () => void; onToggleSaved: () => void };
+type Props = { activity: Activity; saved: boolean; onOpen: (target: View | null) => void; onToggleSaved: () => void };
 
 function CatalogResultCardBase({ activity, saved, onOpen, onToggleSaved }: Props) {
   const c = useColors();
+  const openRef = React.useRef<View>(null);
   const identity = catalogCardIdentity(activity);
   const labels = catalogCardMetadata(activity).slice(0, 3);
   const icon = identity === 'Sequence' ? 'layers' : identity === 'Sport' ? 'flag' : 'activity';
   return (
     <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <Pressable
+        ref={openRef}
         testID={`catalog-result-${activity.id}`}
         accessibilityRole="button"
         accessibilityLabel={`${activity.name}, ${identity}. Open details`}
-        onPress={onOpen}
+        onPress={() => onOpen(openRef.current)}
         style={({ pressed }) => [styles.main, { opacity: pressed ? 0.85 : 1 }]}
       >
         <View style={[styles.icon, { backgroundColor: c.secondary }]}>

@@ -1,12 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Keyboard, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Activity } from '@workspace/activity-catalog';
-import { activityTypeSchema, equipmentSchema, jointSchema } from '@workspace/activity-catalog';
-import { ActivityDetails } from '@/components/ActivityDetails';
+import { equipmentSchema, jointSchema } from '@workspace/activity-catalog';
+import { ExploreActivitySheet } from '@/components/ExploreActivitySheet';
 import { Button, Card, IconButton, useTopInset } from '@/components/ui';
 import { CatalogResultCard } from '@/components/CatalogResultCard';
 import { normalizeExploreFilters } from '@/lib/catalog-explore';
@@ -15,12 +15,12 @@ import { useCatalog } from '@/context/CatalogContext';
 import { useTempo } from '@/context/TempoContext';
 import { fonts } from '@/constants/colors';
 import {
-  AREA_LABEL, ActualSet, CatalogSearchFilters, CompletionV2, DISCIPLINE_LABEL, GEAR_LABEL, Gear, emptyCatalogSearchFilters,
+  AREA_LABEL, CatalogSearchFilters, DISCIPLINE_LABEL, GEAR_LABEL, Gear, emptyCatalogSearchFilters,
   searchCatalog,
 } from '@/lib/domain';
 import { useColors } from '@/hooks/useColors';
+import { focusDetailTarget } from '@/lib/detail-focus';
 
-const typeLabel = (type: Activity['type']) => activityTypeSchema.options.includes(type) ? type.replaceAll('-', ' ') : type;
 const updateErrorSummary = (error: string) => {
   const status = error.match(/HTTP\s+(\d{3})/i)?.[1];
   return `Update check failed${status ? ` (HTTP ${status})` : ''}. Offline catalog remains available.`;
@@ -60,6 +60,8 @@ export default function CatalogSearchScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showCatalogStatus, setShowCatalogStatus] = useState(false);
   const [selected, setSelected] = useState<Activity | null>(null);
+  const openedFrom = React.useRef<View | null>(null);
+  const closeDetails = () => { setSelected(null); requestAnimationFrame(() => focusDetailTarget(openedFrom.current)); };
   const { repository, state: catalogState } = useCatalog();
   const tempo = useTempo();
   const allActivities = catalogState.release.activities;
@@ -230,7 +232,7 @@ export default function CatalogSearchScreen() {
             {activeCount(filters) ? <Button testID="catalog-empty-clear-filters" compact variant="ghost" label="Clear filters" onPress={clearAllFilters} /> : null}
           </Card>
         }
-        renderItem={({ item }) => <CatalogResultCard activity={item} saved={saved(item)} onOpen={() => { Keyboard.dismiss(); setSelected(item); }} onToggleSaved={() => toggleSaved(item)} />}
+        renderItem={({ item }) => <CatalogResultCard activity={item} saved={saved(item)} onOpen={target => { openedFrom.current = target; Keyboard.dismiss(); setSelected(item); }} onToggleSaved={() => toggleSaved(item)} />}
       />
 
       {sheetOpen ? (
@@ -243,95 +245,8 @@ export default function CatalogSearchScreen() {
           onCancel={() => setSheetOpen(false)}
         />
       ) : null}
-      <ActivityDetailModal activity={selected} onClose={() => setSelected(null)} onSelectRelated={id => {
-        const related = allActivities.find(item => item.id === id);
-        if (related) setSelected(related);
-      }} onToggleSaved={toggleSaved} saved={selected ? saved(selected) : false} />
+      {selected ? <ExploreActivitySheet key={selected.id} activityId={selected.id} onClose={closeDetails} onToggleSaved={toggleSaved} saved={saved} /> : null}
     </KeyboardAvoidingView>
-  );
-}
-
-function ActivityDetailModal({ activity, onClose, onSelectRelated, onToggleSaved, saved }: {
-  activity: Activity | null;
-  onClose: () => void;
-  onSelectRelated: (id: string) => void;
-  onToggleSaved: (activity: Activity) => void;
-  saved: boolean;
-}) {
-  const c = useColors();
-  const insets = useSafeAreaInsets();
-  const { state: catalog } = useCatalog();
-  const tempo = useTempo();
-  const [routineChoices, setRoutineChoices] = useState(false);
-  if (!activity) return null;
-  const history = tempo.state.completions
-    .map(completion => ({ completion, log: completion.exercises.find(entry => entry.exerciseId === activity.id) }))
-    .filter((item): item is { completion: CompletionV2; log: NonNullable<CompletionV2['exercises'][number]> } => !!item.log)
-    .sort((a, b) => b.completion.finishedAt.localeCompare(a.completion.finishedAt));
-  const historyLine = (set: ActualSet) => [
-    set.reps != null ? `${set.reps} reps` : null,
-    set.seconds != null ? `${set.seconds}s` : null,
-    set.breaths != null ? `${set.breaths} breaths` : null,
-    set.distance != null ? `${set.distance}${set.distanceUnit ? ` ${set.distanceUnit}` : ''}` : null,
-    set.load != null ? `${set.load} ${set.unit ?? ''}`.trim() : null,
-  ].filter(Boolean).join(' · ') || 'No measured set';
-
-  return (
-    <Modal visible animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
-      <View style={[styles.detailScreen, { backgroundColor: c.background, paddingTop: insets.top + 8, paddingBottom: insets.bottom }]}>
-        <View style={[styles.detailHeader, { borderBottomColor: c.border }]}>
-          <IconButton icon="arrow-left" label="Back to search results" onPress={onClose} />
-          <Text style={[styles.detailHeaderTitle, { color: c.foreground }]} numberOfLines={1}>{activity.name}</Text>
-          <View style={{ width: 44 }} />
-        </View>
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 32, gap: 12 }} keyboardShouldPersistTaps="handled">
-          <Text testID="catalog-detail-name" style={[styles.detailTitle, { color: c.foreground }]}>{activity.name}</Text>
-          <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>{activity.type === 'sequence' ? 'Sequence' : 'Single activity'} · {typeLabel(activity.type)} · {activity.discipline} · {activity.family}</Text>
-          <ActivityDetails activity={activity} release={catalog.release} onOpenRelated={onSelectRelated} />
-          <Card style={{ gap: 8 }}>
-            <Text style={[styles.historyTitle, { color: c.foreground }]}>Your recorded history</Text>
-            {history.length ? history.slice(0, 8).map(({ completion, log }) => (
-              <View key={`${completion.id}:${log.itemKey}`} style={[styles.historyRow, { borderTopColor: c.border }]}>
-                <Text style={[styles.historyDate, { color: c.foreground }]}>{new Date(completion.finishedAt).toLocaleDateString()}</Text>
-                <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>
-                  {completion.title} · {log.skipped ? 'Skipped' : log.done ? 'Completed' : 'Recorded'}
-                </Text>
-                {log.sets.length ? <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>{log.sets.map(historyLine).join(' / ')}</Text> : null}
-              </View>
-            )) : <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>No local history recorded for this catalog identity.</Text>}
-          </Card>
-          <Button testID={`catalog-save-${activity.id}`} variant="soft" icon="bookmark" label={saved ? 'Saved · remove bookmark' : 'Save to Saved Activities'} onPress={() => onToggleSaved(activity)} />
-          {!activity.archived ? (
-            <Button testID="catalog-add-routine" label="Add to a routine" icon="plus" onPress={() => setRoutineChoices(true)} />
-          ) : null}
-        </ScrollView>
-        <Modal visible={routineChoices} transparent animationType="slide" onRequestClose={() => setRoutineChoices(false)}>
-          <View style={styles.choiceOverlay}>
-            <Pressable accessibilityLabel="Dismiss routine choices" onPress={() => setRoutineChoices(false)} style={StyleSheet.absoluteFill} />
-            <View style={[styles.choiceSheet, { backgroundColor: c.background, borderColor: c.border, paddingBottom: insets.bottom + 14 }]}>
-              <View style={styles.detailHeader}>
-                <Text style={[styles.historyTitle, { color: c.foreground, flex: 1 }]}>Choose a routine draft</Text>
-                <IconButton icon="x" label="Close routine choices" onPress={() => setRoutineChoices(false)} />
-              </View>
-              <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>This adds the activity to an editable draft. Nothing is saved until you confirm in the builder.</Text>
-              <Button testID="catalog-add-new-routine" label="Start a new routine draft" icon="plus" onPress={() => {
-                setRoutineChoices(false);
-                onClose();
-                router.push({ pathname: '/builder', params: { activityId: activity.id } });
-              }} />
-              {tempo.state.routines.filter(routine => !routine.archived).map(routine => (
-                <Button key={routine.id} testID={`catalog-add-existing-${routine.id}`} variant="soft" label={`Add to “${routine.name}” draft`} icon="layers" onPress={() => {
-                  setRoutineChoices(false);
-                  onClose();
-                  router.push({ pathname: '/builder', params: { id: routine.id, activityId: activity.id } });
-                }} />
-              ))}
-              {!tempo.state.routines.some(routine => !routine.archived) ? <Text style={[styles.resultMeta, { color: c.mutedForeground }]}>No saved routines yet. Start a new draft above.</Text> : null}
-            </View>
-          </View>
-        </Modal>
-      </View>
-    </Modal>
   );
 }
 
@@ -356,17 +271,7 @@ const styles = StyleSheet.create({
   resultSummary: { minHeight: 42, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summaryText: { fontFamily: fonts.bodyMedium, fontSize: 13 },
   clearLink: { fontFamily: fonts.bodySemi, fontSize: 13, textDecorationLine: 'underline' },
-  resultMeta: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16 },
   emptyCard: { alignItems: 'center', gap: 9, padding: 20, marginTop: 14 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 19 },
   emptyText: { fontFamily: fonts.body, textAlign: 'center', fontSize: 13, lineHeight: 19, marginBottom: 3 },
-  detailScreen: { flex: 1 },
-  detailHeader: { minHeight: 54, borderBottomWidth: 1, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  detailHeaderTitle: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 15, textAlign: 'center' },
-  detailTitle: { fontFamily: fonts.display, fontSize: 26, lineHeight: 32 },
-  historyTitle: { fontFamily: fonts.bodySemi, fontSize: 16 },
-  historyRow: { borderTopWidth: 1, paddingTop: 8, gap: 2 },
-  historyDate: { fontFamily: fonts.bodySemi, fontSize: 13 },
-  choiceOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' },
-  choiceSheet: { borderTopWidth: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 18, paddingTop: 18, gap: 10 },
 });
