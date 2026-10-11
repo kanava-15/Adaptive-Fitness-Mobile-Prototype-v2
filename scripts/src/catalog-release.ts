@@ -6,6 +6,8 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { canonicalJson, coverage, idSchema, normalizedIdentity, orderRelease, requireCoverage, retrievalText, validateRelease } from '@workspace/activity-catalog';
+import { authoredRelease } from '@workspace/activity-catalog/authoring';
+import { assertCurrentCatalogRelease } from './catalog-preflight';
 
 const args = process.argv.slice(2);
 const allowed = new Set(['--environment', '--file', '--rollback', '--apply', '--confirm-production']);
@@ -31,6 +33,8 @@ if (apply && environment === 'development' && ['1', 'true'].includes(process.env
 const input = file ? orderRelease(validateRelease(JSON.parse(await readFile(file, 'utf8')))) : null;
 if (input) {
   if (input.status !== 'released') throw new Error('Release input must be reviewed and marked released with a publication date.');
+  const bundle = JSON.parse(await readFile(new URL('../../lib/activity-catalog/src/starter.json', import.meta.url), 'utf8'));
+  assertCurrentCatalogRelease(input, authoredRelease(), bundle);
   requireCoverage(input);
   console.info(JSON.stringify({ environment, apply, version: input.contentVersion, coverage: coverage(input) }));
 }

@@ -7,6 +7,7 @@
     "catalog:bundle": "tsx ./src/catalog-bundle.ts",
     "test:catalog-development": "NODE_ENV=development tsx ./src/catalog-development-check.ts",
     "test:catalog-errors": "tsx --test ./tests/catalog-errors.test.ts",
+    "test:catalog-preflight": "tsx --test ./tests/catalog-preflight.test.ts",
     "catalog": "tsx ./src/catalog-release.ts",
     "hello": "tsx ./src/hello.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
