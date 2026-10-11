@@ -38,6 +38,7 @@ function RootLayoutNav() {
       <Stack.Screen name="builder" options={{ presentation: 'modal' }} />
       <Stack.Screen name="schedule-add" options={{ presentation: 'modal' }} />
       <Stack.Screen name="content-exchange" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="activity-import" options={{ presentation: 'modal' }} />
       <Stack.Screen name="catalog-search" options={{ presentation: 'fullScreenModal' }} />
       <Stack.Screen name="occurrence" options={{ presentation: 'modal' }} />
       <Stack.Screen name="session" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />

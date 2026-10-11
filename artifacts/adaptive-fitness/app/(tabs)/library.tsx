@@ -14,6 +14,7 @@ import { useCatalog } from '@/context/CatalogContext';
 import { LibraryDashboard } from '@/components/LibraryDashboard';
 
 type Tab = 'home' | 'explore' | 'saved' | 'personal' | 'routines';
+const first = (value?: string | string[]) => Array.isArray(value) ? value[0] : value;
 
 export default function LibraryScreen() {
   const c = useColors();
@@ -21,11 +22,12 @@ export default function LibraryScreen() {
   const bottom = useBottomPad();
   const { state, todayKey, duplicateRoutine, setRoutineArchived, setActivitySaved, startSnapshot } = useTempo();
   const catalog = useCatalog();
-  const params = useLocalSearchParams<{ tab?: string }>();
+  const params = useLocalSearchParams<{ tab?: string; importAdded?: string; importReused?: string; importNames?: string; importMore?: string; importToken?: string }>();
   const requestedTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const tab: Tab = requestedTab === 'catalog' || requestedTab === 'explore' ? 'explore' : requestedTab === 'saved' ? 'saved' : requestedTab === 'moves' || requestedTab === 'personal' || requestedTab === 'custom' ? 'personal' : requestedTab === 'routines' ? 'routines' : 'home';
   const [selectedSavedId, setSelectedSavedId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [dismissedImportToken, setDismissedImportToken] = useState<string | null>(null);
   const f = useLibraryFilter();
   const custom = state.customExercises;
   const list = searchLibrary(custom, { ...f.filter, source: 'local', includeArchived: showArchived });
@@ -33,6 +35,7 @@ export default function LibraryScreen() {
   const archivedCount = tab === 'personal' ? custom.filter((e) => e.archived).length : state.routines.filter((r) => r.archived).length;
   const saved = state.savedActivities;
   const selectedSaved = saved.find(item => item.id === selectedSavedId);
+  const importToken = first(params.importToken) ?? `${first(params.importAdded)}:${first(params.importNames)}`;
   const currentSaved = selectedSaved && catalog.state.release.activities.find(item => item.id === selectedSaved.id);
   const resolvedSaved = selectedSaved ? resolveSavedActivity(selectedSaved, catalog.state.release) : undefined;
   const savedActivity = resolvedSaved?.activity;
@@ -135,8 +138,28 @@ export default function LibraryScreen() {
         <View style={{ marginTop: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <Text style={[s.sectionTitle, { color: c.foreground }]}>On this device</Text>
-            <IconButton testID="library-new" icon="plus" label="New custom activity" onPress={() => router.push('/exercise-edit')} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Button compact variant="soft" testID="library-import-activities" icon="download" label="Import" onPress={() => router.push('/activity-import')} />
+              <IconButton testID="library-new" icon="plus" label="New custom activity" onPress={() => router.push('/exercise-edit')} />
+            </View>
           </View>
+          {first(params.importAdded) !== undefined && dismissedImportToken !== importToken ? (
+            <View testID="activity-import-result">
+            <Card style={{ gap: 6, marginBottom: 10 }}>
+              <Text style={[s.rTitle, { color: c.foreground }]}>Activity import complete</Text>
+              {Number(first(params.importAdded)) > 0 ? (
+                <Text style={[s.hint, { color: c.mutedForeground, marginTop: 0 }]}>
+                  Added {first(params.importAdded)} new unverified {Number(first(params.importAdded)) === 1 ? 'activity' : 'activities'}: {first(params.importNames) || 'open the list below'}{Number(first(params.importMore) ?? 0) > 0 ? ` and ${first(params.importMore)} more` : ''}.
+                </Text>
+              ) : (
+                <Text style={[s.hint, { color: c.mutedForeground, marginTop: 0 }]}>
+                  No new custom activities were added. Reused {first(params.importReused) ?? '0'} existing catalogue {Number(first(params.importReused)) === 1 ? 'activity' : 'activities'}.
+                </Text>
+              )}
+              <Button compact variant="ghost" label="Dismiss" onPress={() => setDismissedImportToken(importToken)} style={{ alignSelf: 'flex-start' }} />
+            </Card>
+            </View>
+          ) : null}
           <LibraryFilters f={f} />
           <Text style={[s.hint, { color: c.mutedForeground }]}>Custom activities are stored only on this device, visibly unreviewed, and separate from saved shared entries.</Text>
           <View style={{ gap: 8, marginTop: 12 }}>
