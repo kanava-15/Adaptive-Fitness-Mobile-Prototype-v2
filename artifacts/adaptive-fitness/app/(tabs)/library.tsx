@@ -8,46 +8,99 @@ import { Button, Card, EmptyState, IconButton, ScreenTitle, confirm, success, ta
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
-import { estimateSec, findExercise, minutesLabel, searchLibrary, snapItem } from '@/lib/domain';
+import { activityDef, estimateSec, findExercise, minutesLabel, personalCatalog, resolveSavedActivity, searchLibrary, snapItem } from '@/lib/domain';
 import { CatalogBrowser } from '@/components/CatalogBrowser';
+import { ActivityDetails } from '@/components/ActivityDetails';
+import { useCatalog } from '@/context/CatalogContext';
 
-type Tab = 'explore' | 'personal' | 'routines';
+type Tab = 'explore' | 'saved' | 'personal' | 'routines';
 
 export default function LibraryScreen() {
   const c = useColors();
   const top = useTopInset();
   const bottom = useBottomPad();
-  const { state, duplicateRoutine, setRoutineArchived } = useTempo();
+  const { state, duplicateRoutine, setRoutineArchived, setActivitySaved } = useTempo();
+  const catalog = useCatalog();
   const params = useLocalSearchParams<{ tab?: string }>();
   const requestedTab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const [tab, setTab] = useState<Tab>(requestedTab === 'catalog' || requestedTab === 'explore' ? 'explore' : requestedTab === 'moves' || requestedTab === 'personal' ? 'personal' : requestedTab === 'routines' ? 'routines' : 'explore');
+  const [tab, setTab] = useState<Tab>(requestedTab === 'catalog' || requestedTab === 'explore' ? 'explore' : requestedTab === 'saved' ? 'saved' : requestedTab === 'moves' || requestedTab === 'personal' || requestedTab === 'custom' ? 'personal' : requestedTab === 'routines' ? 'routines' : 'explore');
+  const [selectedSavedId, setSelectedSavedId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const f = useLibraryFilter();
   const custom = state.customExercises;
   const list = searchLibrary(custom, { ...f.filter, source: 'local', includeArchived: showArchived });
   const routines = state.routines.filter((r) => (showArchived ? true : !r.archived)).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
   const archivedCount = tab === 'personal' ? custom.filter((e) => e.archived).length : state.routines.filter((r) => r.archived).length;
+  const saved = state.savedActivities;
+  const selectedSaved = saved.find(item => item.id === selectedSavedId);
+  const currentSaved = selectedSaved && catalog.state.release.activities.find(item => item.id === selectedSaved.id);
+  const resolvedSaved = selectedSaved ? resolveSavedActivity(selectedSaved, catalog.state.release) : undefined;
+  const savedActivity = resolvedSaved?.activity;
+  const savedRelease = selectedSaved ? {
+    ...personalCatalog(custom),
+    activities: currentSaved ? personalCatalog(custom).activities : [...personalCatalog(custom).activities, selectedSaved.fallback],
+    sequences: currentSaved ? personalCatalog(custom).sequences : [...personalCatalog(custom).sequences, ...(selectedSaved.sequenceMembers ?? [])],
+  } : personalCatalog(custom);
 
   return (
     <KeyboardAwareScrollViewCompat style={{ backgroundColor: c.background }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: top + 16, paddingBottom: bottom }} keyboardShouldPersistTaps="handled" bottomOffset={20}>
       <ScreenTitle
         eyebrow="Library"
-        title={tab === 'explore' ? 'Explore' : tab === 'personal' ? 'My activities' : 'Routines'}
-        right={tab === 'explore' ? undefined : <IconButton testID="library-new" icon="plus" label={tab === 'personal' ? 'New custom activity' : 'New routine'} onPress={() => router.push(tab === 'personal' ? '/exercise-edit' : '/builder')} />}
+        title={tab === 'explore' ? 'Explore' : tab === 'saved' ? 'Saved Activities' : tab === 'personal' ? 'Custom Activities' : 'Routines'}
+        right={tab === 'personal' || tab === 'routines' ? <IconButton testID="library-new" icon="plus" label={tab === 'personal' ? 'New custom activity' : 'New routine'} onPress={() => router.push(tab === 'personal' ? '/exercise-edit' : '/builder')} /> : undefined}
       />
       <Segmented testID="library-tab" options={[
         { value: 'explore', label: 'Explore' },
-        { value: 'personal', label: 'My activities' },
+        { value: 'saved', label: `Saved ${saved.length}` },
+        { value: 'personal', label: `Custom ${custom.filter(e => !e.archived).length}` },
         { value: 'routines', label: 'Routines' },
       ]} value={tab} onChange={(v) => setTab(v)} />
 
-      {tab === 'explore' ? <CatalogBrowser /> : tab === 'personal' ? (
+      {tab === 'explore' ? <CatalogBrowser /> : tab === 'saved' ? (
+        <View style={{ marginTop: 16, gap: 10 }}>
+          {selectedSaved && savedActivity ? (
+            <Card style={{ gap: 10 }}>
+              <Button compact variant="soft" label="Back to Saved Activities" onPress={() => setSelectedSavedId(null)} />
+              <Text testID="saved-activity-name" style={[s.rTitle, { color: c.foreground }]}>{savedActivity.name}</Text>
+              <Text style={[s.hint, { color: c.mutedForeground, marginTop: 0 }]}>
+                {resolvedSaved && !resolvedSaved.unavailable ? 'Shared catalog entry' : 'Unavailable in the current catalog · showing saved offline details'}
+                {savedActivity.archived ? ' · archived' : ''}
+                {' · '}{savedActivity.reviewStatus}
+              </Text>
+              <ActivityDetails activity={savedActivity} release={savedRelease} />
+              <Button testID={`unsave-${selectedSaved.id}`} variant="soft" icon="bookmark" label="Remove from Saved Activities" onPress={() => { setActivitySaved(selectedSaved.id, false); setSelectedSavedId(null); }} />
+              {currentSaved && !currentSaved.archived ? (
+                <Button icon="plus" label={currentSaved.type === 'sequence' ? 'Expand into routine — enter targets' : 'Add to a new routine'} onPress={() => router.push({ pathname: '/builder', params: { activityId: currentSaved.id } })} />
+              ) : null}
+            </Card>
+          ) : saved.length === 0 ? (
+            <EmptyState icon="bookmark" title="No saved activities yet" body="Save shared activities or sequences from Explore. Saved items stay separate from custom activities and routines." />
+          ) : (
+            <>
+              <Text style={[s.hint, { color: c.mutedForeground, marginTop: 0 }]}>Shared catalog bookmarks · read-only · saved on this device</Text>
+              {saved.map(item => {
+                const live = catalog.state.release.activities.find(a => a.id === item.id);
+                const activity = live ?? item.fallback;
+                return (
+                  <ExerciseRow
+                    key={item.id}
+                    testID={`saved-${item.id}`}
+                    e={activityDef(activity)}
+                    onPress={() => setSelectedSavedId(item.id)}
+                    right={<Text style={[s.savedStatus, { color: live?.archived || (!live && activity.archived) ? c.destructive : c.mutedForeground }]}>{!live ? 'Unavailable' : live.archived ? 'Archived' : 'Saved'}</Text>}
+                  />
+                );
+              })}
+            </>
+          )}
+        </View>
+      ) : tab === 'personal' ? (
         <View style={{ marginTop: 16 }}>
           <LibraryFilters f={f} />
-          <Text style={[s.hint, { color: c.mutedForeground }]}>These activities are stored only on this device. They are not part of the shared catalog and are never uploaded.</Text>
+          <Text style={[s.hint, { color: c.mutedForeground }]}>Custom activities are stored only on this device, visibly unreviewed, and separate from saved shared entries.</Text>
           <View style={{ gap: 8, marginTop: 12 }}>
             {list.length === 0 ? (
-              <EmptyState icon="search" title="No personal activities match" body={custom.length ? 'Try clearing a filter or search.' : 'Create an activity for a gym machine, a coach’s instruction, or a movement you want to track. It stays on this device.'}>
+              <EmptyState icon="search" title="No custom activities match" body={custom.length ? 'Try clearing a filter or search.' : 'Create an activity for a gym machine, a coach’s instruction, or a movement you want to track. It stays on this device.'}>
                 <Button compact variant="soft" icon="plus" label="Create custom activity" onPress={() => router.push('/exercise-edit')} />
               </EmptyState>
             ) : (
@@ -102,7 +155,7 @@ export default function LibraryScreen() {
           )}
         </View>
       )}
-      {tab !== 'explore' && (archivedCount || showArchived) ? (
+      {tab !== 'explore' && tab !== 'saved' && (archivedCount || showArchived) ? (
         <Pressable onPress={() => { tap(); setShowArchived(!showArchived); }} style={{ marginTop: 18, alignSelf: 'center' }} hitSlop={8}>
           <Text style={[s.link, { color: c.mutedForeground }]}>{showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}</Text>
         </Pressable>
@@ -119,4 +172,5 @@ const s = StyleSheet.create({
   rMoves: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: 20, marginTop: 8 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   link: { fontFamily: fonts.bodyMedium, fontSize: 13, textDecorationLine: 'underline' },
+  savedStatus: { fontFamily: fonts.bodySemi, fontSize: 11 },
 });

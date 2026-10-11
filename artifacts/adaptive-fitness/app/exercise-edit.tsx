@@ -9,7 +9,7 @@ import { Button, Chip, Eyebrow, IconButton, confirm, success } from '@/component
 import { fonts } from '@/constants/colors';
 import { useTempo } from '@/context/TempoContext';
 import { useColors } from '@/hooks/useColors';
-import { AREAS, AREA_LABEL, DISCIPLINES, DISCIPLINE_LABEL, ExerciseDef, GEARS, GEAR_LABEL, REGIONS, findExercise, validateExercise } from '@/lib/domain';
+import { AREAS, AREA_LABEL, DISCIPLINES, DISCIPLINE_LABEL, DistanceUnit, ExerciseDef, GEARS, GEAR_LABEL, PersonalPreset, REGIONS, Tracking, findExercise, validateExercise } from '@/lib/domain';
 import { REGION_LABEL, newId } from '@/lib/engine';
 import { activitySchema, membershipSchema, type Activity } from '@workspace/activity-catalog';
 import { z } from 'zod';
@@ -26,8 +26,8 @@ const blank = (): ExerciseDef => ({
   gear: ['none'],
   areas: [],
   tracking: 'reps',
-  defaultReps: 10,
-  defaultSeconds: 30,
+  defaultReps: undefined,
+  defaultSeconds: undefined,
   perSide: false,
   loadable: false,
   stresses: [],
@@ -49,6 +49,7 @@ export default function ExerciseEdit() {
   const { state, saveExercise, setExerciseArchived } = useTempo();
   const existing = id ? findExercise(state.customExercises, id) : undefined;
   const [e, setE] = useState<ExerciseDef>(existing ? { ...existing, ...state.presets[existing.id] } : blank());
+  const [preset, setPreset] = useState<PersonalPreset>(() => existing ? { ...state.presets[existing.id] } : {});
   const [knowledge, setKnowledge] = useState<Activity>(() => knowledgeOf(existing ?? blank()));
   const [members, setMembers] = useState(() => JSON.stringify(existing?.sequenceMembers ?? [], null, 2));
   const catalog = useCatalog();
@@ -83,7 +84,8 @@ export default function ExerciseEdit() {
       if (!parsed.success) return;
       setKnowledge(parsed.data);
       set({ instructions: parsed.data.description, discipline: parsed.data.discipline, gear: parsed.data.equipment ?? [],
-        loadable: parsed.data.loadUnits.length > 0, perSide: ['unilateral', 'alternating'].includes(parsed.data.laterality) });
+        loadable: parsed.data.loadUnits.length > 0, perSide: ['unilateral', 'alternating'].includes(parsed.data.laterality),
+        tracking: parsed.data.supportedMetrics[0] === 'duration' ? 'time' : parsed.data.supportedMetrics[0] ?? 'reps' });
       setCuesText(parsed.data.execution.join('\n'));
     } catch { /* Invalid drafts stay editable and cannot be saved. */ }
   };
@@ -100,6 +102,9 @@ export default function ExerciseEdit() {
     const checked = activitySchema.safeParse(a);
     if (!checked.success) checked.error.issues.forEach(i => errs.push(`${i.path.join('.')}: ${i.message}`));
     if (a.type !== 'sequence' && !a.supportedMetrics.length) errs.push('Select at least one measurement capability so this activity can accept a personal target.');
+    if (e.tracking === 'distance' && preset.defaultDistanceUnit && !a.distanceUnits.includes(preset.defaultDistanceUnit)) {
+      errs.push('Choose a personal preset distance unit supported by this activity.');
+    }
     let sequenceMembers: ExerciseDef['sequenceMembers'];
     if (a.type === 'sequence') {
       try {
@@ -111,10 +116,23 @@ export default function ExerciseEdit() {
     }
     setErrors(errs);
     if (errs.length) return;
-    const cues = cuesText.split('\n').map((x) => x.trim()).filter(Boolean);
-    saveExercise({ ...e, activity: a, sequenceMembers, name: e.name.trim(), cues: a.execution.length ? a.execution : cues, instructions: a.description, tracking: a.supportedMetrics[0] === 'duration' ? 'time' : a.supportedMetrics[0] ?? 'reps', perSide: ['unilateral', 'alternating'].includes(a.laterality) });
-    success();
-    router.back();
+    const persist = () => {
+      const cues = cuesText.split('\n').map((x) => x.trim()).filter(Boolean);
+      saveExercise({ ...e, activity: a, sequenceMembers, name: e.name.trim(), cues: a.execution.length ? a.execution : cues, instructions: a.description, tracking: a.supportedMetrics[0] === 'duration' ? 'time' : a.supportedMetrics[0] ?? 'reps', perSide: ['unilateral', 'alternating'].includes(a.laterality) }, preset);
+      success();
+      router.back();
+    };
+    const affectedRoutines = existing && existing.tracking !== e.tracking
+      ? state.routines.filter(r => r.items.some(it => it.exerciseId === existing.id)).length
+      : 0;
+    if (affectedRoutines) {
+      confirm(
+        'Keep saved routine targets?',
+        `${affectedRoutines} saved ${affectedRoutines === 1 ? 'routine uses' : 'routines use'} this activity. Saving a new measurement does not change their pinned definitions or targets; edit those routines separately if you want to use the new measurement.`,
+        'Save activity',
+        persist,
+      );
+    } else persist();
   };
 
   if (id && !existing) {
@@ -185,16 +203,32 @@ export default function ExerciseEdit() {
         <Text style={[s.label, { color: c.foreground }]}>Movement areas</Text>
         <View style={s.wrap}>{AREAS.map((a) => <Chip key={a} label={AREA_LABEL[a]} active={e.areas.includes(a)} onPress={() => set({ areas: toggle(e.areas, a) })} />)}</View>
 
-        <Text style={[s.label, { color: c.foreground }]}>Separate personal preset (optional)</Text>
-        <Text style={[s.hint, { color: c.mutedForeground }]}>These numbers are saved separately from the definition. They prefill your own routine targets, not library prescriptions.</Text>
-        <Segmented testID="exercise-tracking" options={[{ value: 'reps', label: 'Reps' }, { value: 'time', label: 'Timed' }]} value={e.tracking === 'time' ? 'time' : 'reps'} onChange={(tracking) => { set({ tracking }); setKnowledge(a => ({ ...a, supportedMetrics: [tracking === 'time' ? 'duration' : 'reps'] })); }} />
+        <Text style={[s.label, { color: c.foreground }]}>Measurement type</Text>
+        <Text style={[s.hint, { color: c.mutedForeground }]}>Choose what you can track for this activity. This is separate from your optional personal preset below.</Text>
+        <Segmented testID="exercise-tracking" options={[
+          { value: 'reps', label: 'Reps' }, { value: 'time', label: 'Duration' },
+          { value: 'distance', label: 'Distance' }, { value: 'breaths', label: 'Breaths' },
+        ]} value={e.tracking} onChange={(tracking: Tracking) => {
+          set({ tracking });
+          setKnowledge(a => ({ ...a, supportedMetrics: [tracking === 'time' ? 'duration' : tracking], distanceUnits: tracking === 'distance' ? ['m', 'km', 'mi', 'yd'] : [] }));
+        }} />
+        <Text style={[s.label, { color: c.foreground }]}>Personal preset (optional)</Text>
+        <Text style={[s.hint, { color: c.mutedForeground }]}>Stored separately from activity knowledge. It only prefills your own routine target and is never presented as a catalog prescription.</Text>
         <View style={[s.row, { marginTop: 12 }]}>
           {e.tracking === 'reps' ? (
-            <NumField testID="exercise-reps" label="Preset reps" optional value={e.defaultReps} min={1} max={200} onChange={(v) => set({ defaultReps: v })} />
+            <NumField testID="exercise-reps" label="Preset reps" optional value={preset.defaultReps} min={1} max={200} onChange={(v) => setPreset(x => ({ ...x, defaultReps: v }))} />
           ) : (
-            <NumField testID="exercise-seconds" label="Preset time" optional suffix="s" step={5} value={e.defaultSeconds} min={5} max={3600} onChange={(v) => set({ defaultSeconds: v })} />
+            e.tracking === 'time' ? <NumField testID="exercise-seconds" label="Preset duration" optional suffix="s" step={5} value={preset.defaultSeconds} min={5} max={3600} onChange={(v) => setPreset(x => ({ ...x, defaultSeconds: v }))} />
+              : e.tracking === 'breaths' ? <NumField testID="exercise-breaths" label="Preset breaths" optional value={preset.defaultBreaths} min={1} max={10000} onChange={(v) => setPreset(x => ({ ...x, defaultBreaths: v }))} />
+                : <NumField testID="exercise-distance" label="Preset distance" optional decimals suffix={preset.defaultDistanceUnit ?? 'm'} value={preset.defaultDistance} min={0.01} max={1000000} onChange={(v) => setPreset(x => ({ ...x, defaultDistance: v }))} />
           )}
         </View>
+        {e.tracking === 'distance' ? (
+          <Segmented testID="exercise-distance-unit" options={(['m', 'km', 'mi', 'yd'] as DistanceUnit[]).map(value => ({ value, label: value }))} value={preset.defaultDistanceUnit ?? 'm'} onChange={(defaultDistanceUnit: DistanceUnit) => setPreset(x => ({ ...x, defaultDistanceUnit }))} />
+        ) : null}
+        {existing && existing.tracking !== e.tracking && state.routines.some(r => r.items.some(it => it.exerciseId === existing.id)) ? (
+          <Text style={[s.hint, { color: c.mutedForeground, marginTop: 8 }]}>Existing routines keep their saved measurement and targets. The next routine can use {e.tracking === 'time' ? 'duration' : e.tracking}.</Text>
+        ) : null}
         <ToggleRow label="Per side" hint="Counts each side separately, e.g. left and right leg." value={e.perSide} onChange={(perSide) => { set({ perSide }); setKnowledge(a => ({ ...a, laterality: perSide ? 'unilateral' : 'bilateral' })); }} />
         <ToggleRow label="Track load" hint="Shows a weight field (kg or lb) when logging." value={e.loadable} onChange={(loadable) => set({ loadable })} />
 
@@ -208,7 +242,11 @@ export default function ExerciseEdit() {
         <TextInput testID="exercise-steps" value={cuesText} onChangeText={editSteps} multiline placeholder={'Set up…\nMove…\nReturn…'} placeholderTextColor={c.mutedForeground} style={[s.input, s.area, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
         <Text style={[s.label, { color: c.foreground }]}>Notes</Text>
         <TextInput testID="exercise-notes" value={knowledge.description} onChangeText={editNotes} multiline placeholder="Seat height 4, slow lowering…" placeholderTextColor={c.mutedForeground} style={[s.input, s.area, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />
-        <KnowledgeEditor value={{ ...knowledge, discipline: e.discipline }} onChange={a => { setKnowledge(a); syncAdvanced(a); }} />
+        <KnowledgeEditor value={{ ...knowledge, discipline: e.discipline }} onChange={a => {
+          setKnowledge(a);
+          set({ tracking: a.supportedMetrics[0] === 'duration' ? 'time' : a.supportedMetrics[0] ?? 'reps' });
+          syncAdvanced(a);
+        }} />
         <Text style={[s.label, { color: c.foreground }]}>Advanced structured knowledge (optional JSON)</Text>
         <Text style={[s.hint, { color: c.mutedForeground }]}>For qualified benefits, provenance references, series context, movement patterns and complete mobility metadata. Uses the same validated activity schema; no dosage allowed.</Text>
         <Button compact variant="soft" label="Populate from current knowledge" onPress={() => setAdvanced(JSON.stringify({ ...knowledge, id: e.id, name: e.name, equipment: e.gear, description: knowledge.description || e.instructions || e.name }, null, 2))} />

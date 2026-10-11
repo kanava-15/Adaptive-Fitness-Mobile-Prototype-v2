@@ -80,6 +80,109 @@ test('catalog updates, removal and custom edits never rewrite pinned routines or
   assert.equal(D.snapshotFromRoutine(r, [archived]).items[0].name, a.name);
   D.useCatalogRelease(release);
 });
+
+test('saved shared activities toggle once, preserve an offline fallback, and can be unsaved independently', () => {
+  const shared = release.activities.find(item => item.type === 'exercise')!;
+  const state = { ...D.emptyState(), customExercises: [
+    D.userAuthoredDefinition({ ...D.BUILTIN[0], id: 'my_saved_custom', name: 'My local activity', custom: true, verified: false }, undefined, date),
+  ] };
+  const saved = D.setSavedActivity(state, shared.id, true, release, date);
+  assert.equal(saved.savedActivities.length, 1);
+  assert.equal(saved.savedActivities[0].id, shared.id);
+  assert.equal(saved.savedActivities[0].fallback.id, shared.id);
+  assert.equal('defaultReps' in saved.savedActivities[0].fallback, false);
+  assert.equal(D.setSavedActivity(saved, shared.id, true, release).savedActivities.length, 1, 'repeated saves are idempotent');
+  assert.equal(D.setSavedActivity(saved, 'not-shared', true, release).savedActivities.length, 1);
+
+  const unavailable = D.resolveSavedActivity(saved.savedActivities[0], { ...release, activities: release.activities.filter(item => item.id !== shared.id) });
+  assert.equal(unavailable.unavailable, true);
+  assert.deepEqual(unavailable.activity, shared);
+  const archivedRelease = { ...release, activities: release.activities.map(item => item.id === shared.id ? { ...item, archived: true } : item) };
+  const archived = D.resolveSavedActivity(saved.savedActivities[0], archivedRelease);
+  assert.equal(archived.unavailable, false);
+  assert.equal(archived.activity.archived, true);
+
+  const unsaved = D.setSavedActivity(saved, shared.id, false, release);
+  assert.deepEqual(unsaved.savedActivities, []);
+  assert.equal(unsaved.customExercises.length, 1, 'unsaving does not archive or delete custom definitions');
+});
+
+test('saved activity collection survives export/import and old valid v3 data migrates empty', () => {
+  const shared = release.activities.find(item => item.type === 'sequence')!;
+  const bookmark = D.makeSavedActivity(shared.id, shared, release.sequences.filter(m => m.sequenceId === shared.id), date);
+  const state = { ...D.emptyState(), savedActivities: [bookmark] };
+  const exported = D.checkImport(JSON.stringify(D.exportPayload(state)));
+  assert.ok(exported.ok, exported.ok ? '' : exported.error);
+  if (exported.ok) assert.deepEqual(exported.data.savedActivities, [bookmark]);
+  const restarted = D.loadStored(JSON.stringify(state), null);
+  assert.equal(restarted.error, null);
+  assert.deepEqual(restarted.state?.savedActivities, [bookmark]);
+
+  const oldRoutine = routine([D.makeItem(D.BUILTIN[0])]);
+  const oldSnapshot = D.snapshotFromRoutine(oldRoutine, []);
+  const oldSchedule = D.scheduleEntry(oldSnapshot, date, [6]);
+  const oldActive = D.startActive({ date, occurrenceKey: null, snapshot: oldSnapshot, items: [...oldSnapshot.items] }, 100);
+  const oldHistory = D.completeActive(oldActive, { difficulty: null }, 2000);
+  const old = {
+    ...D.emptyState(), schemaVersion: 3 as const,
+    routines: [oldRoutine], schedule: [oldSchedule], active: oldActive, completions: [oldHistory],
+    presets: { legacy: { defaultReps: 0.5 } },
+  };
+  delete (old as Partial<typeof old>).savedActivities;
+  const oldStored = JSON.parse(JSON.stringify(old));
+  const oldLoad = D.loadStored(JSON.stringify(old), null);
+  assert.equal(oldLoad.error, null);
+  assert.deepEqual(oldLoad.state?.savedActivities, []);
+  assert.deepEqual(oldLoad.state?.routines, oldStored.routines);
+  assert.deepEqual(oldLoad.state?.schedule, oldStored.schedule);
+  assert.deepEqual(oldLoad.state?.active, oldStored.active);
+  assert.deepEqual(oldLoad.state?.completions, oldStored.completions);
+  assert.deepEqual(oldLoad.state?.presets, oldStored.presets);
+  const oldImport = D.checkImport(JSON.stringify(D.exportPayload(old)));
+  assert.ok(oldImport.ok, oldImport.ok ? '' : oldImport.error);
+  if (oldImport.ok) assert.deepEqual(oldImport.data.savedActivities, []);
+
+  const damaged = { ...state, savedActivities: [{ ...bookmark, fallback: { ...shared, dosage: 10 } }] };
+  const protectedLoad = D.loadStored(JSON.stringify(damaged), null);
+  assert.equal(protectedLoad.state, null);
+  assert.match(protectedLoad.error ?? '', /failed a check/);
+});
+
+test('custom measurement presets support reps, duration, breaths and distance without putting dose in knowledge', () => {
+  const scenarios = [
+    { tracking: 'reps' as const, metric: 'reps' as const, preset: { defaultReps: 12 }, amount: { reps: 12 } },
+    { tracking: 'time' as const, metric: 'duration' as const, preset: { defaultSeconds: 45 }, amount: { seconds: 45 } },
+    { tracking: 'breaths' as const, metric: 'breaths' as const, preset: { defaultBreaths: 8 }, amount: { breaths: 8 } },
+    { tracking: 'distance' as const, metric: 'distance' as const, preset: { defaultDistance: 2.5, defaultDistanceUnit: 'km' as const }, amount: { distance: 2.5, distanceUnit: 'km' as const } },
+  ];
+  for (const scenario of scenarios) {
+    const customKnowledge = activity({
+      id: `custom-${scenario.tracking}`, authorship: 'user', reviewStatus: 'unreviewed',
+      supportedMetrics: [scenario.metric],
+      distanceUnits: scenario.metric === 'distance' ? ['m', 'km', 'mi', 'yd'] : [],
+      loadUnits: [],
+      adaptation: { eligible: false, loadingKnown: false, loadedJoints: [], rationale: 'User-authored and unreviewed.' },
+    });
+    const definition = D.activityDef(customKnowledge);
+    const item = { ...D.makeItem(definition, 'kg', scenario.preset), confirmed: true };
+    assert.deepEqual(
+      Object.fromEntries(['reps', 'seconds', 'breaths', 'distance', 'distanceUnit'].filter(key => item[key as keyof typeof item] != null).map(key => [key, item[key as keyof typeof item]])),
+      scenario.amount,
+    );
+    assert.deepEqual(D.validateItem(item, scenario.tracking), [], `${scenario.tracking} target is valid`);
+    assert.equal(D.knowledgeOf(definition).supportedMetrics[0], scenario.metric);
+    assert.equal('reps' in D.knowledgeOf(definition), false);
+  }
+
+  const oldCustom = { ...D.BUILTIN[0], id: 'metric-change', custom: true, verified: false, tracking: 'reps' as const };
+  const existingItem = { ...D.makeItem(oldCustom, 'kg', { defaultReps: 10 }), definition: undefined };
+  const changed = { ...oldCustom, tracking: 'distance' as const };
+  assert.equal(D.routineMismatches({ items: [existingItem] }, [changed]).length, 1);
+  const reconciled = D.reconcileItem(existingItem, changed);
+  assert.equal(reconciled.reps, undefined);
+  assert.equal(reconciled.distance, undefined);
+  assert.equal(reconciled.confirmed, false, 'non-prescribable targets require explicit entry');
+});
 test('all measurements and units round trip routines, exceptions, running sessions and completion actuals', () => {
   const a = activity({ id: 'cx_metrics', authorship: 'user', reviewStatus: 'unreviewed',
     adaptation: { eligible: false, loadingKnown: false, loadedJoints: [], rationale: 'User authored.' } });

@@ -252,12 +252,29 @@ export interface StateV2 {
   completions: CompletionV2[];
   active: ActiveV2 | null;
   customExercises: ExerciseDef[];
+  savedActivities: SavedActivity[];
   routines: Routine[];
   schedule: ScheduleEntry[];
-  presets: Record<string, { defaultReps?: number; defaultSeconds?: number }>;
+  presets: Record<string, PersonalPreset>;
 }
 
-export const emptyState = (): StateV2 => ({ schemaVersion: 3, profile: DEFAULT_PROFILE, plan: null, events: [], completions: [], active: null, customExercises: [], routines: [], schedule: [], presets: {} });
+export interface PersonalPreset {
+  defaultReps?: number;
+  defaultSeconds?: number;
+  defaultBreaths?: number;
+  defaultDistance?: number;
+  defaultDistanceUnit?: DistanceUnit;
+}
+
+/** Local bookmark keyed by the shared catalog ID; fallback contains knowledge only, never a dose. */
+export interface SavedActivity {
+  id: string;
+  fallback: Activity;
+  sequenceMembers?: SequenceMembership[];
+  savedAt: string;
+}
+
+export const emptyState = (): StateV2 => ({ schemaVersion: 3, profile: DEFAULT_PROFILE, plan: null, events: [], completions: [], active: null, customExercises: [], savedActivities: [], routines: [], schedule: [], presets: {} });
 
 // ---------------------------------------------------------------- built-in library
 const T0 = '2024-01-01T00:00:00.000Z';
@@ -486,9 +503,13 @@ export function targetMismatch(it: Pick<RoutineItem, 'reps' | 'seconds' | 'breat
 /** Explicit reconciliation: drop the stale target and adopt the exercise's current default. */
 export function reconcileItem(it: RoutineItem, d: ExerciseDef): RoutineItem {
   if (!targetMismatch(it, d.tracking)) return it;
-  return d.tracking === 'reps' ? { ...it, reps: it.reps || d.defaultReps || 8, seconds: undefined } : { ...it, seconds: it.seconds || d.defaultSeconds || 30, reps: undefined };
+  const target = { reps: undefined, seconds: undefined, breaths: undefined, distance: undefined };
+  if (d.tracking === 'reps') return { ...it, ...target, reps: d.defaultReps || 8, confirmed: true };
+  if (d.tracking === 'time') return { ...it, ...target, seconds: d.defaultSeconds || 30, confirmed: true };
+  if (d.tracking === 'breaths') return { ...it, ...target, confirmed: false };
+  return { ...it, ...target, distanceUnit: d.activity?.distanceUnits[0] ?? 'm', confirmed: false };
 }
-/** Items whose targets need reconciling after a custom move changed reps <-> time. */
+/** Items whose targets need reconciling after an activity's measurement changes. */
 export function routineMismatches(r: Pick<Routine, 'items'>, custom: ExerciseDef[]): { key: string; name: string; tracking: Tracking }[] {
   return r.items.flatMap((it) => {
     if (it.definition) return [];
@@ -501,7 +522,7 @@ export function snapshotErrors(items: SnapItem[]): string[] {
   if (!items.length) return ['There are no activities to do.'];
   return items.flatMap((i) => {
     if (i.definition?.activity && targetMismatch(i, i.tracking)) return [`${i.name}: enter a supported target in the routine or date editor first.`];
-    if (targetMismatch(i, i.tracking)) return [`${i.name} now tracks ${i.tracking === 'reps' ? 'reps' : 'time'}, but its target is still in ${i.tracking === 'reps' ? 'seconds' : 'reps'}. Open the routine and confirm a new target first.`];
+    if (targetMismatch(i, i.tracking)) return [`${i.name} now tracks ${trackingLabel(i.tracking)}, but its target needs reconciling. Open the routine and confirm a new target first.`];
     return validateItem(itemOf(i), i.tracking).map((e) => `${i.name}: ${e}`);
   });
 }
@@ -529,6 +550,9 @@ export function makeItem(d: ExerciseDef, unit: Unit = 'kg', preset?: StateV2['pr
     sets: d.discipline === 'yoga' || d.discipline === 'mobility' ? 1 : 3,
     reps: d.tracking === 'reps' ? dose.defaultReps : undefined,
     seconds: d.tracking === 'time' ? dose.defaultSeconds : undefined,
+    breaths: d.tracking === 'breaths' ? dose.defaultBreaths : undefined,
+    distance: d.tracking === 'distance' ? dose.defaultDistance : undefined,
+    distanceUnit: d.tracking === 'distance' ? dose.defaultDistanceUnit ?? d.activity?.distanceUnits[0] ?? 'm' : undefined,
     restSec: d.discipline === 'strength' ? 60 : 20,
     unit,
     perSide: d.perSide,
@@ -538,6 +562,34 @@ export function makeItem(d: ExerciseDef, unit: Unit = 'kg', preset?: StateV2['pr
     definition: dosageFree(d),
     confirmed: d.activity ? false : undefined,
   };
+}
+
+function trackingLabel(tracking: Tracking): string {
+  return tracking;
+}
+
+export function makeSavedActivity(id: string, a: Activity, sequenceMembers?: SequenceMembership[], savedAt = new Date().toISOString()): SavedActivity {
+  return {
+    id,
+    fallback: activitySchema.parse(JSON.parse(JSON.stringify(a))),
+    ...(sequenceMembers ? { sequenceMembers: sequenceMembers.map(m => membershipSchema.parse(m)) } : {}),
+    savedAt,
+  };
+}
+
+export function setSavedActivity(state: StateV2, id: string, saved: boolean, release: CatalogRelease, savedAt?: string): StateV2 {
+  const exists = state.savedActivities.some(item => item.id === id);
+  if (!saved) return exists ? { ...state, savedActivities: state.savedActivities.filter(item => item.id !== id) } : state;
+  if (exists) return state;
+  const activity = release.activities.find(item => item.id === id);
+  if (!activity || activity.authorship !== 'maintainer') return state;
+  const members = release.sequences.filter(item => item.sequenceId === id);
+  return { ...state, savedActivities: [...state.savedActivities, makeSavedActivity(id, activity, members, savedAt)] };
+}
+
+export function resolveSavedActivity(saved: SavedActivity, release: CatalogRelease): { activity: Activity; unavailable: boolean } {
+  const current = release.activities.find(activity => activity.id === saved.id);
+  return { activity: current ?? saved.fallback, unavailable: !current };
 }
 
 export function snapItem(it: RoutineItem, d: ExerciseDef): SnapItem {
@@ -1068,8 +1120,12 @@ export function migrateV2(raw: AnyRec): StateV2 {
     return d ? { ...it, definition: dosageFree(d) } : it;
   }) }));
   s.schemaVersion = 3;
+  s.savedActivities = Array.isArray(s.savedActivities) ? s.savedActivities : [];
   s.presets = presets;
   return freezeSaved(s);
+}
+function normalizeCurrentState(s: StateV2): StateV2 {
+  return freezeSaved({ ...s, savedActivities: s.savedActivities ?? [], presets: s.presets ?? {} });
 }
 function freezeSaved(s: StateV2): StateV2 {
   s.schedule.forEach(e => { deepFreeze(e.snapshot); Object.values(e.exceptions).forEach(x => x.snapshot && deepFreeze(x.snapshot)); });
@@ -1192,7 +1248,21 @@ const actualZ = z.object({ reps: z.number().min(0).optional(), seconds: z.number
 const logZ = z.object({ itemKey: z.string(), exerciseId: z.string(), name: z.string(), kind: tracking, planned: z.object({ sets: z.number(), reps: z.number().optional(), seconds: z.number().optional(), ...measurements, load: z.number().optional(), unit: unitZ.optional(), perSide: z.boolean().optional(), restSec: z.number().optional() }).strict(), sets: z.array(actualZ), done: z.boolean(), skipped: z.boolean(), added: z.boolean() });
 const completionZ = z.object({ id: z.string(), date: dateZ, occurrenceKey: z.string().nullable(), sessionId: z.string(), title: z.string(), plannedMinutes: z.number(), estimateSec: z.number().nullable(), startedAt: z.string(), finishedAt: z.string(), activeSeconds: z.number().min(0), snapshot: snapshotZ.nullable(), executedItems: z.array(snapItemZ).optional(), exercises: z.array(logZ), finishedEarly: z.boolean(), stoppedForPain: z.boolean(), difficulty: z.number().min(1).max(5).nullable(), adaptation: z.array(z.string()) });
 const activeZ = z.object({ id: z.string(), date: dateZ, occurrenceKey: z.string().nullable(), title: z.string(), plannedMinutes: z.number(), estimateSec: z.number().nullable(), snapshot: snapshotZ, items: z.array(snapItemZ), startedAt: z.string(), clock: clockZ, exClock: clockZ, index: z.number().int().min(0), logs: z.array(logZ), adaptation: z.array(z.string()) }).nullable();
-export const stateZ = z.object({ schemaVersion: z.union([z.literal(2), z.literal(3)]), profile: profileZ, plan: planZ, events: z.array(eventZ), completions: z.array(completionZ), active: activeZ, customExercises: z.array(exerciseZ), routines: z.array(routineZ), schedule: z.array(entryZ), presets: z.record(z.string(), z.object({ defaultReps: z.number().optional(), defaultSeconds: z.number().optional() }).strict()).optional() }).strict();
+const personalPresetZ = z.object({
+  // Keep legacy fields as permissive as the previous v3 backup contract.
+  defaultReps: z.number().optional(),
+  defaultSeconds: z.number().optional(),
+  defaultBreaths: z.number().int().min(1).max(10000).optional(),
+  defaultDistance: z.number().positive().max(1000000).optional(),
+  defaultDistanceUnit: z.enum(['m', 'km', 'mi', 'yd']).optional(),
+}).strict();
+const savedActivityZ = z.object({
+  id: z.string().min(1),
+  fallback: activitySchema,
+  sequenceMembers: z.array(membershipSchema).max(500).optional(),
+  savedAt: z.string().min(1),
+}).strict();
+export const stateZ = z.object({ schemaVersion: z.union([z.literal(2), z.literal(3)]), profile: profileZ, plan: planZ, events: z.array(eventZ), completions: z.array(completionZ), active: activeZ, customExercises: z.array(exerciseZ), savedActivities: z.array(savedActivityZ).optional(), routines: z.array(routineZ), schedule: z.array(entryZ), presets: z.record(z.string(), personalPresetZ).optional() }).strict();
 
 /** Cross-entity checks zod can't express. Returns the first problem, or null. */
 export function integrityError(s: StateV2): string | null {
@@ -1207,8 +1277,13 @@ export function integrityError(s: StateV2): string | null {
   };
   const builtinIds = new Set(allExercises([]).map((b) => b.id));
   for (const e of s.customExercises) if (builtinIds.has(e.id)) return `Custom exercise “${e.name}” reuses a built-in id.`;
-  const d = dup(s.customExercises.map((e) => e.id), 'exercise') ?? dup(s.routines.map((r) => r.id), 'routine') ?? dup(s.schedule.map((e) => e.id), 'schedule') ?? dup(s.completions.map((c) => c.id), 'session');
+  const d = dup(s.customExercises.map((e) => e.id), 'exercise') ?? dup(s.savedActivities.map((a) => a.id), 'saved activity') ?? dup(s.routines.map((r) => r.id), 'routine') ?? dup(s.schedule.map((e) => e.id), 'schedule') ?? dup(s.completions.map((c) => c.id), 'session');
   if (d) return d;
+  for (const saved of s.savedActivities) {
+    if (saved.fallback.id !== saved.id) return `Saved activity “${saved.id}” has a mismatched fallback identity.`;
+    if (saved.fallback.authorship !== 'maintainer') return `Saved activity “${saved.fallback.name}” is not a shared catalog entry.`;
+    if (saved.sequenceMembers?.some((m, n) => m.sequenceId !== saved.id || m.order !== n)) return `Saved sequence “${saved.fallback.name}” has invalid membership order.`;
+  }
   for (const d of s.customExercises) {
     if (!d.custom || d.verified || d.activity?.authorship !== 'user' || d.activity?.reviewStatus !== 'unreviewed') return `Custom activity “${d.name}” must be user-authored and unreviewed.`;
     if (d.defaultReps != null || d.defaultSeconds != null) return `Move dosage for “${d.name}” into personal presets.`;
@@ -1287,7 +1362,7 @@ export function checkImport(raw: string): ImportCheck {
       const i = r.error.issues[0];
       return { ok: false, error: `Tempo export is damaged (${i.path.join('.') || 'root'}: ${i.message}). Nothing was changed.` };
     }
-    data = ver === 2 ? migrateV2(r.data as unknown as AnyRec) : freezeSaved(r.data as StateV2);
+    data = ver === 2 ? migrateV2(r.data as unknown as AnyRec) : normalizeCurrentState(r.data as StateV2);
     from = ver;
   } else {
     return { ok: false, error: `Unsupported export version (${String(ver)}). This app reads versions 1, 2 and 3. Nothing was changed.` };
@@ -1314,7 +1389,7 @@ export function loadStored(v2raw: string | null, v1raw: string | null): { state:
     try {
       const r = stateZ.safeParse(JSON.parse(v2raw));
       if (r.success) {
-        const state = r.data.schemaVersion === 2 ? migrateV2(r.data as unknown as AnyRec) : freezeSaved(r.data as StateV2);
+        const state = r.data.schemaVersion === 2 ? migrateV2(r.data as unknown as AnyRec) : normalizeCurrentState(r.data as StateV2);
         const bad = integrityError(state);
         if (bad) return { state: null, migrated: false, error: `${bad} A backup copy was kept.` };
         return { state: withoutAutomaticSuggestions(state), migrated: r.data.schemaVersion === 2, error: null };

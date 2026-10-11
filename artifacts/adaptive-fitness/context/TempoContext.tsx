@@ -11,6 +11,7 @@ import {
   ExerciseDef,
   ImportCheck,
   Occurrence,
+  PersonalPreset,
   Routine,
   Scope,
   SnapItem,
@@ -46,6 +47,7 @@ import {
   actualErrors,
   activityDef,
   userAuthoredDefinition,
+  setSavedActivity as updateSavedActivity,
 } from '@/lib/domain';
 import { Profile, Region, dateKey, newId } from '@/lib/engine';
 
@@ -69,7 +71,8 @@ interface Ctx {
   todayOccurrences: Occurrence[];
   saveProfile: (p: Profile) => void;
   // library
-  saveExercise: (e: ExerciseDef) => void;
+  saveExercise: (e: ExerciseDef, preset?: PersonalPreset) => void;
+  setActivitySaved: (id: string, saved: boolean) => void;
   setExerciseArchived: (id: string, archived: boolean) => void;
   // routines
   saveRoutine: (r: Routine) => Routine;
@@ -173,14 +176,17 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ---- library
-  const saveExercise = useCallback((e: ExerciseDef) => {
+  const saveExercise = useCallback((e: ExerciseDef, preset?: PersonalPreset) => {
     setState((s) => {
       const prev = s.customExercises.find((x) => x.id === e.id);
       const now = new Date().toISOString();
       const next = userAuthoredDefinition(e, prev, now);
-      return { ...s, presets: { ...s.presets, [e.id]: { defaultReps: e.defaultReps, defaultSeconds: e.defaultSeconds } }, customExercises: prev ? s.customExercises.map((x) => (x.id === e.id ? next : x)) : [...s.customExercises, next] };
+      return { ...s, presets: { ...s.presets, [e.id]: preset ?? { defaultReps: e.defaultReps, defaultSeconds: e.defaultSeconds } }, customExercises: prev ? s.customExercises.map((x) => (x.id === e.id ? next : x)) : [...s.customExercises, next] };
     });
   }, []);
+  const setActivitySaved = useCallback((id: string, saved: boolean) => {
+    setState(s => updateSavedActivity(s, id, saved, catalog.state.release));
+  }, [catalog.state.release]);
   const setExerciseArchived = useCallback((id: string, archived: boolean) => {
     setState((s) => ({ ...s, customExercises: s.customExercises.map((x) => (x.id === id ? { ...x, archived, activity: x.activity ? { ...x.activity, archived } : undefined, updatedAt: new Date().toISOString() } : x)) }));
   }, []);
@@ -314,7 +320,7 @@ export function TempoProvider({ children }: { children: React.ReactNode }) {
 
   const value: Ctx = {
     ready, loadError, dismissLoadError, state, todayKey, todayOccurrences, saveProfile,
-    saveExercise, setExerciseArchived, saveRoutine, duplicateRoutine, setRoutineArchived, futureUses, pushRoutineToFuture,
+    saveExercise, setActivitySaved, setExerciseArchived, saveRoutine, duplicateRoutine, setRoutineArchived, futureUses, pushRoutineToFuture,
     addSchedule, occurrence, occurrencesIn, moveOcc, deleteOcc, editOcc, previewAdapt,
     startSnapshot, addExerciseToActive, toggleClock, toggleExClock, resetExClock, logSet, undoSet, markDone, skipExercise, goTo, finish, discardActive,
     exportJson, checkImport, replaceAll, resetAll,

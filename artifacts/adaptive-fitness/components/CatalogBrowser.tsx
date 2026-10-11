@@ -9,10 +9,12 @@ import { router } from 'expo-router';
 import { LibraryFilters, useLibraryFilter } from './planner';
 import { searchLibrary } from '@/lib/domain';
 import { ActivityDetails } from './ActivityDetails';
+import { useTempo } from '@/context/TempoContext';
 
 export function CatalogBrowser() {
   const c = useColors();
   const { repository, state } = useCatalog();
+  const tempo = useTempo();
   const [cars, setCars] = useState(false);
   const [visible, setVisible] = useState(30);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -52,6 +54,13 @@ export function CatalogBrowser() {
             const related = state.release.activities.find(activity => activity.id === id);
             if (related) setSelectedId(related.id);
           }} />
+          <Button
+            testID={`catalog-save-${selected.id}`}
+            variant="soft"
+            icon="bookmark"
+            label={tempo.state.savedActivities.some(item => item.id === selected.id) ? 'Saved · remove bookmark' : 'Save to Saved Activities'}
+            onPress={() => tempo.setActivitySaved(selected.id, !tempo.state.savedActivities.some(item => item.id === selected.id))}
+          />
           {!selected.archived ? <>
             <Button testID="catalog-add-routine" label={selected.type === 'sequence' ? 'Expand into routine — enter targets' : 'Add to new routine'} onPress={() => router.push({ pathname: '/builder', params: { activityId: selected.id } })} />
             {selected.type !== 'sequence' ? <Button testID="catalog-schedule" variant="soft" label="Schedule — enter target" onPress={() => router.push({ pathname: '/schedule-add', params: { exerciseId: selected.id } })} /> : null}
