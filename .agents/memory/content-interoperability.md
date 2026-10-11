@@ -14,3 +14,9 @@ The user requested complete planning in simple, clear words before further impor
 **Why:** The user explicitly corrected the planning approach: “do a complete planning before jumping to code.”
 
 **How to apply:** Explain the content-exchange experience and distinguish current behavior from proposed changes before implementation; settle open behavior decisions rather than hiding them inside technical tasks.
+
+Editor exports should include the current visible draft, including unsaved changes, without saving it or changing the stored original.
+
+**Why:** The user explicitly selected “Current draft, without saving” rather than exporting only the last saved version.
+
+**How to apply:** Preserve editor draft state through export and cancellation, and distinguish editor exports from saved-version exports. Never require an implicit save just to share current content.
