@@ -4,3 +4,4 @@
 - [TypeScript dependency cache](typescript-cache.md) — After pnpm relinking, compare a fresh check before changing UI to address stale React declaration errors.
 - [Personal workout integrity](personal-workout-integrity.md) — Pin personal knowledge, retain both legacy defaults, and preserve established device-authored identifiers.
 - [Expo preview transport](expo-preview-transport.md) — For pre-download failures, compare HTTP/HTTPS and test a secure Expo link; native confirmation remains necessary.
+- [Post-merge timing](post-merge-timing.md) — An up-to-date pnpm install can still exceed 20 seconds; budget for the full setup sequence.
