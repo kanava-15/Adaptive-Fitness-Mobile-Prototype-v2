@@ -1,96 +1,99 @@
-import React, { useState } from 'react';
+import { Feather } from '@expo/vector-icons';
+import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { Activity } from '@workspace/activity-catalog';
+import { router } from 'expo-router';
+import type { Discipline } from '@/lib/domain';
+import { DISCIPLINES, DISCIPLINE_LABEL } from '@/lib/domain';
 import { useCatalog } from '@/context/CatalogContext';
 import { useColors } from '@/hooks/useColors';
 import { fonts } from '@/constants/colors';
-import { Button, Card, Chip } from '@/components/ui';
-import { router } from 'expo-router';
-import { LibraryFilters, useLibraryFilter } from './planner';
-import { searchLibrary } from '@/lib/domain';
-import { ActivityDetails } from './ActivityDetails';
-import { useTempo } from '@/context/TempoContext';
+import { Button, Card } from '@/components/ui';
 
 export function CatalogBrowser() {
   const c = useColors();
   const { repository, state } = useCatalog();
-  const tempo = useTempo();
-  const [cars, setCars] = useState(false);
-  const [visible, setVisible] = useState(30);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const f = useLibraryFilter();
-  const list = searchLibrary([], { ...f.filter, source: 'shared' }).map(e => e.activity)
-    .filter((a): a is Activity => !!a && (!cars || a.family === 'cars'));
-  const selected = state.release.activities.find(a => a.id === selectedId);
-  const body = (text: string, key?: string | number) => <Text key={key} style={[s.body, { color: c.foreground }]}>{text}</Text>;
+  const openSearch = (discipline?: Discipline) => router.push({
+    pathname: '/catalog-search',
+    params: discipline ? { discipline } : {},
+  });
   return (
-    <View style={{ marginTop: 16, gap: 12 }}>
-      <Card style={{ gap: 5 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Text style={[s.heading, { color: c.foreground, flex: 1 }]}>Activity catalog</Text>
+    <View style={styles.container}>
+      <Card style={{ gap: 8 }}>
+        <View style={styles.statusHeading}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.title, { color: c.foreground }]}>Discover</Text>
+            <Text style={[styles.status, { color: c.mutedForeground }]}>
+              {state.release.activities.length} shared activities · {state.release.contentVersion}
+            </Text>
+          </View>
           <Button
             testID="catalog-refresh"
             compact
             variant="soft"
             icon="refresh-cw"
-              label={state.checking ? 'Checking…' : 'Refresh'}
+            label={state.checking ? 'Checking…' : 'Refresh'}
             disabled={state.checking}
             onPress={() => void repository.refresh()}
           />
         </View>
-        {body(`${state.release.activities.length} entries · ${state.release.contentVersion}`)}
-        <Text testID="catalog-freshness" style={[s.meta, { color: c.mutedForeground }]}>
+        <Text testID="catalog-freshness" style={[styles.status, { color: c.mutedForeground }]}>
           {state.origin === 'bundled' ? 'Bundled offline copy' : state.origin === 'cache' ? 'Saved offline copy' : 'Downloaded and validated copy'}
-          {' · '}{state.checkedAt ? `Last checked ${new Date(state.checkedAt).toLocaleString()}` : 'Not checked for updates'}
+          {' · '}{state.checkedAt ? `Checked ${new Date(state.checkedAt).toLocaleString()}` : 'Not checked for updates'}
         </Text>
-        {state.error ? <Text testID="catalog-error" accessibilityRole="alert" numberOfLines={2} style={[s.meta, { color: c.foreground }]}>{state.error}</Text> : null}
+        {state.error ? <Text testID="catalog-error" accessibilityRole="alert" numberOfLines={2} style={[styles.status, { color: c.destructive }]}>{state.error}</Text> : null}
       </Card>
-      {selected ? (
-        <Card style={{ gap: 8 }}>
-          <Button compact variant="soft" label="Back to Explore" onPress={() => setSelectedId(null)} />
-          <Text testID="catalog-detail-name" style={[s.title, { color: c.foreground }]}>{selected.name}</Text>
-          {body(`${selected.discipline} · ${selected.type} · ${selected.family} · difficulty: ${selected.difficulty}`)}
-          <ActivityDetails activity={selected} release={state.release} onOpenRelated={(id) => {
-            const related = state.release.activities.find(activity => activity.id === id);
-            if (related) setSelectedId(related.id);
-          }} />
-          <Button
-            testID={`catalog-save-${selected.id}`}
-            variant="soft"
-            icon="bookmark"
-            label={tempo.state.savedActivities.some(item => item.id === selected.id) ? 'Saved · remove bookmark' : 'Save to Saved Activities'}
-            onPress={() => tempo.setActivitySaved(selected.id, !tempo.state.savedActivities.some(item => item.id === selected.id))}
-          />
-          {!selected.archived ? <>
-            <Button testID="catalog-add-routine" label={selected.type === 'sequence' ? 'Expand into routine — enter targets' : 'Add to new routine'} onPress={() => router.push({ pathname: '/builder', params: { activityId: selected.id } })} />
-            {selected.type !== 'sequence' ? <Button testID="catalog-schedule" variant="soft" label="Schedule — enter target" onPress={() => router.push({ pathname: '/schedule-add', params: { exerciseId: selected.id } })} /> : null}
-          </> : null}
-        </Card>
-      ) : (
-        <>
-          <LibraryFilters f={f} searchTestID="catalog-search" />
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <Text testID="catalog-results" style={[s.meta, { color: c.mutedForeground, flex: 1 }]}>{list.length} results · {cars ? 'CARs only' : 'all types'}</Text>
-            <Chip testID="catalog-cars" active={cars} icon="filter" label={cars ? 'CARs only' : 'Show CARs only'} onPress={() => { setCars(!cars); setVisible(30); }} />
-          </View>
-          {!list.length ? body('No catalog entries match. Try a shorter name or clear the category.') : null}
-          {list.slice(0, visible).map(a => (
-            <Pressable key={a.id} testID={`catalog-${a.id}`} accessibilityRole="button" onPress={() => setSelectedId(a.id)}>
-              <Card style={{ gap: 4 }}>
-                <Text style={[s.heading, { color: c.foreground }]}>{a.name}</Text>
-                <Text style={[s.meta, { color: c.mutedForeground }]}>{a.englishName !== a.name ? `${a.englishName} · ` : ''}Shared catalog · {a.reviewStatus}{a.instructionNeeded ? ' · instruction required' : ''}</Text>
-              </Card>
-            </Pressable>
-          ))}
-          {list.length > visible ? <Button compact variant="soft" label={`Show more (${list.length - visible} remaining)`} onPress={() => setVisible(n => n + 30)} /> : null}
-        </>
-      )}
+
+      <Pressable
+        testID="catalog-open-search"
+        accessibilityRole="button"
+        onPress={() => openSearch()}
+        style={({ pressed }) => [styles.searchEntry, { backgroundColor: c.card, borderColor: c.border, opacity: pressed ? 0.88 : 1 }]}
+      >
+        <Feather name="search" size={20} color={c.primary} />
+        <Text style={[styles.searchLabel, { color: c.mutedForeground }]}>Search the shared catalog</Text>
+        <Feather name="arrow-up-right" size={18} color={c.mutedForeground} />
+      </Pressable>
+
+      <View style={styles.gridHeader}>
+        <Text style={[styles.sectionTitle, { color: c.foreground }]}>Browse by discipline</Text>
+        <Text style={[styles.status, { color: c.mutedForeground }]}>Start with a category</Text>
+      </View>
+      <View style={styles.grid}>
+        {DISCIPLINES.map((discipline, index) => (
+          <Pressable
+            key={discipline}
+            testID={`catalog-discipline-${discipline}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Browse ${DISCIPLINE_LABEL[discipline]}`}
+            onPress={() => openSearch(discipline)}
+            style={({ pressed }) => [
+              styles.disciplineTile,
+              { backgroundColor: index % 2 ? c.secondary : c.accent, borderColor: index % 2 ? c.border : c.accent, opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <Feather name={icons[discipline]} size={21} color={index % 2 ? c.secondaryForeground : c.accentForeground} />
+            <Text style={[styles.tileName, { color: index % 2 ? c.secondaryForeground : c.accentForeground }]}>{DISCIPLINE_LABEL[discipline]}</Text>
+            <Feather name="arrow-up-right" size={16} color={index % 2 ? c.secondaryForeground : c.accentForeground} />
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
-const s = StyleSheet.create({
-  title: { fontFamily: fonts.display, fontSize: 22 },
-  heading: { fontFamily: fonts.bodySemi, fontSize: 15 },
-  body: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21 },
-  meta: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18 },
+
+const icons: Record<Discipline, keyof typeof Feather.glyphMap> = {
+  yoga: 'wind', mobility: 'rotate-cw', strength: 'activity', conditioning: 'zap',
+};
+const styles = StyleSheet.create({
+  container: { marginTop: 16, gap: 14 },
+  statusHeading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  title: { fontFamily: fonts.display, fontSize: 22, letterSpacing: -0.4 },
+  sectionTitle: { fontFamily: fonts.display, fontSize: 19 },
+  status: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17 },
+  searchEntry: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, borderRadius: 17, borderWidth: 1 },
+  searchLabel: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 15 },
+  gridHeader: { gap: 2, marginTop: 2 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  disciplineTile: { width: '48%', minHeight: 112, borderRadius: 19, borderWidth: 1, padding: 15, justifyContent: 'space-between' },
+  tileName: { fontFamily: fonts.bodySemi, fontSize: 15, lineHeight: 20 },
 });

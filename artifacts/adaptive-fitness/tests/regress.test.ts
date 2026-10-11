@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as D from '../lib/domain';
+import starter from '@workspace/activity-catalog/starter';
+import { equipmentSchema, type Activity, type CatalogRelease } from '@workspace/activity-catalog';
 import { numericValue } from '../lib/numeric-input';
 
 test('numeric edits are available without blur and stepping uses the edited number', () => {
@@ -55,4 +57,61 @@ test('low energy never lengthens a short hold', () => {
   assert.equal(D.lowEnergySeconds(5), 5);
   assert.equal(D.lowEnergySeconds(10), 10);
   assert.equal(D.lowEnergySeconds(60), 45);
+});
+
+test('catalog search matches diacritic names and aliases without crossing its supplied source', () => {
+  const source = (starter as { release: CatalogRelease }).release.activities;
+  const seed = source.find(activity => activity.id === 'yoga-adho-mukha-svanasana')!;
+  const entry: Activity = {
+    ...seed,
+    id: 'search-diacritic-fixture',
+    name: 'Vīrabhadrāsana',
+    englishName: 'Warrior Pose',
+    sanskritName: 'Vīrabhadrāsana',
+    aliases: ['Virabhadrasana'],
+  };
+  const filters = D.emptyCatalogSearchFilters();
+  assert.deepEqual(D.searchCatalog([entry], filters, 'virabhadrasana').map(item => item.id), [entry.id]);
+  assert.deepEqual(D.searchCatalog([entry], filters, 'VīRABHADRĀSANA').map(item => item.id), [entry.id]);
+  assert.deepEqual(D.searchCatalog([entry], filters, 'warrior pose').map(item => item.id), [entry.id]);
+  assert.deepEqual(D.searchCatalog(source, filters, entry.id), [], 'shared search only searches supplied catalog entries and names');
+  assert.equal(D.normalizeCatalogSearchText('  Vīrabhadrāsana  '), 'virabhadrasana');
+});
+
+test('catalog facets use OR within disciplines, AND across facets, and count the full catalog', () => {
+  const activities = (starter as { release: CatalogRelease }).release.activities;
+  const filters = { ...D.emptyCatalogSearchFilters(), discipline: ['yoga', 'mobility'] as Activity['discipline'][] };
+  const combined = D.searchCatalog(activities, filters);
+  assert.ok(combined.length > 0);
+  assert.ok(combined.every(item => item.discipline === 'yoga' || item.discipline === 'mobility'));
+  const narrowed = D.searchCatalog(activities, { ...filters, family: 'cars' });
+  assert.ok(narrowed.length > 0 && narrowed.every(item => item.family === 'cars'));
+  assert.equal(
+    D.catalogFacetCount(activities, D.emptyCatalogSearchFilters(), 'discipline', 'yoga'),
+    D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), discipline: ['yoga'] }).length,
+  );
+  assert.ok(D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), type: 'sequence' }).length > 0);
+  assert.ok(D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), type: 'practice-element' }).length > 0);
+  assert.ok(D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), family: 'cars' }).every(item => item.type !== ('cars' as Activity['type'])));
+  assert.ok(D.searchCatalog(activities, { ...D.emptyCatalogSearchFilters(), metric: 'distance' }).length > 0);
+  assert.ok(equipmentSchema.options.some(equipment =>
+    D.catalogFacetCount(activities, { ...D.emptyCatalogSearchFilters(), discipline: ['yoga'] }, 'equipment', equipment) === 0,
+  ), 'choices with no prospective results can be identified from metadata');
+});
+
+test('unknown catalog equipment and difficulty never become no-equipment or beginner matches', () => {
+  const source = (starter as { release: CatalogRelease }).release.activities;
+  const seed = source.find(activity => activity.id === 'yoga-adho-mukha-svanasana')!;
+  const unknown: Activity = {
+    ...seed,
+    id: 'unknown-metadata-fixture',
+    equipment: null,
+    difficulty: 'unknown',
+    primaryMuscles: null,
+    secondaryMuscles: null,
+    joints: null,
+  };
+  assert.equal(D.searchCatalog([unknown], { ...D.emptyCatalogSearchFilters(), equipment: 'none' }).length, 0);
+  assert.equal(D.searchCatalog([unknown], { ...D.emptyCatalogSearchFilters(), difficulty: 'beginner' }).length, 0);
+  assert.deepEqual(D.catalogAreas(unknown), []);
 });

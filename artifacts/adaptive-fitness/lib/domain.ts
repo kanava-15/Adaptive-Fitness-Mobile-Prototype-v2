@@ -444,6 +444,96 @@ export function searchLibrary(custom: ExerciseDef[], f: LibraryFilter): Exercise
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** Catalog search filters are intentionally separate from legacy picker filters. */
+export interface CatalogSearchFilters {
+  discipline: Activity['discipline'][];
+  equipment: Gear | null;
+  difficulty: Activity['difficulty'] | null;
+  area: Area | null;
+  muscle: string | null;
+  joint: string | null;
+  type: Activity['type'] | null;
+  family: Activity['family'] | null;
+  metric: Activity['supportedMetrics'][number] | null;
+}
+
+export const emptyCatalogSearchFilters = (): CatalogSearchFilters => ({
+  discipline: [], equipment: null, difficulty: null, area: null, muscle: null,
+  joint: null, type: null, family: null, metric: null,
+});
+
+/** Normalize user input and catalog text equally, including accents and Sanskrit diacritics. */
+export function normalizeCatalogSearchText(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+/** Infer broad areas only from explicit joint/muscle metadata; null metadata stays unknown. */
+export function catalogAreas(activity: Activity): Area[] {
+  const areas = new Set<Area>();
+  for (const joint of activity.joints ?? []) {
+    if (['cervical-spine', 'thoracic-spine', 'lumbar-spine'].includes(joint)) areas.add('spine');
+    if (['scapula', 'shoulder'].includes(joint)) areas.add('shoulders');
+    if (joint === 'wrist') areas.add('wrists');
+    if (joint === 'knee') areas.add('knees');
+    if (joint === 'ankle' || joint === 'toes') areas.add('ankles');
+    if (joint === 'hip') areas.add('hips');
+  }
+  for (const muscle of [...(activity.primaryMuscles ?? []), ...(activity.secondaryMuscles ?? [])]) {
+    if (['quadriceps', 'hamstrings', 'glutes', 'calves', 'tibialis', 'adductors', 'abductors', 'feet'].includes(muscle)) areas.add('lower');
+    if (['abdominals', 'obliques', 'spinal-erectors'].includes(muscle)) areas.add('core');
+    if (['lats', 'trapezius', 'rhomboids', 'pectorals', 'deltoids', 'rotator-cuff', 'biceps', 'triceps', 'forearms', 'neck'].includes(muscle)) areas.add('upper');
+  }
+  if (areas.size > 1) areas.add('full');
+  return [...areas];
+}
+
+export function catalogActivityMatches(activity: Activity, filters: CatalogSearchFilters, query = ''): boolean {
+  if (activity.archived) return false;
+  if (filters.discipline.length && !filters.discipline.includes(activity.discipline)) return false;
+  if (filters.equipment && !activity.equipment?.includes(filters.equipment)) return false;
+  if (filters.difficulty && activity.difficulty !== filters.difficulty) return false;
+  if (filters.area && !catalogAreas(activity).includes(filters.area)) return false;
+  if (filters.muscle && ![...(activity.primaryMuscles ?? []), ...(activity.secondaryMuscles ?? [])].includes(filters.muscle as never)) return false;
+  if (filters.joint && !activity.joints?.includes(filters.joint as never)) return false;
+  if (filters.type && activity.type !== filters.type) return false;
+  if (filters.family && activity.family !== filters.family) return false;
+  if (filters.metric && !activity.supportedMetrics.includes(filters.metric)) return false;
+  const q = normalizeCatalogSearchText(query);
+  if (q) {
+    const names = [activity.name, activity.englishName, activity.sanskritName, ...activity.aliases]
+      .filter((name): name is string => !!name)
+      .map(normalizeCatalogSearchText);
+    if (!names.some(name => name.includes(q))) return false;
+  }
+  return true;
+}
+
+export function searchCatalog(activities: Activity[], filters: CatalogSearchFilters, query = ''): Activity[] {
+  return activities.filter(activity => catalogActivityMatches(activity, filters, query))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export type CatalogFilterFacet = keyof CatalogSearchFilters;
+/** Count a prospective option against the full local catalog while preserving other facets. */
+export function catalogFacetCount(
+  activities: Activity[],
+  filters: CatalogSearchFilters,
+  facet: CatalogFilterFacet,
+  value: string,
+  query = '',
+): number {
+  const candidate = { ...filters, [facet]: facet === 'discipline' ? [] : null } as CatalogSearchFilters;
+  if (facet === 'discipline') {
+    const selected = filters.discipline.includes(value as Activity['discipline'])
+      ? filters.discipline
+      : [...filters.discipline, value as Activity['discipline']];
+    candidate.discipline = selected;
+  } else {
+    (candidate as unknown as Record<string, unknown>)[facet] = value;
+  }
+  return searchCatalog(activities, candidate, query).length;
+}
+
 // ---------------------------------------------------------------- validation
 export function validateExercise(e: Pick<ExerciseDef, 'name' | 'tracking' | 'defaultReps' | 'defaultSeconds' | 'areas' | 'gear'>): string[] {
   const errs: string[] = [];
