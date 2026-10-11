@@ -1,0 +1,54 @@
+Moving the catalog search into a dedicated top app bar icon is an excellent product decision. It cleans up the primary interface, conforms to standard mobile navigation patterns, and shifts the mindset from "querying a database" to "browsing a library."
+
+By removing the segmented navigation bar (Explore | My activities | Routines), you are changing the Library from a "tabbed folder" into a **Dashboard**.
+
+To surface the choices clearly without tabs, you must use **vertical hierarchy**. Users visit this tab for two distinct reasons: to *execute* something they already planned (high frequency/intent), or to *discover* something new (lower frequency/exploratory).
+
+Here is a wireframe layout for the new Library landing page that surfaces Routines, Custom Activities, and the Shared Catalog naturally.
+
+### The App Bar (Sticky Top)
+
+* **Left:** Large Title "Library"
+* **Right:** Search Icon (🔍). *Tapping this opens a full-screen modal dedicated entirely to searching the shared catalog with the progressive filters we discussed.*
+
+### Section 1: Your Routines (High Priority)
+
+Routines are the user's actionable plans. Because they are the most frequently used asset, they should dominate the top of the screen.
+
+* **Header:** "Routines"
+* **Layout:** A horizontally scrolling carousel of Cards.
+* **Card 1 (Action):** A distinct, dashed-outline card saying **"+ New Routine"**.
+* **Card 2+ (Content):** The user's saved routines (e.g., "Tuesday Gym", "Morning Flow"). Displays the name, estimated time, and a quick "Play" or "View" button.
+
+
+* *UX Rationale:* The user immediately sees their plans and has a one-tap entry point to create a new one, entirely replacing the need for a "Routines" tab.
+
+### Section 2: Your Activities (Building Blocks)
+
+Since users can create custom activities that don't exist in your shared catalog, they need a dedicated place to view and manage their personal inventory.
+
+* **Header:** "My Activities"
+* **Layout:** A compact row of two wide rectangular buttons or tiles side-by-side.
+* **Tile 1:** **"Saved & Custom"** (Shows a count, e.g., "14 Activities"). Tapping this opens a list view of activities they have created or favorited.
+* **Tile 2:** **"+ Create Custom"**. Tapping this opens the activity creation form.
+
+
+* *UX Rationale:* This cleanly replaces the "My activities" tab. It gives them immediate access to their custom library and the creation tool without taking up too much vertical screen real estate.
+
+### Section 3: Explore the Catalog (Discovery)
+
+This replaces the old "Explore" tab. Since the raw search is now hidden behind the magnifying glass icon in the top app bar, this section is your curated storefront to draw users into the shared catalog.
+
+* **Header:** "Discover"
+* **Layout:** A vertical stack of curated entry points.
+* **Goal-Based Pills:** A horizontally scrolling row of small chips for quick filtering (e.g., "Joint Health", "Hypertrophy", "Active Recovery"). Tapping one opens the Search screen with that filter pre-applied.
+* **Curated Carousels:** One or two horizontal rows featuring specific catalog highlights. (e.g., "Intro to Kinstretch CARs" or "No-Equipment Flows").
+* **Browse by Discipline:** A 2x2 or 3x2 grid of visually appealing square tiles (Yoga, Strength, Calisthenics, Mobility). Tapping a tile drops them into the Search screen pre-filtered by that discipline.
+
+
+
+### Why This Layout Works
+
+1. **Eliminates Navigation Ambiguity:** Users don't have to guess what lives under which tab. Their actionable routines are at the top, their custom building blocks are in the middle, and the platform's shared content sits at the bottom.
+2. **Scalability:** If a user is a beginner and has zero routines and zero custom activities, Sections 1 and 2 simply show clean empty states with "Create" buttons, pushing the "Explore the Catalog" section higher up to encourage discovery.
+3. **Encourages Routine Building:** By placing "+ New Routine" and "+ Create Custom" right on the main dashboard, you reduce the friction of planning, making the app feel like a personalized tool rather than just a read-only encyclopedia.
