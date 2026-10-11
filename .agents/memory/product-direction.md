@@ -37,3 +37,9 @@ The Material-style catalog revamp is for the separate search/Explore activities 
 **Why:** The user explicitly corrected an interpretation that included the main Library in this revamp.
 
 **How to apply:** Keep the main Library landing page and app-wide navigation outside this revamp's scope; implement the catalog changes incrementally on the separate Explore destination.
+
+The user chose Svasthic as the app's new name, replacing Tempo.
+
+**Why:** The user stated, “we shall name it Svasthic.”
+
+**How to apply:** Use Svasthic for future user-visible branding. Clarify whether the rebrand includes visual identity before changing screens or assets; preserve internal storage identifiers and do not choose a permanent Android application ID without confirmation.
