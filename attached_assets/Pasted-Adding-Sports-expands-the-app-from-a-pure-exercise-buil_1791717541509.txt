@@ -1,0 +1,49 @@
+Adding "Sports" expands the app from a pure exercise builder into a comprehensive physical activity tracker. Since your foundation already supports diverse disciplines like yoga, strength, and mobility, adding sports is a natural fit, provided the data model accommodates how sports are measured and displayed.
+
+Here is how to seamlessly integrate sports into your current product architecture:
+
+**1. Adapting the Data Taxonomy**
+Your current data model uses filters like Discipline, Equipment, Target Muscle, and Joint. Sports operate differently because they are typically full-body, dynamic, and duration-based.
+
+* **Discipline Addition:** Add "Sports" alongside your existing categories (Yoga, Strength, Mobility).
+
+
+* **Measurement Override:** Unlike atomic exercises measured in sets, reps, or hold durations, sports must default to **Time/Duration**, Distance, or RPE (Rate of Perceived Exertion).
+
+
+* **Hiding Anatomy Tags:** Use progressive disclosure to hide "Muscle" and "Joint" filters when the "Sports" discipline is selected. Playing basketball engages the whole body; forcing users to tag specific joints creates unnecessary friction and data clutter.
+
+
+
+**2. Updating the Catalog Card UI**
+Using the four-zone card architecture previously established for Svasthic, a sport card requires specific modifications to remain scannable:
+
+* **Zone 2 (Header):** Clear titles like "Tennis (Singles)", "Bouldering", or "Swimming".
+* **Zone 3 (Strategic Tagging):** Replace anatomical chips with format or intensity chips (e.g., ⏱️ Duration, 🫀 High Intensity, 🏃 Cardio) to prevent "chip soup".
+
+
+* **Zone 4 (Action Bar):** The standard "+ Add" button remains, dropping the sport into the staging area or routine builder.
+
+
+
+**3. Routine Assembly (The "Sandwich" Use Case)**
+Treating a sport as an "Activity" unlocks a powerful routine-building feature. Users can build structured routines where the sport is the central event, bookended by your existing database of sequences.
+
+* *Example Routine:* "Pre-Match Joint Mobility" (15 min sequence) + "Tennis" (90 min sport) + "Post-Match Static Stretch" (10 min sequence).
+
+
+
+**4. Library Dashboard & Discovery**
+In your newly redesigned Library dashboard:
+
+* **Browse Grid:** Add a dedicated "Sports" or "Cardio" tile to your discipline browse grid, ensuring it sits clearly alongside Yoga and Strength.
+
+
+* **Search Behavior:** Ensure the global search indexes sports accurately, allowing users to type "Running" alongside searches for "Kettlebell Goblet Squat".
+
+
+
+**MVP Execution Strategy**
+You do not need to build an exhaustive database of every sport globally for V1. Seed the shared catalog with 10-20 of the most common sports (Running, Cycling, Swimming, Football, Basketball, Tennis, Golf, etc.). Rely on the prominent **"+ Create Custom"** tile to empower users to add niche sports (like Padel or Fencing) to their personal inventory.
+
+When a user adds a sport to their routine, should the platform default to a blank duration for them to fill in (e.g., entering "45 minutes" manually), or should the catalog offer pre-set blocks (e.g., "30-Min Run", "60-Min Run")?
