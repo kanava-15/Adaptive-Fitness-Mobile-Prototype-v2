@@ -20,3 +20,9 @@ Editor exports should include the current visible draft, including unsaved chang
 **Why:** The user explicitly selected “Current draft, without saving” rather than exporting only the last saved version.
 
 **How to apply:** Preserve editor draft state through export and cancellation, and distinguish editor exports from saved-version exports. Never require an implicit save just to share current content.
+
+For this content-exchange rollout, the user requires testable phases/tasks/subtasks and verification after each task. Only after their approval may the current task be marked complete or the next task begin.
+
+**Why:** The user explicitly requested approval-gated, incremental delivery rather than a single all-at-once implementation.
+
+**How to apply:** Activate one phase at a time. After changes and checks, report what changed and provide a short verification checklist, then wait for explicit approval; passing automated checks or dependency readiness is not approval.
