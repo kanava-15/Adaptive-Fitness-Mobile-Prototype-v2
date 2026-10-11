@@ -721,6 +721,12 @@ export function snapshotFromRoutine(r: Routine, custom: ExerciseDef[], now = new
   });
   return mkSnap(r.name, { kind: 'routine', routineId: r.id, routineVersion: r.version }, items, now);
 }
+/** Build a complete, validated launch snapshot; never launch only the resolvable subset. */
+export function routineLaunchSnapshot(r: Routine, custom: ExerciseDef[], now = new Date().toISOString()): { snapshot: Snapshot; errors: string[] } {
+  const snapshot = snapshotFromRoutine(r, custom, now);
+  const missing = snapshot.items.length === r.items.length ? [] : ['An activity is missing from the library. Edit the routine before starting.'];
+  return { snapshot, errors: [...missing, ...snapshotErrors(snapshot.items)] };
+}
 export function snapshotFromExercise(d: ExerciseDef, now = new Date().toISOString()): Snapshot {
   return mkSnap(d.name, { kind: 'exercise', exerciseId: d.id }, [snapItem(makeItem(d), d)], now);
 }

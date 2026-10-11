@@ -44,6 +44,65 @@ test('tracking change reps->time blocks scheduling/start until reconciled', () =
   assert.ok(D.snapshotErrors([]).length > 0);
 });
 
+test('routine launch requires confirmed targets and refuses partial snapshots with missing activities', () => {
+  const shared = (starter as { release: CatalogRelease }).release.activities.find(activity =>
+    activity.type !== 'sequence' && activity.supportedMetrics.length > 0,
+  )!;
+  const definition = D.activityDef(shared);
+  const blank = { ...D.makeItem(definition), reps: undefined, seconds: undefined, breaths: undefined, distance: undefined, distanceUnit: undefined };
+  const target: D.RoutineItem = {
+    ...blank,
+    ...(definition.tracking === 'reps' ? { reps: 8 } : {}),
+    ...(definition.tracking === 'time' ? { seconds: 30 } : {}),
+    ...(definition.tracking === 'breaths' ? { breaths: 5 } : {}),
+    ...(definition.tracking === 'distance' ? { distance: 10, distanceUnit: shared.distanceUnits[0] } : {}),
+    confirmed: true,
+  };
+  const routine: D.Routine = {
+    id: 'routine-launch-test',
+    name: 'Personal routine',
+    notes: '',
+    items: [target],
+    version: 1,
+    archived: false,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+
+  const valid = D.routineLaunchSnapshot(routine, [], '2026-01-02T00:00:00.000Z');
+  assert.deepEqual(valid.errors, []);
+  assert.equal(valid.snapshot.source.kind, 'routine');
+  assert.equal(valid.snapshot.source.kind === 'routine' ? valid.snapshot.source.routineId : null, routine.id);
+  const run = D.startActive({
+    date: '2026-10-11',
+    occurrenceKey: null,
+    snapshot: valid.snapshot,
+    items: valid.snapshot.items,
+  }, Date.parse('2026-10-11T09:00:00.000Z'));
+  const restored = D.loadStored(JSON.stringify({ ...D.emptyState(), routines: [routine], schedule: [], active: run }), null).state!;
+  assert.equal(restored.active?.occurrenceKey, null, 'routine starts remain unscheduled after restore');
+  assert.equal(restored.schedule.length, 0, 'starting now does not create a schedule entry');
+  const completion = D.completeActive(restored.active!, { difficulty: 3 }, Date.parse('2026-10-11T09:05:00.000Z'));
+  const afterFinish = D.loadStored(JSON.stringify({
+    ...restored,
+    active: null,
+    completions: [...restored.completions, completion],
+  }), null).state!;
+  assert.equal(afterFinish.active, null);
+  assert.equal(afterFinish.completions[0].occurrenceKey, null);
+  assert.equal(afterFinish.schedule.length, 0);
+
+  const unconfirmed = D.routineLaunchSnapshot({ ...routine, items: [{ ...target, confirmed: false }] }, []);
+  assert.ok(unconfirmed.errors.some(error => /confirm an explicit target/.test(error)));
+
+  const partial = D.routineLaunchSnapshot({
+    ...routine,
+    items: [target, { ...target, key: 'missing-item', exerciseId: 'missing-library-activity', definition: undefined }],
+  }, []);
+  assert.equal(partial.snapshot.items.length, 1);
+  assert.ok(partial.errors.some(error => /missing from the library/.test(error)), 'a routine with one missing item must not launch only its available subset');
+});
+
 test('logged sets carry load and unit together; resume restores both', () => {
   const item = { tracking: 'time' as const, loadable: true, load: 10, unit: 'kg' as const };
   assert.deepEqual(D.nextLoad(item, []), { load: 10, unit: 'kg' });
