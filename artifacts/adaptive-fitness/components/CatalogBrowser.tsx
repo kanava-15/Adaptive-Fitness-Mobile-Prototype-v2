@@ -4,7 +4,7 @@ import type { Activity } from '@workspace/activity-catalog';
 import { useCatalog } from '@/context/CatalogContext';
 import { useColors } from '@/hooks/useColors';
 import { fonts } from '@/constants/colors';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, Chip } from '@/components/ui';
 import { router } from 'expo-router';
 import { LibraryFilters, useLibraryFilter } from './planner';
 import { searchLibrary } from '@/lib/domain';
@@ -23,16 +23,25 @@ export function CatalogBrowser() {
   const body = (text: string, key?: string | number) => <Text key={key} style={[s.body, { color: c.foreground }]}>{text}</Text>;
   return (
     <View style={{ marginTop: 16, gap: 12 }}>
-      <Card style={{ gap: 8 }}>
-        <Text style={[s.heading, { color: c.foreground }]}>Source-checked activity catalog</Text>
+      <Card style={{ gap: 5 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Text style={[s.heading, { color: c.foreground, flex: 1 }]}>Activity catalog</Text>
+          <Button
+            testID="catalog-refresh"
+            compact
+            variant="soft"
+            icon="refresh-cw"
+              label={state.checking ? 'Checking…' : 'Refresh'}
+            disabled={state.checking}
+            onPress={() => void repository.refresh()}
+          />
+        </View>
         {body(`${state.release.activities.length} entries · ${state.release.contentVersion}`)}
         <Text testID="catalog-freshness" style={[s.meta, { color: c.mutedForeground }]}>
           {state.origin === 'bundled' ? 'Bundled offline copy' : state.origin === 'cache' ? 'Saved offline copy' : 'Downloaded and validated copy'}
-          {' · '}{state.checkedAt ? `Last checked ${new Date(state.checkedAt).toLocaleString()}` : 'Not yet checked for updates'}
+          {' · '}{state.checkedAt ? `Last checked ${new Date(state.checkedAt).toLocaleString()}` : 'Not checked for updates'}
         </Text>
-        <Text style={[s.meta, { color: c.mutedForeground }]}>Content reference checks, not medical certification. Add activities with explicit personal targets. Updates never rewrite saved routines, sessions or history.</Text>
-        {state.error ? <Text testID="catalog-error" accessibilityRole="alert" style={[s.meta, { color: c.foreground }]}>{state.error}</Text> : null}
-        <Button testID="catalog-refresh" compact variant="soft" icon="refresh-cw" label={state.checking ? 'Checking…' : 'Check for updates'} disabled={state.checking} onPress={() => void repository.refresh()} />
+        {state.error ? <Text testID="catalog-error" accessibilityRole="alert" numberOfLines={2} style={[s.meta, { color: c.foreground }]}>{state.error}</Text> : null}
       </Card>
       {selected ? (
         <Card style={{ gap: 8 }}>
@@ -51,8 +60,10 @@ export function CatalogBrowser() {
       ) : (
         <>
           <LibraryFilters f={f} searchTestID="catalog-search" />
-          <Button testID="catalog-cars" compact variant={cars ? 'primary' : 'soft'} label="CARs only" onPress={() => { setCars(!cars); setVisible(30); }} />
-          <Text testID="catalog-results" style={[s.meta, { color: c.mutedForeground }]}>{list.length} shared entries · tap to read details and sources</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <Text testID="catalog-results" style={[s.meta, { color: c.mutedForeground, flex: 1 }]}>{list.length} results · {cars ? 'CARs only' : 'all types'}</Text>
+            <Chip testID="catalog-cars" active={cars} icon="filter" label={cars ? 'CARs only' : 'Show CARs only'} onPress={() => { setCars(!cars); setVisible(30); }} />
+          </View>
           {!list.length ? body('No catalog entries match. Try a shorter name or clear the category.') : null}
           {list.slice(0, visible).map(a => (
             <Pressable key={a.id} testID={`catalog-${a.id}`} accessibilityRole="button" onPress={() => setSelectedId(a.id)}>
