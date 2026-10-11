@@ -85,7 +85,7 @@ export function ActivityDetails({ activity: a, release, onOpenRelated }: { activ
           </Pressable>
           <Text style={{ color: c.mutedForeground, fontFamily: fonts.body, fontSize: 12 }}>{source ? `Reference source: ${source.title}` : `Source unavailable: ${reference.sourceId}`}</Text>
         </View>;
-      }) : <Text style={{ color: c.mutedForeground, fontFamily: fonts.body, lineHeight: 21 }}>None attached. Future entries will link to reviewed resources; Tempo does not host or play media.</Text>}
+      }) : <Text style={{ color: c.mutedForeground, fontFamily: fonts.body, lineHeight: 21 }}>None attached. Future entries will link to reviewed resources; Svasthic does not host or play media.</Text>}
     </View>
     {linkError ? <Text accessibilityRole="alert" style={{ color: c.destructive, fontFamily: fonts.body, marginTop: 8 }}>{linkError}</Text> : null}
   </View>;

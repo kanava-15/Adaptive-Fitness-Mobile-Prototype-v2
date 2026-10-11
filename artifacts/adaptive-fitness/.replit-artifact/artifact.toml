@@ -1,6 +1,6 @@
 kind = "mobile"
 previewPath = "/"
-title = "Tempo — Adaptive Fitness"
+title = "Svasthic"
 description = "Local-first adaptive fitness for busy professionals, with quick workout adjustments, timers, rep logging, and preserved history."
 version = "1.0.0"
 id = "artifacts/adaptive-fitness"

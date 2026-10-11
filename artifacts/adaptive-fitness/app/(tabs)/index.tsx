@@ -46,7 +46,7 @@ export default function Today() {
       {!state.profile.setupDone ? (
         <Pressable testID="setup-banner" onPress={() => router.push('/setup')} style={[s.banner, { backgroundColor: c.secondary }]}>
           <Feather name="sliders" size={18} color={c.secondaryForeground} />
-          <Text style={[s.bannerText, { color: c.secondaryForeground }]}>Optional: tell Tempo your equipment and limits. Four taps.</Text>
+          <Text style={[s.bannerText, { color: c.secondaryForeground }]}>Optional: tell Svasthic your equipment and limits. Four taps.</Text>
           <Feather name="chevron-right" size={18} color={c.secondaryForeground} />
         </Pressable>
       ) : null}
@@ -91,7 +91,7 @@ export default function Today() {
         <View style={[s.ring2, { borderColor: c.done }]} />
         <Text style={[s.heroEyebrow, { color: c.accentMuted }]}>YOUR DAY</Text>
         <Text style={[s.heroTitle, { color: c.accentForeground }]}>Nothing scheduled today</Text>
-        <Text style={[s.note, { color: c.accentMuted }]}>Choose a routine or an activity when you want to work out. Tempo won’t add sessions for you.</Text>
+        <Text style={[s.note, { color: c.accentMuted }]}>Choose a routine or an activity when you want to work out. Svasthic won’t add sessions for you.</Text>
         <Button testID="today-schedule" label="Schedule a workout" icon="plus" onPress={() => router.push({ pathname: '/schedule-add', params: { date: todayKey } })} style={{ marginTop: 18 }} />
         <Button testID="today-routines" label="Browse routines & activities" variant="ghost" onPress={() => router.push('/library')} style={{ marginTop: 8 }} />
       </View>

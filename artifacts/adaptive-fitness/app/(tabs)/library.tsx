@@ -78,7 +78,7 @@ export default function LibraryScreen() {
       <View style={[s.appBar, { paddingTop: top + 8, borderBottomColor: c.border, backgroundColor: c.background }]}>
         {tab !== 'home' ? <IconButton testID="library-back" icon="arrow-left" label="Back to Library" onPress={() => router.replace('/library')} /> : null}
         <View style={{ flex: 1 }}>
-          <Text style={[s.appBarEyebrow, { color: c.mutedForeground }]}>{tab === 'home' ? 'Tempo' : 'Library'}</Text>
+          <Text style={[s.appBarEyebrow, { color: c.mutedForeground }]}>{tab === 'home' ? 'Svasthic' : 'Library'}</Text>
           <Text accessibilityRole="header" style={[s.appBarTitle, title.length > 12 && s.longAppBarTitle, tab === 'routines' && s.compactAppBarTitle, { color: c.foreground }]} numberOfLines={2}>{title}</Text>
         </View>
         <Button

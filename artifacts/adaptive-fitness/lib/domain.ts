@@ -1073,7 +1073,7 @@ export function adapt(snapshot: Snapshot, p: Profile, custom: ExerciseDef[], opt
       }
       continue;
     }
-    if ((it.custom && it.stresses.length === 0) || it.definition?.activity?.adaptation.loadingKnown === false) notes.push(`${it.name}: loading or suitability is not established. Tempo cannot fully check your exclusions. Kept as you chose it; not automatically adjusted.`);
+    if ((it.custom && it.stresses.length === 0) || it.definition?.activity?.adaptation.loadingKnown === false) notes.push(`${it.name}: loading or suitability is not established. Svasthic cannot fully check your exclusions. Kept as you chose it; not automatically adjusted.`);
     const missing = it.gear.filter((g) => !gear.has(g));
     if (missing.length) {
       notes.push(`${it.name} needs ${missing.join(', ')}, which isn’t in your setup. Kept because you chose it.`);
@@ -1111,7 +1111,7 @@ export function adapt(snapshot: Snapshot, p: Profile, custom: ExerciseDef[], opt
 
   // 3. Time window: reduce sets first (optional, then normal, then must), drop optional moves last.
   let infeasible: string | null = null;
-  if (opts.targetMinutes && !Number.isFinite(estimateSec(items))) infeasible = 'Duration unknown: breath pace or travel speed was not supplied. Tempo cannot claim this fits your time window.';
+  if (opts.targetMinutes && !Number.isFinite(estimateSec(items))) infeasible = 'Duration unknown: breath pace or travel speed was not supplied. Svasthic cannot claim this fits your time window.';
   if (opts.targetMinutes) {
     const budget = opts.targetMinutes * 60;
     const tiers: Priority[] = ['optional', 'normal', 'must'];
@@ -1141,7 +1141,7 @@ export function adapt(snapshot: Snapshot, p: Profile, custom: ExerciseDef[], opt
     const after = estimateSec(items);
     if (after > budget) {
       const fixed = items.filter((i) => !adjustable(i)).length;
-      infeasible = `This still needs about ${minutesLabel(after)} with rest, over your ${opts.targetMinutes}-minute window. ${fixed ? `${fixed} locked or rehabilitation activit${fixed === 1 ? 'y' : 'ies'} can’t be trimmed automatically. ` : ''}Tempo won’t claim it fits: unlock something, pick a longer window, or start anyway.`;
+      infeasible = `This still needs about ${minutesLabel(after)} with rest, over your ${opts.targetMinutes}-minute window. ${fixed ? `${fixed} locked or rehabilitation activit${fixed === 1 ? 'y' : 'ies'} can’t be trimmed automatically. ` : ''}Svasthic won’t claim it fits: unlock something, pick a longer window, or start anyway.`;
     }
   }
 
@@ -1558,7 +1558,7 @@ export function checkImport(raw: string): ImportCheck {
   } catch {
     return { ok: false, error: 'That isn’t valid JSON. Paste the full export, including the outer braces.' };
   }
-  if (!isObj(parsed) || parsed.app !== 'tempo' || !isObj(parsed.data)) return { ok: false, error: 'Not a Tempo export: expected {"app": "tempo", "data": {...}}.' };
+  if (!isObj(parsed) || parsed.app !== 'tempo' || !isObj(parsed.data)) return { ok: false, error: 'Not a compatible Svasthic backup. Svasthic and earlier Tempo backups use {"app": "tempo", "data": {...}}.' };
   const ver = parsed.data.schemaVersion;
   let data: StateV2;
   let from: 1 | 2 | 3 | 4;
@@ -1566,7 +1566,7 @@ export function checkImport(raw: string): ImportCheck {
     const r = v1StateZ.safeParse(parsed.data);
     if (!r.success) {
       const i = r.error.issues[0];
-      return { ok: false, error: `Old Tempo export is damaged (${i.path.join('.') || 'root'}: ${i.message}). Nothing was changed.` };
+      return { ok: false, error: `Older Tempo backup is damaged (${i.path.join('.') || 'root'}: ${i.message}). Nothing was changed.` };
     }
     data = migrateV2(migrateV1(r.data as unknown as AnyRec) as unknown as AnyRec);
     from = 1;
@@ -1574,7 +1574,7 @@ export function checkImport(raw: string): ImportCheck {
     const r = stateZ.safeParse(parsed.data);
     if (!r.success) {
       const i = r.error.issues[0];
-      return { ok: false, error: `Tempo export is damaged (${i.path.join('.') || 'root'}: ${i.message}). Nothing was changed.` };
+      return { ok: false, error: `Svasthic/Tempo backup is damaged (${i.path.join('.') || 'root'}: ${i.message}). Nothing was changed.` };
     }
     data = ver === 2 ? migrateV2(r.data as unknown as AnyRec) : normalizeCurrentState(r.data as StateV2);
     from = ver;

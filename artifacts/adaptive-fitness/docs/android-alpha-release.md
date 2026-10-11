@@ -1,6 +1,6 @@
-# Tempo Android alpha handoff
+# Svasthic Android alpha handoff
 
-This is a preparation checklist, not approval to submit or publish Tempo.
+This is a preparation checklist, not approval to submit or publish Svasthic.
 
 ## Hold points
 
@@ -11,7 +11,7 @@ This is a preparation checklist, not approval to submit or publish Tempo.
 
 ## App identity and assets
 
-- Current app name: `Tempo — Adaptive Fitness` (25 characters); Expo version: `1.0.0`.
+- Current app name: `Svasthic`; Expo version: `1.0.0`.
 - Android `versionCode` starts at `1`; increment it for every uploaded bundle.
 - `assets/images/icon.png` is the 1024 × 1024 launcher artwork.
 - `assets/images/play-store-icon.png` is a 512 × 512, RGBA Play listing icon under the 1 MiB limit.
@@ -20,15 +20,15 @@ This is a preparation checklist, not approval to submit or publish Tempo.
 
 ## Permissions and data flow reviewed
 
-- Tempo's workout state uses device-local AsyncStorage: profile preferences (including excluded body areas), routines, schedules, active sessions, and completed-workout history.
-- The app requests the read-only shared exercise catalog from Tempo's API. Its catalog endpoints do not accept workout/profile data and expose no account or write endpoints.
+- Svasthic's workout state uses device-local AsyncStorage: profile preferences (including excluded body areas), routines, schedules, active sessions, and completed-workout history.
+- The app requests the read-only shared exercise catalog from Svasthic's API. Its catalog endpoints do not accept workout/profile data and expose no account or write endpoints.
 - The bundled starter catalog is available immediately offline. A previously cached catalog remains available offline after it has been downloaded.
-- The preview API was checked on 11 October 2026 and its catalog manifest returned 503 because the connected database did not contain `catalog_releases`. This does not prevent bundled/offline browsing. Before relying on network catalog refresh in an Android alpha, initialize the API database through the project's approved development flow and verify that a reviewed release is active; recheck the intended API environment before building.
-- Export is user-initiated and opens Android's share sheet with a JSON backup. The destination app selected by the user receives that backup. Deleting Tempo removes local data unless the user exported a copy.
+- The development preview API returned 503 when its database had no active reviewed release; the catalog tables existed, but the generated seed file was stale. On 11 October 2026, the current reviewed release (`tempo-catalog-2026-10-11-2`, 427 activities) was loaded into development and the manifest, release, and search endpoints returned 200. Production is a separate environment and remains unverified; confirm its intended API and active release before an Android alpha build.
+- Export is user-initiated and opens Android's share sheet with a JSON backup. The destination app selected by the user receives that backup. Deleting Svasthic removes local data unless the user exported a copy.
 - The Settings disclosure now distinguishes catalog requests from personal workout data and warns about sharing an export.
 - `expo-image-picker` and `expo-location` were unused. They have been removed, and their camera, media-storage, microphone, and location permissions are blocked in static Expo config. Haptics still need vibration; catalog refresh needs Internet access.
 - Before a closed test or production release, publish a public privacy-policy URL, link it in the app and Play listing, and complete the Data safety form using the actual shipped SDKs and any hosting/provider practices. Recheck the share-sheet disclosure when answering data-sharing questions.
-- Complete Play Console's health-app declaration and the app-content questionnaires (target audience, ads, content rating, and app access). Tempo is general fitness/wellness software, not a medical device or medical advice.
+- Complete Play Console's health-app declaration and the app-content questionnaires (target audience, ads, content rating, and app access). Svasthic is general fitness/wellness software, not a medical device or medical advice.
 
 ## Checks and Android device verification
 

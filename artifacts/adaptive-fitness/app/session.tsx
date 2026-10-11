@@ -83,7 +83,7 @@ export default function SessionScreen() {
         <Text style={[s.doneTitle, { color: c.accentForeground }]}>{result.stoppedForPain ? 'Stopped. Good call.' : result.finishedEarly ? 'Saved. Partial still counts.' : 'Session done.'}</Text>
         <Text style={[s.doneBody, { color: c.accentMuted }]}>
           {result.stoppedForPain
-            ? 'If pain persists or was sharp, check in with a qualified health professional before your next session. Tempo is not medical advice.'
+            ? 'If pain persists or was sharp, check in with a qualified health professional before your next session. Svasthic is not medical advice.'
             : 'Logged exactly what you did. Tomorrow’s plan will take it into account, conservatively.'}
         </Text>
         <View style={s.doneStats}>
@@ -134,7 +134,7 @@ export default function SessionScreen() {
         <Text style={[s.finTitle, { color: c.foreground }]}>{isPain ? 'Stop and save' : doneCount === a.logs.length ? 'Nice. Wrap it up.' : 'Finish early?'}</Text>
         {isPain ? (
           <>
-            <Text style={[s.body, { color: c.mutedForeground }]}>Stop if anything hurts — sharp, pinching, or worsening pain is a signal, not a challenge. Where did you feel it? Tempo can leave out movements that load that area from now on.</Text>
+            <Text style={[s.body, { color: c.mutedForeground }]}>Stop if anything hurts — sharp, pinching, or worsening pain is a signal, not a challenge. Where did you feel it? Svasthic can leave out movements that load that area from now on.</Text>
             <View style={s.wrap}>
               {(Object.keys(REGION_LABEL) as Region[]).map((r) => (
                 <Chip key={r} label={REGION_LABEL[r]} active={painRegion === r} onPress={() => setPainRegion(painRegion === r ? null : r)} />

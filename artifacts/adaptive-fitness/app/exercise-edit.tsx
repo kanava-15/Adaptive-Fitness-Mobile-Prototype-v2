@@ -251,10 +251,10 @@ export default function ExerciseEdit() {
         <ToggleRow label="Track load" hint="Shows a weight field (kg or lb) when logging." value={e.loadable} onChange={(loadable) => set({ loadable })} />
 
         <Text style={[s.label, { color: c.foreground }]}>Areas it loads</Text>
-        <Text style={[s.hint, { color: c.mutedForeground, marginBottom: 8 }]}>Used to respect your exclusions. Leave empty if unsure; Tempo will tell you it couldn’t check.</Text>
+        <Text style={[s.hint, { color: c.mutedForeground, marginBottom: 8 }]}>Used to respect your exclusions. Leave empty if unsure; Svasthic will tell you it couldn’t check.</Text>
         <View style={s.wrap}>{REGIONS.map((r) => <Chip key={r} label={REGION_LABEL[r]} active={e.stresses.includes(r)} onPress={() => set({ stresses: toggle(e.stresses, r) })} />)}</View>
 
-        <ToggleRow testID="exercise-rehab" label="Prescribed rehabilitation" hint="Tempo will never shorten, progress or swap this activity. Follow the professional who prescribed it." value={e.rehab} onChange={(rehab) => set({ rehab })} />
+        <ToggleRow testID="exercise-rehab" label="Prescribed rehabilitation" hint="Svasthic will never shorten, progress or swap this activity. Follow the professional who prescribed it." value={e.rehab} onChange={(rehab) => set({ rehab })} />
 
         <Text style={[s.label, { color: c.foreground }]}>Steps (one per line)</Text>
         <TextInput testID="exercise-steps" value={cuesText} onChangeText={editSteps} multiline placeholder={'Set up…\nMove…\nReturn…'} placeholderTextColor={c.mutedForeground} style={[s.input, s.area, { borderColor: c.border, backgroundColor: c.card, color: c.foreground }]} />

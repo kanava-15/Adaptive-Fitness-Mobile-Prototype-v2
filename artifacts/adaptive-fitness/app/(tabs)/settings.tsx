@@ -23,7 +23,7 @@ export default function Settings() {
     const json = exportJson();
     setShowExport(true);
     try {
-      await Share.share({ message: json, title: 'Tempo export' });
+      await Share.share({ message: json, title: 'Svasthic export' });
     } catch {
       // Share unavailable (e.g. some web browsers) — JSON is shown below for copying.
     }
@@ -74,7 +74,7 @@ export default function Settings() {
         <Feather name="lock" size={20} color={c.done} />
         <View style={{ flex: 1 }}>
           <Text style={[s.privTitle, { color: c.accentForeground }]}>Stays on this device</Text>
-          <Text style={[s.privBody, { color: c.accentMuted }]}>No account, cloud sync, AI, or analytics. Your profile, routines, and workout history stay in this app’s local storage. Tempo may request shared exercise-catalog updates; it does not send your profile or workouts. If you export, the app you choose in the share sheet receives a JSON backup. Deleting Tempo removes local data unless you exported it.</Text>
+          <Text style={[s.privBody, { color: c.accentMuted }]}>No account, cloud sync, AI, or analytics. Your profile, routines, and workout history stay in this app’s local storage. Svasthic may request shared exercise-catalog updates; it does not send your profile or workouts. If you export, the app you choose in the share sheet receives a JSON backup. Deleting Svasthic removes local data unless you exported it.</Text>
         </View>
       </View>
 
@@ -94,7 +94,7 @@ export default function Settings() {
 
       <Card style={{ marginTop: 14 }}>
         <Eyebrow>Import</Eyebrow>
-        <Text style={[s.body, { color: c.mutedForeground }]}>Paste a Tempo export. It’s checked first, and you’ll confirm before anything is replaced.</Text>
+        <Text style={[s.body, { color: c.mutedForeground }]}>Paste a Svasthic backup. Earlier Tempo backups are still supported. It’s checked first, and you’ll confirm before anything is replaced.</Text>
         <TextInput
           testID="import-input"
           value={importText}
@@ -126,7 +126,7 @@ export default function Settings() {
         />
       </Card>
 
-      <Text style={[s.fine, { color: c.mutedForeground }]}>Tempo offers general fitness suggestions, not medical advice, and has not been clinically validated. Stop if something hurts and consult a qualified professional about pain or health conditions.</Text>
+      <Text style={[s.fine, { color: c.mutedForeground }]}>Svasthic offers general fitness suggestions, not medical advice, and has not been clinically validated. Stop if something hurts and consult a qualified professional about pain or health conditions.</Text>
     </KeyboardAwareScrollViewCompat>
   );
 }

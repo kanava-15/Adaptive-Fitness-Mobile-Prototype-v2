@@ -313,7 +313,7 @@ function BuilderDraft() {
                     <View style={s.wrap}>
                       {(['must', 'normal', 'optional'] as Priority[]).map((p) => <Chip key={p} label={PRIORITY_LABEL[p]} active={it.priority === p} onPress={() => patch(it.key, { priority: p })} />)}
                     </View>
-                    {r.rehab ? <Text style={[s.hint, { color: c.secondaryForeground, marginTop: 10 }]}>Marked as prescribed rehab: Tempo will not change it.</Text> : null}
+                    {r.rehab ? <Text style={[s.hint, { color: c.secondaryForeground, marginTop: 10 }]}>Marked as prescribed rehab: Svasthic will not change it.</Text> : null}
                     <View style={[s.itemActions, { borderTopColor: c.border }]}>
                       <IconButton testID={`move-up-${n}`} icon="arrow-up" label="Move up" onPress={() => moveItem(it.key, -1)} />
                       <IconButton testID={`move-down-${n}`} icon="arrow-down" label="Move down" onPress={() => moveItem(it.key, 1)} />

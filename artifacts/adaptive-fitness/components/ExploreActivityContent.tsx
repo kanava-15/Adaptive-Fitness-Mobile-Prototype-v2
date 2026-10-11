@@ -79,7 +79,7 @@ export function ExploreActivityContent({ activity: a, release, onOpenRelated }: 
         {link(reference.title, reference.url)}
         {text(`Reference source: ${release.sources.find(item => item.id === reference.sourceId)?.title ?? `Unavailable (${reference.sourceId})`}`)}
       </View>) : text('No reviewed media reference attached. Instructions are available above.')}
-      {text('Links open outside Tempo only when tapped. Tempo does not host or play media.')}
+      {text('Links open outside Svasthic only when tapped. Svasthic does not host or play media.')}
     </View>
     <DetailDisclosure title="Sources & attribution" testID="catalog-detail-sources">
       {Array.from(new Set([...a.sourceIds, ...a.benefits.flatMap(b => b.sourceIds), ...a.seriesContext.map(x => x.sourceId), ...(a.mediaReferences ?? []).map(x => x.sourceId)])).map(id => {
